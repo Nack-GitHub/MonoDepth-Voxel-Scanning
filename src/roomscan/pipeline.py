@@ -14,6 +14,8 @@ import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
+import cv2
+import numpy as np
 from omegaconf import DictConfig
 
 from roomscan.config import to_yaml
@@ -25,7 +27,7 @@ from roomscan.export import export_mesh
 from roomscan.geometry.postprocess import clean_mesh
 from roomscan.geometry.scale_align import ScaleAligner, build_aligner
 from roomscan.geometry.tsdf_fusion import TSDFFusion
-from roomscan.types import Timing
+from roomscan.types import Intrinsics, Timing
 
 
 @dataclass
@@ -47,7 +49,7 @@ class RunResult:
             "run_name": self.run_name, "scene": self.scene,
             "depth_source": self.depth_source, "aligner": self.aligner,
             "n_frames": self.n_frames, "voxel_size": self.voxel_size,
-            "timing": asdict(self.timing),
+            "timing": {**asdict(self.timing), "total": self.timing.total},
             "metrics_3d": self.metrics_3d.to_flat_dict() if self.metrics_3d else None,
             "metrics_2d": asdict(self.metrics_2d) if self.metrics_2d else None,
         }
@@ -98,7 +100,7 @@ class ReconstructionPipeline:
             t.depth += time.perf_counter() - t0
 
             t0 = time.perf_counter()
-            depth_m = self.aligner.align(pred, frame)
+            depth_m = _to_grid(self.aligner.align(pred, frame), self.dataset.intrinsics)
             t.align += time.perf_counter() - t0
 
             if cfg.eval.compute_2d_metrics and frame.gt_depth is not None:
@@ -148,6 +150,13 @@ class ReconstructionPipeline:
             f"_{self.aligner.name}_v{int(cfg.fusion.voxel_size * 100):02d}_s{cfg.dataset.frame_stride}"
         )
         return Path(cfg.output.root) / cfg.output.experiment / name
+
+
+def _to_grid(depth: np.ndarray, intr: Intrinsics) -> np.ndarray:
+    """Every source's depth lands on the fusion grid through this one function (nearest, keeps 0)."""
+    if depth.shape == (intr.height, intr.width):
+        return depth
+    return cv2.resize(depth, (intr.width, intr.height), interpolation=cv2.INTER_NEAREST)
 
 
 def _pick_device(requested: str) -> str:

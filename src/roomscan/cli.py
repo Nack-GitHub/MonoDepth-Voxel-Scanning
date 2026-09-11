@@ -19,11 +19,11 @@ def main(argv: list[str] | None = None) -> int:
 
     r = sub.add_parser("run", help="one scene, one config")
     r.add_argument("--config", required=True)
-    r.add_argument("--set", dest="overrides", action="append", default=[], metavar="KEY=VALUE")
+    r.add_argument("--set", dest="overrides", nargs="+", action="extend", default=[], metavar="KEY=VALUE")
 
     s = sub.add_parser("sweep", help="all runs x all scenes in an experiment file")
     s.add_argument("experiment_file")
-    s.add_argument("--set", dest="overrides", action="append", default=[], metavar="KEY=VALUE")
+    s.add_argument("--set", dest="overrides", nargs="+", action="extend", default=[], metavar="KEY=VALUE")
     s.add_argument("--skip-existing", action="store_true")
 
     rp = sub.add_parser("report", help="aggregate metrics.json files into tables")

@@ -26,7 +26,7 @@ from roomscan.geometry.backproject import backproject, to_world
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/base.yaml")
-    ap.add_argument("--set", dest="overrides", action="append", default=[], metavar="KEY=VALUE")
+    ap.add_argument("--set", dest="overrides", nargs="+", action="extend", default=[], metavar="KEY=VALUE")
     ap.add_argument("--frame", type=int, default=0)
     ap.add_argument("--source", default="gt", choices=["gt", "lidar"])
     ap.add_argument("--out", default="outputs")

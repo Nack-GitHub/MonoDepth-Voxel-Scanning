@@ -1,8 +1,6 @@
-"""DepthModel — a neural network that maps RGB -> depth-ish map.
-
-Kept separate from DepthSource so Exp4 (model size) is just a different
-backend behind the same `MonocularDepth` source. Inference only (ADR-008).
-"""
+"""DepthModel — a network mapping RGB -> depth-ish map. Inference only (ADR-008).
+Kept separate from DepthSource so Exp4 (model size) is a different backend behind
+the same MonocularDepth source."""
 
 from __future__ import annotations
 
@@ -13,16 +11,23 @@ import numpy as np
 
 
 class DepthModel(ABC):
-    name: ClassVar[str]
-    is_metric: ClassVar[bool]        # True -> output is already metres; False -> relative/affine
-    param_count: ClassVar[int | None] = None   # for the model-size table
+    name: str
+    is_metric: ClassVar[bool]            # True -> metres; False -> affine-invariant
+    output_kind: ClassVar[str] = "depth"  # "depth" | "disparity"
+    param_count: int | None = None
 
     @abstractmethod
     def predict(self, rgb: np.ndarray) -> np.ndarray:
-        """(H, W, 3) uint8 RGB -> (H, W) float32.
+        """(H, W, 3) uint8 RGB, upright -> (H, W) float32 (same H, W)."""
 
-        Relative models return whatever the network outputs (often inverse
-        depth / disparity). Say so in `output_kind` so the aligner can invert.
-        """
 
-    output_kind: ClassVar[str] = "depth"   # "depth" | "disparity"
+def pick_torch_device(device: str = "auto") -> str:
+    import torch
+
+    if device != "auto":
+        return device
+    if torch.cuda.is_available():
+        return "cuda"
+    if getattr(torch.backends, "mps", None) and torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
