@@ -49,6 +49,22 @@ paper/           outline, figures
 data/            NOT in git — see data/README.md
 ```
 
-## Status
+## No data yet? Run the whole thing on a synthetic room
 
-Phase 0 — skeleton + contracts committed; loader not yet implemented. See [docs/architecture/README.md §7](docs/architecture/README.md) for the phase → module map.
+```bash
+make synthetic         # writes data/synthetic/ in ARKitScenes layout (~90 MB, 60 frames)
+make smoke             # gt / lidar / mono_oracle / mono_scene sweep + report tables
+make figures-smoke     # error heatmaps -> outputs/figures_smoke/
+```
+
+## Status (2026-09-12)
+
+| Phase | State |
+|---|---|
+| 0 loader + sanity | ✅ implemented, tested on synthetic scene; **not yet run on real ARKitScenes** |
+| 1 GT/LiDAR pipeline, metrics, reference builder | ✅ implemented; synthetic GT: accuracy 1.1 cm, precision@5cm 0.999 |
+| 2 monocular + scale alignment + 2D metrics | ✅ implemented; DA-v2 Small verified end-to-end on MPS |
+| 3 sweep / report / MiDaS | ✅ sweep+report verified (`exp0_synthetic_smoke`); MiDaS wrapper untested |
+| 4 figures | ✅ `scripts/make_figures.py` (heatmap ply + top-down png) |
+| Real data | ⏳ blocked on disk space + download — see `data/README.md` |
+| 5 paper | ⏳ outline only |

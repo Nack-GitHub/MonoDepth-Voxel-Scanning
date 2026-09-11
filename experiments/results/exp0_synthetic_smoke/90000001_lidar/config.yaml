@@ -2,7 +2,7 @@ dataset:
   name: arkitscenes
   root: data/synthetic
   scene: 90000001
-  frame_stride: 1
+  frame_stride: 2
   max_frames: null
   options:
     split: Training
@@ -34,8 +34,8 @@ eval:
   compute_2d_metrics: true
 output:
   root: experiments/results
-  experiment: synthetic
-  run_name: null
+  experiment: exp0_synthetic_smoke
+  run_name: 90000001_lidar
   save_mesh: true
   export_formats:
   - ply

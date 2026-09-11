@@ -1,0 +1,20 @@
+# Exp0 — end-to-end smoke on the synthetic room (no real data needed).
+#   python scripts/make_synthetic_scene.py --root data/synthetic --frames 60
+#   roomscan sweep configs/experiments/exp0_synthetic_smoke.yaml && roomscan report experiments/results
+# Numbers are NOT paper numbers; they prove every row of Exp1 runs and the tables build.
+experiment: exp0_synthetic_smoke
+base: configs/base.yaml
+scenes: [90000001]
+runs:
+  - name: gt
+    overrides: {dataset.root: data/synthetic, dataset.options.reference: arkit_mesh, dataset.frame_stride: 2,
+                depth.source: gt, depth.aligner: identity}
+  - name: lidar
+    overrides: {dataset.root: data/synthetic, dataset.options.reference: arkit_mesh, dataset.frame_stride: 2,
+                depth.source: lidar, depth.aligner: identity}
+  - name: mono_oracle
+    overrides: {dataset.root: data/synthetic, dataset.options.reference: arkit_mesh, dataset.frame_stride: 5,
+                depth.source: mono, depth.model: depth_anything_v2_small, depth.aligner: oracle_frame}
+  - name: mono_scene
+    overrides: {dataset.root: data/synthetic, dataset.options.reference: arkit_mesh, dataset.frame_stride: 5,
+                depth.source: mono, depth.model: depth_anything_v2_small, depth.aligner: per_scene}

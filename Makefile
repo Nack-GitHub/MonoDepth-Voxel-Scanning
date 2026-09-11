@@ -1,12 +1,22 @@
 # Common entrypoints. Every target is one command so the paper's
 # "reproduce" section can point here.
-.PHONY: setup setup-gt sanity reference run-gt run-lidar run-mono sweep-exp1 sweep-exp2 sweep-exp3 sweep-exp4 report test lint
+.PHONY: setup setup-gt synthetic smoke figures-smoke sanity reference run-gt run-lidar run-mono sweep-exp1 sweep-exp2 sweep-exp3 sweep-exp4 report test lint
 
 setup:            ## full env (GT + monocular models + dev tools)
 	pip install -e ".[mono,dev]"
 
 setup-gt:         ## minimal env, enough for Phase 0-1 (no torch)
 	pip install -e ".[dev]"
+
+synthetic:        ## synthetic ARKitScenes-format room for testing without real data
+	python scripts/make_synthetic_scene.py --root data/synthetic --frames 60
+
+smoke:            ## all Exp1 row types on the synthetic room + tables
+	roomscan sweep configs/experiments/exp0_synthetic_smoke.yaml
+	roomscan report experiments/results
+
+figures-smoke:
+	python scripts/make_figures.py experiments/results/exp0_synthetic_smoke --out outputs/figures_smoke
 
 sanity:           ## Phase 0: one frame -> point cloud -> outputs/sanity_<scene>_<frame>_<source>.ply
 	python scripts/sanity_check.py --frame 0 --source gt

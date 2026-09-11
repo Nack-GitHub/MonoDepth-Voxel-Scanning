@@ -1,0 +1,40 @@
+{
+  "run_name": "90000001_mono_oracle",
+  "scene": "90000001",
+  "depth_source": "mono:depth_anything_v2_small",
+  "aligner": "oracle_frame",
+  "n_frames": 12,
+  "voxel_size": 0.04,
+  "timing": {
+    "depth": 1.9951327090384439,
+    "align": 1.56798141496256,
+    "fusion": 0.1997369579039514,
+    "extract": 0.022834291914477944,
+    "postprocess": 0.041528375004418194,
+    "eval": 0.45197954191826284,
+    "total": 4.279193290742114
+  },
+  "metrics_3d": {
+    "accuracy": 0.07136321031360869,
+    "completeness": 0.3168988161487057,
+    "chamfer": 0.1941310132311572,
+    "precision@0.02": 0.21746,
+    "recall@0.02": 0.104175,
+    "fscore@0.02": 0.1408671040154212,
+    "precision@0.05": 0.534115,
+    "recall@0.05": 0.22221,
+    "fscore@0.05": 0.3138483962582223,
+    "precision@0.1": 0.774365,
+    "recall@0.1": 0.336475,
+    "fscore@0.1": 0.46911249752439593,
+    "normal_consistency": 0.9086282350648827
+  },
+  "metrics_2d": {
+    "rmse": 0.11076488553926847,
+    "abs_rel": 0.049213174669108524,
+    "delta1": 0.9826592339409722,
+    "delta2": 1.0,
+    "delta3": 1.0,
+    "n_valid": 589824
+  }
+}

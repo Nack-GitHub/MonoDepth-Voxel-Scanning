@@ -22,7 +22,7 @@ Workflow doc เลือก ScanNet เพราะมี RGB/depth/pose/GT mes
 ## Decision
 1. `dataio/arkitscenes.py::ARKitScenesScene` เป็น dataset default; `ScanNetScene` คงไว้ใน registry เป็น fallback (stub)
 2. Mapping ลง `Frame`:
-   - `rgb` = `wide` (resize ลงเท่ากับ depth resolution ที่ใช้ fuse) — **VERIFY** ว่า wide กับ lowres_depth ใช้กล้องเดียวกัน (ใช่: ทั้งคู่คือ wide camera, ต่างแค่ resolution → ใช้ `Intrinsics.scaled()`)
+   - `rgb` = RGB ที่ดีที่สุดที่มี (`upsampling/color` 1920×1440 > `vga_wide` > `lowres_wide`) ที่ resolution เดิม; pipeline resample depth ทุก source ลง fusion grid 256×192 ด้วยฟังก์ชันเดียว (`_to_grid`)
    - `gt_depth` = `highres_depth` (Faro) เมื่อมี; None เมื่อไม่มี
    - `extra["lidar_depth"]` = `lowres_depth` (ARKit) → ป้อน `LiDARDepth` source
    - `extra["lidar_confidence"]` = `confidence` (0/1/2)
@@ -57,12 +57,15 @@ Workflow doc เลือก ScanNet เพราะมี RGB/depth/pose/GT mes
 - Depth 256×192 ต่ำ → fuse ที่ resolution นี้ทุก row (mono ก็ downsample output ลงมา) เพื่อความแฟร์; ทดลอง fuse mono ที่ res สูงกว่าได้เป็น extra
 - `highres_depth` ไม่ครบทุกเฟรม (ถ้าเป็นเช่นนั้น) → 2D metrics คิดเฉพาะเฟรมที่มี; reference mesh ใช้เฟรมที่มี
 
-## สิ่งที่ต้อง VERIFY ตอนโหลดฉากแรก (Phase 0 checklist)
-- [ ] `lowres_depth` เป็น uint16 มิลลิเมตร? (`np.unique` ดูช่วงค่า)
-- [ ] `highres_depth` มี resolution เท่าไร และมีกี่ % ของเฟรม
-- [ ] `.traj` เป็น c2w หรือ w2c — ดู point cloud จาก 2 เฟรมซ้อนกันไหม
-- [ ] `.pincam` ของ wide กับ lowres_wide สัมพันธ์กันด้วย scale ล้วน ๆ (cx/cy สเกลตาม)
-- [ ] timestamp ชื่อไฟล์ vs traj: offset/tolerance เท่าไร
+## VERIFY checklist — ปิดแล้วจาก source code ของ Apple (2026-09-12)
+- [x] depth PNG = uint16 มิลลิเมตร (DATA.md) → `/1000`
+- [x] `highres_depth` = 1920×1440, ~10 FPS "filtered" (raw/README.md); RGB คู่กันอยู่ใน dataset `upsampling/color`
+- [x] `.traj` = world→camera; Apple `np.linalg.inv` → c2w (`TrajStringToMatrix`) — loader ทำเหมือนกัน, test ยืนยันด้วย synthetic scene
+- [x] pinhole มาตรฐาน ไม่มี axis flip (`generate_point`)
+- [x] timestamp: key 3 ตำแหน่ง, tolerance 0.005 s (Apple) → เราใช้ nearest ≤ 0.02 s
+- [x] `sky_direction` ใน metadata → หมุนภาพก่อนเข้า mono model (ทำใน `MonocularDepth`)
+- [ ] **ยังไม่ได้รันกับไฟล์จริง** — ทำ `make sanity` ทันทีที่โหลดฉากแรก
+- [ ] Faro laser point clouds (`--download_laser_scanner_point_cloud`) อยู่ frame เดียวกับ ARKit world หรือไม่ — ถ้าใช่ ใช้เป็น reference ตรง ๆ ได้ (ดีกว่า faro_fused)
 
 ## Revisit trigger
 ถ้าไม่มีฉากไหนที่ `highres_depth` ครอบคลุมพอสร้าง reference ได้ → กลับไป ScanNet (loader interface เดิม, ADR-003) หรือใช้ Replica (synthetic, GT สมบูรณ์)

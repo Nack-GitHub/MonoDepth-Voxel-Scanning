@@ -7,4 +7,6 @@
 - New depth source / model / aligner / dataset = new file + registry line. If it requires editing `pipeline.py`, stop and write an ADR.
 - Results are files: `experiments/results/<exp>/<scene>_<run>/{config.yaml,metrics.json}` are committed; meshes are not.
 - Never commit anything under `data/`. Never push unless asked.
-- Tests: `make test` — must run without data and without torch.
+- Tests: `make test` — must run without real data (they generate a synthetic scene) and without torch.
+- Synthetic scene (`make synthetic`, `data/synthetic/`) is for wiring checks only; never report its numbers as results.
+- Dev env used on 2026-09-12 lived in the session scratchpad and is gone; recreate with `make setup` (Python 3.12, open3d 0.19, torch 2.14 MPS OK).

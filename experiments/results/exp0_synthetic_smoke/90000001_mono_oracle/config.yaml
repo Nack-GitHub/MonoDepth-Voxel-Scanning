@@ -2,7 +2,7 @@ dataset:
   name: arkitscenes
   root: data/synthetic
   scene: 90000001
-  frame_stride: 1
+  frame_stride: 5
   max_frames: null
   options:
     split: Training
@@ -11,9 +11,9 @@ dataset:
     - 256
     - 192
 depth:
-  source: gt
-  model: null
-  aligner: identity
+  source: mono
+  model: depth_anything_v2_small
+  aligner: oracle_frame
   aligner_fit_frames: 10
   lidar_min_confidence: 0
 fusion:
@@ -34,8 +34,8 @@ eval:
   compute_2d_metrics: true
 output:
   root: experiments/results
-  experiment: synthetic
-  run_name: null
+  experiment: exp0_synthetic_smoke
+  run_name: 90000001_mono_oracle
   save_mesh: true
   export_formats:
   - ply

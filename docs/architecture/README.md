@@ -111,7 +111,7 @@ src/roomscan/
 
 ทุก run ทิ้ง `config.yaml` + `metrics.json` ไว้ที่ `experiments/results/<exp>/<scene>_<run>/` — `roomscan report` รวมเป็นตาราง
 
-## 7. Phase → module
+## 7. Phase → module (สถานะ 2026-09-12: 0–4 implemented + tested บน synthetic; ยังไม่แตะข้อมูลจริง)
 
 | Phase | ต้องทำให้ทำงาน | gate |
 |---|---|---|
