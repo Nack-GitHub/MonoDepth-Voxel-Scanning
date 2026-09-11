@@ -1,0 +1,18 @@
+# Experiment 1 — Depth Source (the paper's main axis).
+# One pipeline, one variable. Everything else pinned to base.yaml.
+experiment: exp1_depth_source
+base: configs/base.yaml
+scenes: [41069021, 41159856, 42445173]   # ARKitScenes video_ids WITH highres_depth — replace after download
+runs:
+  - name: gt
+    overrides: {depth.source: gt, depth.aligner: identity}
+  - name: lidar                     # what iPhone Pro / iPad Pro does today (ADR-009)
+    overrides: {depth.source: lidar, depth.aligner: identity}
+  - name: mono_oracle
+    overrides: {depth.source: mono, depth.model: depth_anything_v2_large, depth.aligner: oracle_frame}
+  - name: mono_scene
+    overrides: {depth.source: mono, depth.model: depth_anything_v2_large, depth.aligner: per_scene}
+  - name: mono_metric
+    overrides: {depth.source: mono, depth.model: depth_anything_v2_metric_indoor, depth.aligner: identity}
+  # - name: arcore        # only if an Android capture of the same room exists (custom dataset)
+  #   overrides: {depth.source: arcore, depth.aligner: identity}

@@ -1,0 +1,40 @@
+# ---- Data & heavy artifacts: NEVER commit ----
+data/*
+!data/README.md
+outputs/*
+!outputs/.gitkeep
+# Results: commit config + metrics (small), ignore meshes/arrays (large)
+experiments/results/**/*.ply
+experiments/results/**/*.obj
+experiments/results/**/*.glb
+experiments/results/**/*.npy
+experiments/results/**/*.npz
+experiments/results/**/*.png
+paper/figures/*.ply
+
+# ---- Model weights ----
+checkpoints/
+*.pth
+*.pt
+*.safetensors
+*.onnx
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# ---- Notebooks ----
+.ipynb_checkpoints/
+
+# ---- OS / editors ----
+.DS_Store
+.vscode/
+.idea/

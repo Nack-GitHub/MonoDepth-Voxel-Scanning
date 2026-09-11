@@ -1,0 +1,10 @@
+# Phase 2 — monocular model, (s, t) fitted once on the first N frames then frozen.
+# Realistic: mirrors what a deployed system could do with a few sparse SLAM points.
+_base_: configs/base.yaml
+depth:
+  source: mono
+  model: depth_anything_v2_large
+  aligner: per_scene
+  aligner_fit_frames: 10
+output:
+  experiment: phase2_mono

@@ -1,0 +1,18 @@
+# Paper outline (System Development track)
+
+**Thesis:** เปลี่ยน depth source (Faro GT / iPad LiDAR / monocular model) โดย pipeline คงเดิม → geometry error เปลี่ยนกี่ซม. และหมายความว่าอะไรต่อ use case
+
+1. Introduction & Business Motivation — RoomPlan จำกัด iPhone Pro; Android ต้องพึ่ง mono
+2. Related Work — MiDaS, Depth Anything; Atlas / NeuralRecon / SimpleRecon (baseline, ไม่แข่ง); RoomPlan, Polycam
+3. System Design — `docs/architecture/README.md` §2–§5 (DepthSource / ScaleAligner abstraction คือจุดขายเชิงวิศวกรรม)
+4. Experimental Setup — ARKitScenes 3 scans, reference mesh จาก Faro (ADR-009), metrics protocol (`metrics_3d.py` docstring)
+5. Results — Exp1–4 จาก `experiments/results/*/table.md`
+6. Discussion — error → ซม.บนผนัง 4 ม.; LiDAR vs mono gap = "Android ห่างจาก iPhone Pro เท่าไร"; failure cases
+7. Business Implications — cost/scan (Exp3), positioning
+8. Limitations & Future Work — VIO pose drift, 256×192 depth, Project 1 (compression), semantic layer
+9. Conclusion
+
+**ห้ามเขียน:** "แม่นกว่า Atlas" / "จุดเด่นคือไม่ต้องใช้ LiDAR"
+**ต้องเขียน:** "เราวัดว่า depth source ต่างกันส่งผลต่อ geometry อย่างไร"
+
+Figures → `figures/` (gitignore `.ply`; commit `.png`/`.pdf` ที่ใช้จริง)

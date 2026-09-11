@@ -1,0 +1,56 @@
+# Base config. Every run/experiment starts from this and overrides a few keys.
+# Any key can be overridden from the CLI:  roomscan run --set fusion.voxel_size=0.02
+#
+# The 4 ablation axes of the paper map 1:1 onto config keys:
+#   Exp1 depth source  -> depth.source / depth.aligner
+#   Exp2 voxel size    -> fusion.voxel_size (+ sdf_trunc)
+#   Exp3 frame stride  -> dataset.frame_stride
+#   Exp4 model size    -> depth.model
+
+dataset:
+  name: arkitscenes        # arkitscenes | scannet | replica | custom   (see dataio/, ADR-009)
+  root: data/arkitscenes
+  scene: 41069021          # ARKitScenes video_id (example — replace with a scan that has highres_depth)
+  frame_stride: 10         # Exp3
+  max_frames: null         # null = all frames
+  options:                 # dataset-specific, passed to the loader constructor
+    split: Training
+    reference: faro_fused  # faro_fused | arkit_mesh   (what gt_mesh() returns, ADR-009)
+    fusion_resolution: [256, 192]   # everything is fused at lowres_depth resolution
+
+depth:
+  source: gt               # gt | lidar | mono | arcore                 (Exp1)
+                           #   gt    = Faro laser depth (highres_depth)
+                           #   lidar = ARKit depth from the iPad's LiDAR (lowres_depth)
+  model: null              # mono only: depth_anything_v2_small | depth_anything_v2_large
+                           #            | depth_anything_v2_metric_indoor | midas_small      (Exp4)
+  aligner: identity        # identity | oracle_frame | per_scene | sparse_points (Exp1)
+  aligner_fit_frames: 10   # per_scene: how many leading frames to fit (s, t) on
+  lidar_min_confidence: 0  # lidar only: drop ARKit pixels below this confidence (0/1/2)
+
+fusion:
+  voxel_size: 0.04         # meters                                      (Exp2)
+  sdf_trunc: 0.12          # ~3x voxel_size; keep the ratio when sweeping
+  depth_trunc: 5.0         # meters, drop anything further
+  depth_min: 0.1           # meters, drop anything closer (sensor noise)
+
+postprocess:
+  remove_small_clusters: true
+  min_cluster_triangles: 1000
+  simplify_target_triangles: null   # null = no decimation
+
+eval:
+  fscore_thresholds: [0.02, 0.05, 0.10]   # meters; 0.05 is the headline number
+  n_sample_points: 200000
+  compute_2d_metrics: true                 # per-frame RMSE/AbsRel/delta vs GT depth
+
+output:
+  root: experiments/results
+  experiment: dev          # results land in <root>/<experiment>/<run_name>/
+  run_name: null           # null = auto: <scene>_<source>_<aligner>_<voxel>
+  save_mesh: true
+  export_formats: [ply]    # ply | obj | glb
+
+runtime:
+  device: auto             # auto | cuda | mps | cpu
+  seed: 0

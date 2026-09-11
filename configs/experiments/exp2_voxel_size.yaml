@@ -1,0 +1,12 @@
+# Experiment 2 — Voxel size vs accuracy / RAM / time. Run with GT depth so the
+# only variable is the grid.
+experiment: exp2_voxel_size
+base: configs/base.yaml
+scenes: [41069021, 41159856, 42445173]   # ARKitScenes video_ids WITH highres_depth — replace after download
+runs:
+  - name: v02
+    overrides: {depth.source: gt, fusion.voxel_size: 0.02, fusion.sdf_trunc: 0.06}
+  - name: v04
+    overrides: {depth.source: gt, fusion.voxel_size: 0.04, fusion.sdf_trunc: 0.12}
+  - name: v08
+    overrides: {depth.source: gt, fusion.voxel_size: 0.08, fusion.sdf_trunc: 0.24}

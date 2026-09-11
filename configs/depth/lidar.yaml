@@ -1,0 +1,8 @@
+# Consumer LiDAR (ARKit lowres_depth). Direct competitor of the mono rows.
+_base_: configs/base.yaml
+depth:
+  source: lidar
+  aligner: identity
+  lidar_min_confidence: 0
+output:
+  experiment: phase1_lidar

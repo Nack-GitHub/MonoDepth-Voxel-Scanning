@@ -1,0 +1,49 @@
+[project]
+name = "roomscan"
+version = "0.1.0"
+description = "Monocular depth -> TSDF voxel grid -> 3D room reconstruction (depth-source ablation study)"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    "opencv-python-headless>=4.8",
+    "open3d>=0.18",
+    "omegaconf>=2.3",
+    "pandas>=2.0",
+    "tqdm",
+    "imageio",
+]
+
+[project.optional-dependencies]
+# Only needed for depth.source=mono (Phase 2+). GT-only pipeline (Phase 0-1) works without torch.
+mono = [
+    "torch>=2.1",
+    "torchvision",
+    "transformers>=4.40",   # Depth Anything V2 via HuggingFace
+    "timm",                 # MiDaS via torch.hub
+]
+dev = [
+    "pytest>=7",
+    "ruff",
+    "matplotlib",
+    "jupyter",
+]
+
+[project.scripts]
+roomscan = "roomscan.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

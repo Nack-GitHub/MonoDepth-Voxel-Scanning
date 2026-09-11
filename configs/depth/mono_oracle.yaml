@@ -1,0 +1,9 @@
+# Phase 2 — monocular model, per-frame least-squares scale/shift vs GT ("oracle scale").
+# Shows the model's ceiling. Not deployable (needs GT).
+_base_: configs/base.yaml
+depth:
+  source: mono
+  model: depth_anything_v2_large
+  aligner: oracle_frame
+output:
+  experiment: phase2_mono

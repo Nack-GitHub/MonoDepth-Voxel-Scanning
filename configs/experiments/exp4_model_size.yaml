@@ -1,0 +1,11 @@
+# Experiment 4 — Model size. Bridge to Project 1 (model compression).
+experiment: exp4_model_size
+base: configs/base.yaml
+scenes: [41069021, 41159856, 42445173]   # ARKitScenes video_ids WITH highres_depth — replace after download
+runs:
+  - name: da_large
+    overrides: {depth.source: mono, depth.model: depth_anything_v2_large, depth.aligner: oracle_frame}
+  - name: da_small
+    overrides: {depth.source: mono, depth.model: depth_anything_v2_small, depth.aligner: oracle_frame}
+  - name: midas_small
+    overrides: {depth.source: mono, depth.model: midas_small, depth.aligner: oracle_frame}

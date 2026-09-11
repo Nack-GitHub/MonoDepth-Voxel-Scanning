@@ -1,0 +1,7 @@
+# Phase 1 — upper bound. Perfect depth, perfect pose.
+_base_: configs/base.yaml
+depth:
+  source: gt
+  aligner: identity
+output:
+  experiment: phase1_gt

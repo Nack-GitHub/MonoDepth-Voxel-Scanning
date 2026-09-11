@@ -1,0 +1,8 @@
+# Phase 2 — metric-depth model. No alignment at all.
+_base_: configs/base.yaml
+depth:
+  source: mono
+  model: depth_anything_v2_metric_indoor
+  aligner: identity
+output:
+  experiment: phase2_mono
