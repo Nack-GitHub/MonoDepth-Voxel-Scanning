@@ -11,7 +11,7 @@ dataset:
   name: arkitscenes        # arkitscenes | scannet | replica | custom   (see dataio/, ADR-009)
   root: data/arkitscenes
   scene: 42444474          # ARKitScenes video_id (visit 421069; has highres_depth + laser clouds)
-  frame_stride: 10         # Exp3
+  frame_stride: 1          # Exp3 (highres_depth frames are already ~2-3 FPS after Apple's filtering)
   max_frames: null         # null = all frames
   options:                 # dataset-specific, passed to the loader constructor
     split: Training
@@ -43,6 +43,8 @@ eval:
   fscore_thresholds: [0.02, 0.05, 0.10]   # meters; 0.05 is the headline number
   n_sample_points: 200000
   compute_2d_metrics: true                 # per-frame RMSE/AbsRel/delta vs GT depth
+  mask_to_gt: true                         # integrate only pixels where GT depth exists, for EVERY source,
+                                           # so no row is penalised for seeing more than the Faro reference covers
 
 output:
   root: experiments/results

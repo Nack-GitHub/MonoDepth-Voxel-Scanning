@@ -1,0 +1,40 @@
+{
+  "run_name": "42444474_gt_identity_v04_s1",
+  "scene": "42444474",
+  "depth_source": "gt",
+  "aligner": "identity",
+  "n_frames": 235,
+  "voxel_size": 0.04,
+  "timing": {
+    "depth": 0.00022708636242896318,
+    "align": 0.029597116401419044,
+    "fusion": 0.66311746975407,
+    "extract": 0.03509133297484368,
+    "postprocess": 0.07053862500470132,
+    "eval": 0.41858370800036937,
+    "total": 1.2171553384978324
+  },
+  "metrics_3d": {
+    "accuracy": 0.014575562770409752,
+    "completeness": 0.020958246202599947,
+    "chamfer": 0.01776690448650485,
+    "precision@0.02": 0.828215,
+    "recall@0.02": 0.757165,
+    "fscore@0.02": 0.7910979203408647,
+    "precision@0.05": 0.978085,
+    "recall@0.05": 0.95144,
+    "fscore@0.05": 0.9645785282906414,
+    "precision@0.1": 0.99776,
+    "recall@0.1": 0.985135,
+    "fscore@0.1": 0.9914073086068601,
+    "normal_consistency": 0.9229673930818989
+  },
+  "metrics_2d": {
+    "rmse": 0.0,
+    "abs_rel": 0.0,
+    "delta1": 1.0,
+    "delta2": 1.0,
+    "delta3": 1.0,
+    "n_valid": 10445751
+  }
+}

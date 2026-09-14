@@ -101,6 +101,8 @@ class ReconstructionPipeline:
 
             t0 = time.perf_counter()
             depth_m = _to_grid(self.aligner.align(pred, frame), self.dataset.intrinsics)
+            if cfg.eval.get("mask_to_gt", False) and frame.gt_depth is not None:
+                depth_m = np.where(frame.gt_depth > 0, depth_m, 0.0).astype(np.float32)
             t.align += time.perf_counter() - t0
 
             if cfg.eval.compute_2d_metrics and frame.gt_depth is not None:
