@@ -2,7 +2,7 @@
 # only variable is the grid.
 experiment: exp2_voxel_size
 base: configs/base.yaml
-scenes: [41069021, 41159856, 42445173]   # ARKitScenes video_ids WITH highres_depth — replace after download
+scenes: [42444474]   # add 2 more video_ids once downloaded (data/README.md)
 runs:
   - name: v02
     overrides: {depth.source: gt, fusion.voxel_size: 0.02, fusion.sdf_trunc: 0.06}

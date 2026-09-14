@@ -2,7 +2,7 @@
 # One pipeline, one variable. Everything else pinned to base.yaml.
 experiment: exp1_depth_source
 base: configs/base.yaml
-scenes: [41069021, 41159856, 42445173]   # ARKitScenes video_ids WITH highres_depth — replace after download
+scenes: [42444474]   # add 2 more video_ids once downloaded (data/README.md)
 runs:
   - name: gt
     overrides: {depth.source: gt, depth.aligner: identity}

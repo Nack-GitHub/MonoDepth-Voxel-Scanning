@@ -2,7 +2,7 @@
 # Run with the *deployable* mono setting (per_scene), because that's what the business cares about.
 experiment: exp3_frame_stride
 base: configs/base.yaml
-scenes: [41069021, 41159856, 42445173]   # ARKitScenes video_ids WITH highres_depth — replace after download
+scenes: [42444474]   # add 2 more video_ids once downloaded (data/README.md)
 runs:
   - name: s01
     overrides: {depth.source: mono, depth.model: depth_anything_v2_large, depth.aligner: per_scene, dataset.frame_stride: 1}
