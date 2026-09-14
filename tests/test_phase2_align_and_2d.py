@@ -31,7 +31,7 @@ def test_stacked_fit_and_per_scene_aligner():
     s, t = fit_scale_shift_stacked([p for p, _ in pairs], [g for _, g in pairs])
     assert abs(s - 2.0) < 0.02 and abs(t - 0.5) < 0.02
     frames = [Frame(i, np.zeros((1, 1, 3), np.uint8), np.eye(4), gt_depth=g) for i, (_, g) in enumerate(pairs)]
-    al = PerSceneAligner(fit_frames=4)
+    al = PerSceneAligner(fit_frames=4, space="depth")
     al.fit(frames, [p for p, _ in pairs])
     out = al.align(pairs[0][0], frames[0])
     m = depth_metrics(out, pairs[0][1])
@@ -41,7 +41,8 @@ def test_stacked_fit_and_per_scene_aligner():
 def test_oracle_aligner_and_invalid_pixels_stay_zero():
     pred, gt = _pair(7)
     pred[:10] = 0.0
-    out = OraclePerFrameAligner().align(pred, Frame(0, np.zeros((1, 1, 3), np.uint8), np.eye(4), gt_depth=gt))
+    f = Frame(0, np.zeros((1, 1, 3), np.uint8), np.eye(4), gt_depth=gt)
+    out = OraclePerFrameAligner(space="depth").align(pred, f)
     assert (out[:10] == 0).all()
     assert depth_metrics(out, gt).delta1 > 0.9
 
@@ -54,3 +55,15 @@ def test_metrics_2d_identity_and_mean():
     assert off.delta1 == 0.0 and off.delta2 == 1.0
     m = mean_metrics([perfect, off])
     assert m.delta1 == pytest.approx(0.5) and m.n_valid == 32
+
+
+def test_inverse_space_recovers_disparity_affine():
+    rng = np.random.default_rng(3)
+    gt = rng.uniform(0.5, 5.0, (192, 256)).astype(np.float32)
+    disp = 3.0 / gt + 0.2                       # model output: affine in disparity
+    pred = (1.0 / disp).astype(np.float32)      # what MonocularDepth hands the aligner
+    f = Frame(0, np.zeros((1, 1, 3), np.uint8), np.eye(4), gt_depth=gt)
+    out = OraclePerFrameAligner(space="inverse").align(pred, f)
+    assert depth_metrics(out, gt).abs_rel < 0.01
+    bad = OraclePerFrameAligner(space="depth").align(pred, f)
+    assert depth_metrics(bad, gt).abs_rel > depth_metrics(out, gt).abs_rel

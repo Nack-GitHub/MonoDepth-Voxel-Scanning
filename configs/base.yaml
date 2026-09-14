@@ -25,7 +25,8 @@ depth:
   model: null              # mono only: depth_anything_v2_small | depth_anything_v2_large
                            #            | depth_anything_v2_metric_indoor | midas_small      (Exp4)
   aligner: identity        # identity | oracle_frame | per_scene | sparse_points (Exp1)
-  aligner_fit_frames: 10   # per_scene: how many leading frames to fit (s, t) on
+  aligner_fit_frames: 10   # per_scene: how many frames (spread over the scan) to fit (s, t) on
+  align_space: inverse     # inverse | depth — affine-invariant models are affine in DISPARITY -> inverse
   lidar_min_confidence: 0  # lidar only: drop ARKit pixels below this confidence (0/1/2)
 
 fusion:

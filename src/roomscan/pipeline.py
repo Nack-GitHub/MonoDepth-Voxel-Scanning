@@ -89,8 +89,9 @@ class ReconstructionPipeline:
         # --- optional one-off calibration (per_scene / sparse_points) ---
         frames = list(frames_iter)
         if hasattr(self.aligner, "fit_frames"):
-            head = frames[: self.aligner.fit_frames]
-            self.aligner.fit(head, [self.depth_source.get_depth(f) for f in head])
+            k = max(1, len(frames) // max(1, self.aligner.fit_frames))
+            fit_set = frames[::k][: self.aligner.fit_frames]   # spread over the scan, not the first N
+            self.aligner.fit(fit_set, [self.depth_source.get_depth(f) for f in fit_set])
 
         # --- main loop: one variable (depth_source), everything else fixed ---
         per_frame_2d: list[Metrics2D] = []

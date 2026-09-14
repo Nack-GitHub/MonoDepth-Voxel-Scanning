@@ -1,0 +1,40 @@
+{
+  "run_name": "42444474_mono-depth_anything_v2_metric_indoor_identity_v04_s1",
+  "scene": "42444474",
+  "depth_source": "mono:depth_anything_v2_metric_indoor",
+  "aligner": "identity",
+  "n_frames": 235,
+  "voxel_size": 0.04,
+  "timing": {
+    "depth": 209.4684832112398,
+    "align": 0.3531713206321001,
+    "fusion": 1.6151327594416216,
+    "extract": 0.23772249999456108,
+    "postprocess": 0.33145658299326897,
+    "eval": 1.4728430409450084,
+    "total": 213.47880941524636
+  },
+  "metrics_3d": {
+    "accuracy": 0.8421015885406986,
+    "completeness": 0.22191221869437708,
+    "chamfer": 0.5320069036175379,
+    "precision@0.02": 0.01244,
+    "recall@0.02": 0.02101,
+    "fscore@0.02": 0.015627168908819135,
+    "precision@0.05": 0.044135,
+    "recall@0.05": 0.11102,
+    "fscore@0.05": 0.06316093841642229,
+    "precision@0.1": 0.10357,
+    "recall@0.1": 0.261975,
+    "fscore@0.1": 0.14845094721580107,
+    "normal_consistency": 0.688010609230541
+  },
+  "metrics_2d": {
+    "rmse": 0.45365191268777766,
+    "abs_rel": 0.30779477756725615,
+    "delta1": 0.5277402867935431,
+    "delta2": 0.8647851315174763,
+    "delta3": 0.9526361124429855,
+    "n_valid": 10411392
+  }
+}

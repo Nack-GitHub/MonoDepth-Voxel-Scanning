@@ -82,6 +82,35 @@ def _apply(pred: np.ndarray, s: float, t: float) -> np.ndarray:
     return out
 
 
+def _inv(x: np.ndarray) -> np.ndarray:
+    """1/x with invalid (<=0, non-finite) mapped to 0 so it stays invalid downstream."""
+    with np.errstate(divide="ignore", invalid="ignore"):
+        out = np.where(np.isfinite(x) & (x > 0), 1.0 / x, 0.0)
+    return out.astype(np.float32)
+
+
+class _AffineAligner(ScaleAligner):
+    """Shared machinery: fit/apply an affine map in `space` = 'depth' or 'inverse'.
+
+    Affine-invariant models (Depth Anything, MiDaS) are affine in DISPARITY, so the
+    right model is  gt ≈ 1 / (s * (1/pred) + t)  — `space='inverse'`. Fitting in
+    depth space is wrong for those models and only right for near-metric ones.
+    """
+
+    def __init__(self, space: str = "inverse"):
+        if space not in ("depth", "inverse"):
+            raise ValueError("space must be 'depth' or 'inverse'")
+        self.space = space
+
+    def _xy(self, pred: np.ndarray, ref: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        return (_inv(pred), _inv(ref)) if self.space == "inverse" else (pred, ref)
+
+    def _map(self, pred: np.ndarray, s: float, t: float) -> np.ndarray:
+        if self.space == "inverse":
+            return _inv(_apply(_inv(pred), s, t))
+        return _apply(pred, s, t)
+
+
 class IdentityAligner(ScaleAligner):
     name = "identity"
 
@@ -89,38 +118,43 @@ class IdentityAligner(ScaleAligner):
         return pred
 
 
-class OraclePerFrameAligner(ScaleAligner):
+class OraclePerFrameAligner(_AffineAligner):
     name = "oracle_frame"
 
     def align(self, pred: np.ndarray, frame: Frame) -> np.ndarray:
         if frame.gt_depth is None:
             raise ValueError("oracle_frame needs frame.gt_depth")
-        s, t = fit_scale_shift(pred, _match(frame.gt_depth, pred))
-        return _apply(pred, s, t)
+        x, y = self._xy(pred, _match(frame.gt_depth, pred))
+        s, t = fit_scale_shift(x, y)
+        return self._map(pred, s, t)
 
 
-class PerSceneAligner(ScaleAligner):
+class PerSceneAligner(_AffineAligner):
+    """One (s, t) for the whole scan, fitted on `fit_frames` frames spread evenly over it
+    (the pipeline picks them). Mimics a one-time calibration against a few known points."""
+
     name = "per_scene"
 
-    def __init__(self, fit_frames: int = 10):
+    def __init__(self, fit_frames: int = 10, space: str = "inverse"):
+        super().__init__(space)
         self.fit_frames = fit_frames
         self.s: float | None = None
         self.t: float | None = None
 
     def fit(self, frames: list[Frame], preds: list[np.ndarray]) -> None:
-        pairs = [(p, _match(f.gt_depth, p)) for f, p in zip(frames, preds, strict=True)
+        pairs = [self._xy(p, _match(f.gt_depth, p)) for f, p in zip(frames, preds, strict=True)
                  if f.gt_depth is not None]
         if not pairs:
             raise ValueError("per_scene needs gt_depth on the fit frames")
-        self.s, self.t = fit_scale_shift_stacked([p for p, _ in pairs], [r for _, r in pairs])
+        self.s, self.t = fit_scale_shift_stacked([x for x, _ in pairs], [y for _, y in pairs])
 
     def align(self, pred: np.ndarray, frame: Frame) -> np.ndarray:
         if self.s is None:
             raise RuntimeError("PerSceneAligner.fit() must run before align()")
-        return _apply(pred, self.s, self.t)
+        return self._map(pred, self.s, self.t)
 
 
-class SparsePointsAligner(ScaleAligner):
+class SparsePointsAligner(_AffineAligner):
     """MVP path: fit against frame.extra['sparse_depth'] (H,W, 0 = no point) from SLAM."""
 
     name = "sparse_points"
@@ -129,8 +163,9 @@ class SparsePointsAligner(ScaleAligner):
         sparse = frame.extra.get("sparse_depth")
         if sparse is None:
             raise ValueError("sparse_points needs frame.extra['sparse_depth']")
-        s, t = fit_scale_shift(pred, _match(sparse, pred), robust_iters=1, trim=0.0)
-        return _apply(pred, s, t)
+        x, y = self._xy(pred, _match(sparse, pred))
+        s, t = fit_scale_shift(x, y, robust_iters=1, trim=0.0)
+        return self._map(pred, s, t)
 
 
 def _match(ref: np.ndarray, pred: np.ndarray) -> np.ndarray:
@@ -143,11 +178,12 @@ def _match(ref: np.ndarray, pred: np.ndarray) -> np.ndarray:
 
 
 def build_aligner(cfg) -> ScaleAligner:
+    space = str(cfg.get("align_space", "inverse"))
     table = {
         "identity": lambda: IdentityAligner(),
-        "oracle_frame": lambda: OraclePerFrameAligner(),
-        "per_scene": lambda: PerSceneAligner(fit_frames=int(cfg.get("aligner_fit_frames", 10))),
-        "sparse_points": lambda: SparsePointsAligner(),
+        "oracle_frame": lambda: OraclePerFrameAligner(space),
+        "per_scene": lambda: PerSceneAligner(int(cfg.get("aligner_fit_frames", 10)), space),
+        "sparse_points": lambda: SparsePointsAligner(space),
     }
     try:
         return table[cfg.aligner]()
