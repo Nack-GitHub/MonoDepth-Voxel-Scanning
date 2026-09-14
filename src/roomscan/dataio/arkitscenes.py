@@ -6,8 +6,11 @@
   * .pincam: "width height fx fy cx cy" (one line). Per-frame, but we take the
     median over the scan and treat intrinsics as constant.
   * depth PNG = uint16 millimetres. confidence PNG = uint8 in {0,1,2}.
-  * Timestamps live in filenames: <video_id>_<ts>.png with 3 decimals; Apple
-    matches poses within 0.005 s. We use nearest-neighbour within `match_tolerance`.
+  * Timestamps live in filenames: <video_id>_<ts>.png with 3 decimals.
+  * lowres_wide.traj is only ~10 Hz on real scans (observed: 878 rows / 88 s) while
+    highres_depth frames fall between rows -> poses are INTERPOLATED (slerp + lerp)
+    between the two bracketing rows when the gap is <= `pose_max_gap`; frames outside
+    the trajectory's time span are dropped.
   * Assets and rates (raw dataset):
         lowres_wide / lowres_depth / confidence   256x192   60 FPS  (LiDAR stream)
         highres_depth                              1920x1440 ~10 FPS (Faro, subset of videos)
@@ -65,6 +68,16 @@ def read_pincam(path: Path) -> Intrinsics:
     return Intrinsics(float(fx), float(fy), float(cx), float(cy), int(round(w)), int(round(h)))
 
 
+def _interp_pose(p0: np.ndarray, p1: np.ndarray, a: float) -> np.ndarray:
+    from scipy.spatial.transform import Rotation, Slerp
+
+    rots = Rotation.from_matrix(np.stack([p0[:3, :3], p1[:3, :3]]))
+    out = np.eye(4)
+    out[:3, :3] = Slerp([0.0, 1.0], rots)(a).as_matrix()
+    out[:3, 3] = (1 - a) * p0[:3, 3] + a * p1[:3, 3]
+    return out
+
+
 def _timestamp_of(path: Path) -> float:
     return float(path.stem.rsplit("_", 1)[1])
 
@@ -99,7 +112,8 @@ class ARKitScenesScene(SceneDataset):
     def __init__(self, root: str | Path, scene_id: str, *, split: str = "Training",
                  reference: str = "faro_fused", fusion_resolution: tuple[int, int] = (256, 192),
                  frame_source: str = "auto", rgb_asset: str = "auto",
-                 match_tolerance: float = 0.02, sky_direction: str | None = None):
+                 match_tolerance: float = 0.02, pose_max_gap: float = 0.25,
+                 sky_direction: str | None = None):
         if reference not in self.REFERENCES:
             raise ValueError(f"reference must be one of {self.REFERENCES}")
         self.root = Path(root)
@@ -110,6 +124,7 @@ class ARKitScenesScene(SceneDataset):
         self.reference = reference
         self.fusion_resolution = (int(fusion_resolution[0]), int(fusion_resolution[1]))
         self.tol = float(match_tolerance)
+        self.pose_max_gap = float(pose_max_gap)
         if not self.scene_dir.is_dir():
             raise FileNotFoundError(f"scene dir not found: {self.scene_dir}")
 
@@ -137,9 +152,9 @@ class ARKitScenesScene(SceneDataset):
         self._pose_ts = np.array([p[0] for p in parsed])
         self._poses = np.stack([p[1] for p in parsed]) if parsed else np.zeros((0, 4, 4))
 
-        # keep frames that have a pose (tracking-lost frames simply aren't in the traj)
+        # keep frames whose pose can be interpolated (tracking-lost gaps simply aren't in the traj)
         self._timestamps = [
-            ts for ts in self._idx[frame_source].ts if self._pose_index(ts) is not None
+            ts for ts in self._idx[frame_source].ts if self._pose_at(ts) is not None
         ]
 
         # --- intrinsics: median pincam of the lowres_wide stream, scaled to the fusion grid ---
@@ -169,7 +184,7 @@ class ARKitScenesScene(SceneDataset):
 
     def frame(self, idx: int) -> Frame:
         ts = self._timestamps[idx]
-        pose = self._poses[self._pose_index(ts)]
+        pose = self._pose_at(ts)
         rgb = self._read_rgb(ts)
         gt = self._read_depth("highres_depth", ts)
         lidar = self._read_depth("lowres_depth", ts)
@@ -212,15 +227,23 @@ class ARKitScenesScene(SceneDataset):
         return len(self._idx["highres_depth"]) > 0
 
     # ------------------------------------------------------------------ internals
-    def _pose_index(self, ts: float) -> int | None:
-        if len(self._pose_ts) == 0:
+    def _pose_at(self, ts: float) -> np.ndarray | None:
+        """Camera-to-world at `ts`, interpolated between the bracketing traj rows."""
+        n = len(self._pose_ts)
+        if n == 0:
             return None
         i = int(np.searchsorted(self._pose_ts, ts))
-        best, best_dt = None, self.tol
-        for j in (i - 1, i):
-            if 0 <= j < len(self._pose_ts) and abs(self._pose_ts[j] - ts) <= best_dt:
-                best, best_dt = j, abs(self._pose_ts[j] - ts)
-        return best
+        if i == 0 or i == n:                       # outside the trajectory: nearest end if very close
+            j = 0 if i == 0 else n - 1
+            return self._poses[j] if abs(self._pose_ts[j] - ts) <= self.tol else None
+        t0, t1 = self._pose_ts[i - 1], self._pose_ts[i]
+        if t1 - t0 > self.pose_max_gap:            # tracking gap: don't invent poses across it
+            for j in (i - 1, i):
+                if abs(self._pose_ts[j] - ts) <= self.tol:
+                    return self._poses[j]
+            return None
+        a = float((ts - t0) / (t1 - t0)) if t1 > t0 else 0.0
+        return _interp_pose(self._poses[i - 1], self._poses[i], a)
 
     def _read_rgb(self, ts: float) -> np.ndarray:
         p = self._idx[self.rgb_asset].nearest(ts, self.tol)

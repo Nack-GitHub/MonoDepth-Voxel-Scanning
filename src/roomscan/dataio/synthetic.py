@@ -156,10 +156,10 @@ def write_synthetic_scene(root: str | Path, video_id: str = "90000001", *, split
         (scene_dir / "lowres_wide_intrinsics" / f"{name}.pincam").write_text(
             f"{lw} {lh} {K_low[0,0]:.6f} {K_low[1,1]:.6f} {K_low[0,2]:.6f} {K_low[1,2]:.6f}\n")
 
-        # traj at 60 FPS around each frame, with sub-ms jitter (exercises nearest matching)
-        for k in range(6):
-            tj = ts + k / 60.0 + rng.uniform(-4e-4, 4e-4)
-            traj_lines.append(_w2c_traj_line(tj, c2w if k == 0 else _nudge(c2w, k)))
+        # traj row exactly at the frame (sub-ms jitter) plus one nudged row between frames:
+        # real scans have ~10 Hz traj, so the loader must interpolate, not snap
+        traj_lines.append(_w2c_traj_line(ts + rng.uniform(-4e-4, 4e-4), c2w))
+        traj_lines.append(_w2c_traj_line(ts + 0.5 / fps, _nudge(c2w, 1)))
 
     (scene_dir / "lowres_wide.traj").write_text("\n".join(traj_lines) + "\n")
     meta = root / "raw" / "metadata.csv"

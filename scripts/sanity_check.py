@@ -43,11 +43,13 @@ def main() -> None:
     print(f"{len(pts_world)} points; depth range "
           f"{np.nanmin(depth[depth > 0]):.2f}-{np.nanmax(depth):.2f} m")
 
+    import cv2
     import open3d as o3d
 
     pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(pts_world))
     valid = np.isfinite(depth) & (depth > 0)
-    pcd.colors = o3d.utility.Vector3dVector(f.rgb[valid].reshape(-1, 3) / 255.0)
+    rgb = cv2.resize(f.rgb, (depth.shape[1], depth.shape[0]), interpolation=cv2.INTER_AREA)
+    pcd.colors = o3d.utility.Vector3dVector(rgb[valid].reshape(-1, 3) / 255.0)
     out = Path(args.out) / f"sanity_{ds.scene_id}_{args.frame:06d}_{args.source}.ply"
     out.parent.mkdir(parents=True, exist_ok=True)
     o3d.io.write_point_cloud(str(out), pcd)

@@ -10,7 +10,7 @@
 dataset:
   name: arkitscenes        # arkitscenes | scannet | replica | custom   (see dataio/, ADR-009)
   root: data/arkitscenes
-  scene: 41069021          # ARKitScenes video_id (example — replace with a scan that has highres_depth)
+  scene: 42444474          # ARKitScenes video_id (visit 421069; has highres_depth + laser clouds)
   frame_stride: 10         # Exp3
   max_frames: null         # null = all frames
   options:                 # dataset-specific, passed to the loader constructor

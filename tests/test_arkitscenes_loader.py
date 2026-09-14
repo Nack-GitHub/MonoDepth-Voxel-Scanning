@@ -41,13 +41,21 @@ def test_frames_have_poses_and_all_assets(ds):
     assert ds.intrinsics.width == 256 and ds.intrinsics.height == 192
 
 
-def test_nearest_pose_ignores_jittered_neighbours(ds):
-    """The traj has 60 FPS rows; the ones between frames are nudged. We must pick the exact one."""
+def test_pose_interpolation_lands_on_exact_rows(ds):
+    """Traj rows sit within 0.4 ms of each frame; interpolation weight ~0 -> exact pose (r=0.8)."""
     f0, f1 = ds.frame(0), ds.frame(1)
     assert not np.allclose(f0.pose_c2w, f1.pose_c2w)
-    # orbit radius 0.8 -> camera centre norm in xy == 0.8 exactly for un-nudged poses
     for f in (f0, f1):
-        assert abs(np.linalg.norm(f.pose_c2w[:2, 3]) - 0.8) < 1e-6
+        assert abs(np.linalg.norm(f.pose_c2w[:2, 3]) - 0.8) < 2e-3
+
+
+def test_pose_interpolation_between_rows():
+    from roomscan.dataio.arkitscenes import _interp_pose
+    p0, p1 = np.eye(4), np.eye(4)
+    p1[:3, 3] = [2, 0, 0]
+    mid = _interp_pose(p0, p1, 0.25)
+    np.testing.assert_allclose(mid[:3, 3], [0.5, 0, 0])
+    np.testing.assert_allclose(mid[:3, :3], np.eye(3))
 
 
 def test_backprojected_gt_lies_on_room_mesh(ds):
