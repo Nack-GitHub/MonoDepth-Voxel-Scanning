@@ -18,8 +18,8 @@ video/frames ─▶ SceneDataset ─▶ DepthSource ─▶ ScaleAligner ─▶ T
 ## Quickstart
 
 ```bash
-make setup-gt          # Phase 0-1: numpy/open3d/omegaconf (no torch)
-# make setup           # + torch/transformers for monocular models
+make setup            # creates ./.venv and installs everything into it
+# make setup-gt         # lighter: no torch (Phase 0-1 only)
 ```
 
 โหลดข้อมูล 3 ฉากตาม [scripts/README.md](scripts/README.md) แล้ว:
