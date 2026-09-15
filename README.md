@@ -22,7 +22,7 @@ make setup            # creates ./.venv and installs everything into it
 # make setup-gt         # lighter: no torch (Phase 0-1 only)
 ```
 
-โหลดข้อมูล 3 ฉากตาม [scripts/README.md](scripts/README.md) แล้ว:
+โหลดข้อมูลตาม [data/README.md](data/README.md) แล้ว:
 
 ```bash
 make sanity            # Phase 0 gate: one frame -> point cloud, open in MeshLab
@@ -44,7 +44,7 @@ src/roomscan/    the package — see docs/architecture/README.md §4
 scripts/         sanity_check, build_reference_mesh, data download notes
 tests/           pure-numpy tests (no data, no torch)
 experiments/     results/<exp>/<scene>_<run>/{config.yaml, metrics.json}  (meshes gitignored)
-docs/architecture/  overview + ADR-001..009
+docs/architecture/  overview + ADR-001..010
 paper/           outline, figures
 data/            NOT in git — see data/README.md
 ```
@@ -57,14 +57,14 @@ make smoke             # gt / lidar / mono_oracle / mono_scene sweep + report ta
 make figures-smoke     # error heatmaps -> outputs/figures_smoke/
 ```
 
-## Status (2026-09-12)
+## Status (2026-09-15)
 
 | Phase | State |
 |---|---|
-| 0 loader + sanity | ✅ implemented, tested on synthetic scene; **not yet run on real ARKitScenes** |
-| 1 GT/LiDAR pipeline, metrics, reference builder | ✅ implemented; synthetic GT: accuracy 1.1 cm, precision@5cm 0.999 |
-| 2 monocular + scale alignment + 2D metrics | ✅ implemented; DA-v2 Small verified end-to-end on MPS |
-| 3 sweep / report / MiDaS | ✅ sweep+report verified (`exp0_synthetic_smoke`); MiDaS wrapper untested |
-| 4 figures | ✅ `scripts/make_figures.py` (heatmap ply + top-down png) |
-| Real data | ⏳ blocked on disk space + download — see `data/README.md` |
+| 0 loader + sanity | ✅ on real scan 42444474 (poses interpolated between 10 Hz traj rows; 235/236 highres frames kept) |
+| 1 GT/LiDAR pipeline, metrics, reference builder | ✅ 42444474 @ 4 cm: gt chamfer 1.78 cm / F@5cm 0.965, lidar 2.84 cm / 0.904 |
+| 2 monocular + scale alignment + 2D metrics | ✅ DA-v2 Large: oracle 5.4 cm, per_scene 23.9 cm, metric-indoor 53.2 cm (ADR-010) |
+| 3 sweep / report / MiDaS | ✅ Exp1–4 run on 42444474 (`experiments/results/*/table.md`); MiDaS small works via torch.hub |
+| 4 figures | ✅ `paper/figures/` — heatmap ply + top-down png per run + Exp1 grid |
+| Real data | ⏳ **1 scene only** (42444474: open-plan kitchen/dining, 9.8×5.2 m, sloped ceiling, glass table + balustrade). Need 2–5 more — `data/README.md`; disk is the limit (17 GB free, ~2–3 GB/scene) |
 | 5 paper | ⏳ outline only |

@@ -16,6 +16,14 @@ class MiDaS(DepthModel):
 
         self.name = f"midas_{variant.lower().removeprefix('midas_')}"
         self.device = pick_torch_device(device)
+        if "small" in variant.lower():
+            # MiDaS_small builds its EfficientNet-lite3 backbone through a nested
+            # torch.hub.load() that omits trust_repo, so torch prompts on stdin and a
+            # non-interactive sweep dies with EOFError. Fetch the backbone repo
+            # through the same API with trust_repo=True first; MiDaS then finds it
+            # already trusted and skips the prompt.
+            torch.hub.load("rwightman/gen-efficientnet-pytorch", "tf_efficientnet_lite3",
+                           pretrained=False, trust_repo=True)
         self.model = torch.hub.load("intel-isl/MiDaS", variant, trust_repo=True).to(self.device).eval()
         tf = torch.hub.load("intel-isl/MiDaS", "transforms", trust_repo=True)
         self.transform = tf.small_transform if "small" in variant.lower() else tf.dpt_transform

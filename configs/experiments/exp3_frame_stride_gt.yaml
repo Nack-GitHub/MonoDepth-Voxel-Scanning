@@ -1,0 +1,15 @@
+# Experiment 3 control — same strides with GT depth, so the coverage loss from
+# subsampling ~2.7 fps Faro frames is measured on its own, separate from the
+# mono/per_scene error in exp3_frame_stride.yaml. Runs in seconds.
+experiment: exp3_frame_stride_gt
+base: configs/base.yaml
+scenes: [42444474]
+runs:
+  - name: s01
+    overrides: {depth.source: gt, depth.aligner: identity, dataset.frame_stride: 1}
+  - name: s05
+    overrides: {depth.source: gt, depth.aligner: identity, dataset.frame_stride: 5}
+  - name: s10
+    overrides: {depth.source: gt, depth.aligner: identity, dataset.frame_stride: 10}
+  - name: s20
+    overrides: {depth.source: gt, depth.aligner: identity, dataset.frame_stride: 20}

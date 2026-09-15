@@ -16,3 +16,5 @@
 **ต้องเขียน:** "เราวัดว่า depth source ต่างกันส่งผลต่อ geometry อย่างไร"
 
 Figures → `figures/` (gitignore `.ply`; commit `.png`/`.pdf` ที่ใช้จริง)
+Failure analysis ต่อฉาก → `analysis/<scene>_failure_analysis.md` (วัตถุดิบบท 6 และ 8)
+ร่างบท → `draft/` (บทละไฟล์)

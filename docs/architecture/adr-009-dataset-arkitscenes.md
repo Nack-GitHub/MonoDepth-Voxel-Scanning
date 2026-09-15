@@ -64,7 +64,9 @@ Workflow doc เลือก ScanNet เพราะมี RGB/depth/pose/GT mes
 - [x] pinhole มาตรฐาน ไม่มี axis flip (`generate_point`)
 - [x] timestamp: key 3 ตำแหน่ง, tolerance 0.005 s (Apple) → เราใช้ nearest ≤ 0.02 s
 - [x] `sky_direction` ใน metadata → หมุนภาพก่อนเข้า mono model (ทำใน `MonocularDepth`)
-- [ ] **ยังไม่ได้รันกับไฟล์จริง** — ทำ `make sanity` ทันทีที่โหลดฉากแรก
+- [x] รันกับไฟล์จริงแล้ว (42444474, 2026-09-13): Faro GT และ ARKit LiDAR back-project ลงบน ARKit mesh ที่ median 1–5 cm
+- [x] **`.traj` เป็น ~10 Hz ไม่ใช่ 60** (878 แถว / 88 s) — nearest ±0.02 s เก็บได้แค่ 109/236 เฟรม highres; loader จึง slerp/lerp ระหว่าง 2 แถวที่ครอบ (gap ≤ 0.25 s) → 235/236
+- [x] `highres_depth` ไม่ครอบทุก pixel → `eval.mask_to_gt=true`: ทุก source integrate เฉพาะ pixel ที่มี Faro depth ไม่งั้น LiDAR/mono โดนลงโทษที่มองเห็นเกิน reference
 - [ ] Faro laser point clouds (`--download_laser_scanner_point_cloud`) อยู่ frame เดียวกับ ARKit world หรือไม่ — ถ้าใช่ ใช้เป็น reference ตรง ๆ ได้ (ดีกว่า faro_fused)
 
 ## Revisit trigger

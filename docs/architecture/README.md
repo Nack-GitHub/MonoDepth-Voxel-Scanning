@@ -106,12 +106,12 @@ src/roomscan/
 |---|---|---|---|
 | 1 Depth source | gt / **lidar** / mono×aligner | `depth.source`, `depth.aligner`, `depth.model` | `exp1_depth_source.yaml` |
 | 2 Voxel size | 2/4/8 cm | `fusion.voxel_size`, `fusion.sdf_trunc` | `exp2_voxel_size.yaml` |
-| 3 Frame stride | 1/5/10/20 | `dataset.frame_stride` | `exp3_frame_stride.yaml` |
+| 3 Frame stride | 1/5/10/20 | `dataset.frame_stride` | `exp3_frame_stride.yaml` + control `exp3_frame_stride_gt.yaml` (Faro เฟรมมีแค่ ~2.7 fps → stride วัด coverage เป็นหลัก, ดู `paper/analysis/`) |
 | 4 Model size | L / S / MobileViT | `depth.model` | `exp4_model_size.yaml` |
 
 ทุก run ทิ้ง `config.yaml` + `metrics.json` ไว้ที่ `experiments/results/<exp>/<scene>_<run>/` — `roomscan report` รวมเป็นตาราง
 
-## 7. Phase → module (สถานะ 2026-09-12: 0–4 implemented + tested บน synthetic; ยังไม่แตะข้อมูลจริง)
+## 7. Phase → module (สถานะ 2026-09-15: 0–4 ผ่าน gate บนฉากจริง 42444474; Exp1–4 รันแล้ว 1 ฉาก — รอฉากเพิ่ม)
 
 | Phase | ต้องทำให้ทำงาน | gate |
 |---|---|---|
@@ -136,6 +136,7 @@ src/roomscan/
 | [007](adr-007-src-layout-single-package.md) | `src/` layout, package เดียว, ไม่แยก repo | Accepted |
 | [008](adr-008-pretrained-inference-only.md) | ใช้โมเดล pretrained, ไม่เทรน | Accepted |
 | [009](adr-009-dataset-arkitscenes.md) | **ARKitScenes** แทน ScanNet + วิธีสร้าง reference mesh | Accepted |
+| [010](adr-010-scale-alignment-in-inverse-depth.md) | fit scale/shift ใน inverse-depth (ขยาย 002) — oracle 15 → 5.4 cm | Accepted |
 
 ## 9. สิ่งที่ตั้งใจ *ไม่* ทำตอนนี้
 
