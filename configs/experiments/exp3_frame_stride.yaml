@@ -1,8 +1,12 @@
-# Experiment 3 — Frame stride. Answers "how long a video / how much compute per scan".
-# Run with the *deployable* mono setting (per_scene), because that's what the business cares about.
+# Experiment 3 — Frame stride. Faro GT frames are only ~2.7 fps, so on ARKitScenes
+# stride mostly measures *coverage* (how many frames per second a scan must keep),
+# not compute-vs-accuracy. Reported as three rows per stride:
+#   exp3_frame_stride_gt.yaml      gt + identity      -> coverage loss alone (control)
+#   exp3_frame_stride_oracle.yaml  mono + oracle_frame -> + model shape error
+#   this file                      mono + per_scene    -> + scale error (deployable setting)
 experiment: exp3_frame_stride
 base: configs/base.yaml
-scenes: [42444474]   # add 2 more video_ids once downloaded (data/README.md)
+scenes: [42444474, 47333774, 47115299, 42897743, 47429736, 45261556]
 runs:
   - name: s01
     overrides: {depth.source: mono, depth.model: depth_anything_v2_large, depth.aligner: per_scene, dataset.frame_stride: 1}

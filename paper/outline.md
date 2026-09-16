@@ -5,10 +5,10 @@
 1. Introduction & Business Motivation — RoomPlan จำกัด iPhone Pro; Android ต้องพึ่ง mono
 2. Related Work — MiDaS, Depth Anything; Atlas / NeuralRecon / SimpleRecon (baseline, ไม่แข่ง); RoomPlan, Polycam
 3. System Design — `docs/architecture/README.md` §2–§5 (DepthSource / ScaleAligner abstraction คือจุดขายเชิงวิศวกรรม)
-4. Experimental Setup — ARKitScenes 3 scans, reference mesh จาก Faro (ADR-009), metrics protocol (`metrics_3d.py` docstring)
+4. Experimental Setup — ARKitScenes 6 scans, reference mesh จาก Faro (ADR-009), metrics protocol (`metrics_3d.py` docstring)
 5. Results — Exp1–4 จาก `experiments/results/*/table.md`
 6. Discussion — error → ซม.บนผนัง 4 ม.; LiDAR vs mono gap = "Android ห่างจาก iPhone Pro เท่าไร"; failure cases
-7. Business Implications — cost/scan (Exp3), positioning
+7. Business Implications — cost/scan (Exp3 = เฟรม/วินาทีที่ต้องเก็บ: gt control / oracle / per_scene, Exp4 = เวลาโมเดล), positioning
 8. Limitations & Future Work — VIO pose drift, 256×192 depth, Project 1 (compression), semantic layer
 9. Conclusion
 

@@ -106,7 +106,7 @@ src/roomscan/
 |---|---|---|---|
 | 1 Depth source | gt / **lidar** / mono×aligner | `depth.source`, `depth.aligner`, `depth.model` | `exp1_depth_source.yaml` |
 | 2 Voxel size | 2/4/8 cm | `fusion.voxel_size`, `fusion.sdf_trunc` | `exp2_voxel_size.yaml` |
-| 3 Frame stride | 1/5/10/20 | `dataset.frame_stride` | `exp3_frame_stride.yaml` + control `exp3_frame_stride_gt.yaml` (Faro เฟรมมีแค่ ~2.7 fps → stride วัด coverage เป็นหลัก, ดู `paper/analysis/`) |
+| 3 Frame stride | 1/5/10/20 × {gt, mono+oracle, mono+per_scene} | `dataset.frame_stride` | `exp3_frame_stride_gt.yaml` (control: coverage อย่างเดียว) / `exp3_frame_stride_oracle.yaml` (+รูปทรงโมเดล) / `exp3_frame_stride.yaml` (+scale, deployable) — Faro มีแค่ ~2.7 fps คำถามจึงเป็น "ต้องเก็บกี่เฟรม/วินาที" ไม่ใช่ compute-vs-accuracy (ดู `paper/analysis/`) |
 | 4 Model size | L / S / MobileViT | `depth.model` | `exp4_model_size.yaml` |
 
 ทุก run ทิ้ง `config.yaml` + `metrics.json` ไว้ที่ `experiments/results/<exp>/<scene>_<run>/` — `roomscan report` รวมเป็นตาราง

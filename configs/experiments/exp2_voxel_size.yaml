@@ -2,7 +2,7 @@
 # only variable is the grid.
 experiment: exp2_voxel_size
 base: configs/base.yaml
-scenes: [42444474]   # add 2 more video_ids once downloaded (data/README.md)
+scenes: [42444474, 47333774, 47115299, 42897743, 47429736, 45261556]
 runs:
   - name: v02
     overrides: {depth.source: gt, fusion.voxel_size: 0.02, fusion.sdf_trunc: 0.06}

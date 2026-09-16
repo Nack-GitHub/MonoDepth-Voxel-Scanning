@@ -43,6 +43,8 @@ def _apply_inv(pred: np.ndarray, s: float, t: float) -> np.ndarray:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/depth/mono_scene.yaml")
+    ap.add_argument("--set", dest="overrides", nargs="+", action="extend", default=[], metavar="KEY=VALUE",
+                    help="config overrides, e.g. dataset.scene=47333774")
     ap.add_argument("--model", default=None, help="override depth.model")
     ap.add_argument("--stride", type=int, default=5)
     ap.add_argument("--fit_frames", type=int, default=10)
@@ -50,7 +52,7 @@ def main() -> None:
     ap.add_argument("--out", default=None, help="json with per-frame rows")
     a = ap.parse_args()
 
-    cfg = load_config(a.config)
+    cfg = load_config(a.config, a.overrides)
     if a.model:
         cfg.depth.model = a.model
     ds = build_dataset(cfg.dataset)

@@ -1,0 +1,17 @@
+# Experiment 3 (a) — same strides with mono + oracle_frame, so the mono row's
+# accuracy is decoupled from the per_scene scale error: gt control isolates
+# coverage, this isolates model shape, exp3_frame_stride.yaml is the deployable
+# per_scene setting. Together they answer "how many frames per second must a
+# scan keep" (paper §7); see paper/analysis/42444474_failure_analysis.md §3.
+experiment: exp3_frame_stride_oracle
+base: configs/base.yaml
+scenes: [42444474, 47333774, 47115299, 42897743, 47429736, 45261556]
+runs:
+  - name: s01
+    overrides: {depth.source: mono, depth.model: depth_anything_v2_large, depth.aligner: oracle_frame, dataset.frame_stride: 1}
+  - name: s05
+    overrides: {depth.source: mono, depth.model: depth_anything_v2_large, depth.aligner: oracle_frame, dataset.frame_stride: 5}
+  - name: s10
+    overrides: {depth.source: mono, depth.model: depth_anything_v2_large, depth.aligner: oracle_frame, dataset.frame_stride: 10}
+  - name: s20
+    overrides: {depth.source: mono, depth.model: depth_anything_v2_large, depth.aligner: oracle_frame, dataset.frame_stride: 20}

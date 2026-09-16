@@ -3,7 +3,7 @@
 # mono/per_scene error in exp3_frame_stride.yaml. Runs in seconds.
 experiment: exp3_frame_stride_gt
 base: configs/base.yaml
-scenes: [42444474]
+scenes: [42444474, 47333774, 47115299, 42897743, 47429736, 45261556]
 runs:
   - name: s01
     overrides: {depth.source: gt, depth.aligner: identity, dataset.frame_stride: 1}

@@ -25,6 +25,8 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("experiment_file")
     s.add_argument("--set", dest="overrides", nargs="+", action="extend", default=[], metavar="KEY=VALUE")
     s.add_argument("--skip-existing", action="store_true")
+    s.add_argument("--scenes", nargs="+", default=None, metavar="SCENE",
+                   help="subset of the experiment's scenes to run (default: all)")
 
     rp = sub.add_parser("report", help="aggregate metrics.json files into tables")
     rp.add_argument("results_root", nargs="?", default="experiments/results")
@@ -53,7 +55,13 @@ def _sweep(args) -> int:
 
     exp = OmegaConf.load(args.experiment_file)
     base = load_config(exp.base, args.overrides)
-    for scene in exp.scenes:
+    scenes = [str(x) for x in exp.scenes]
+    if args.scenes:
+        unknown = set(args.scenes) - set(scenes)
+        if unknown:
+            raise SystemExit(f"--scenes not in {args.experiment_file}: {sorted(unknown)}")
+        scenes = args.scenes
+    for scene in scenes:
         for run in exp.runs:
             cfg = apply_overrides(base, dict(run.overrides))
             cfg.dataset.scene = scene

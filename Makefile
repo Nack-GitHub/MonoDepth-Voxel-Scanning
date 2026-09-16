@@ -51,8 +51,10 @@ sweep-exp1:       ## Phase 3: depth source ablation
 sweep-exp2:
 	$(ROOMSCAN) sweep configs/experiments/exp2_voxel_size.yaml
 
-sweep-exp3:
-	$(ROOMSCAN) sweep configs/experiments/exp3_frame_stride.yaml
+sweep-exp3:       ## gt control + mono oracle + mono per_scene at strides 1/5/10/20
+	$(ROOMSCAN) sweep configs/experiments/exp3_frame_stride_gt.yaml --skip-existing
+	$(ROOMSCAN) sweep configs/experiments/exp3_frame_stride_oracle.yaml --skip-existing
+	$(ROOMSCAN) sweep configs/experiments/exp3_frame_stride.yaml --skip-existing
 
 sweep-exp4:
 	$(ROOMSCAN) sweep configs/experiments/exp4_model_size.yaml

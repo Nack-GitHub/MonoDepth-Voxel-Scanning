@@ -75,8 +75,8 @@ calibration ครั้งเดียว (per_scene) ใช้ไม่ได�
 (`exp3_frame_stride_gt` = control ที่เพิ่มวันนี้) accuracy ของ GT คงที่ 1.4–1.5 cm ทุก stride; ที่โตคือ completeness ล้วน ๆ
 ⇒ ตัวเลข mono ใน Exp3 = coverage loss + per_scene error ซ้อนกัน แยกไม่ออก และ per_scene ที่ s20 fit จาก 10 ใน 12 เฟรม (เกือบ oracle ทั้งฉาก)
 
-**ต้องตัดสินใจก่อนเขียน Results:** (a) รัน Exp3 ด้วย `oracle_frame` เพื่อให้เห็น cost-vs-accuracy ของ mono ล้วน, หรือ
-(b) นิยาม Exp3 ใหม่ให้เป็น "เฟรมต่อวินาทีที่ต้องเก็บ" แล้วรายงานร่วมกับ control GT — ข้อ (b) ตรงกับคำถาม Business (ต้องอัดวิดีโอนานแค่ไหน) มากกว่า
+**ตัดสินใจแล้ว (2026-09-16, ทำทั้งสอง):** (a) เพิ่ม `exp3_frame_stride_oracle.yaml` (mono + `oracle_frame` ทุก stride) เพื่อแยกรูปทรงโมเดลออกจาก scale;
+(b) นิยาม Exp3 เป็น "ต้องเก็บกี่เฟรม/วินาที" รายงาน 3 แถวต่อ stride (gt control / oracle / per_scene) — ตารางรวมใน `paper/draft/05_results.md`
 
 ## 4. Exp2 / Exp4 — ไม่มี failure, ใช้ได้เลย
 

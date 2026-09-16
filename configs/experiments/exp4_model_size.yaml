@@ -1,7 +1,7 @@
 # Experiment 4 — Model size. Bridge to Project 1 (model compression).
 experiment: exp4_model_size
 base: configs/base.yaml
-scenes: [42444474]   # add 2 more video_ids once downloaded (data/README.md)
+scenes: [42444474, 47333774, 47115299, 42897743, 47429736, 45261556]
 runs:
   - name: da_large
     overrides: {depth.source: mono, depth.model: depth_anything_v2_large, depth.aligner: oracle_frame}

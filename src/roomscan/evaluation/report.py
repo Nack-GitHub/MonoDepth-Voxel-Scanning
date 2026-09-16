@@ -3,6 +3,7 @@
     roomscan report experiments/results
     -> experiments/results/summary.csv           one row per run
     -> experiments/results/<experiment>/table.md  mean ± std over scenes, per run name
+    -> experiments/results/<experiment>/per_scene.md  chamfer / F@5cm, run x scene
 """
 
 from __future__ import annotations
@@ -60,4 +61,23 @@ def write_tables(results_root: str | Path) -> None:
             lines.append(f"| {run} | " + " | ".join(cells) + " |")
         (root / exp / "table.md").write_text("\n".join(lines) + "\n")
         print(f"wrote {root / exp / 'table.md'}")
+        (root / exp / "per_scene.md").write_text(_per_scene_table(exp, g))
     print(f"wrote {root / 'summary.csv'} ({len(df)} runs)")
+
+
+def _per_scene_table(exp: str, g: pd.DataFrame) -> str:
+    """run x scene grid of the two headline numbers, so a single bad scene is visible."""
+    scenes = sorted(g.scene.astype(str).unique())
+    runs = list(dict.fromkeys(g.run_name))          # keep experiment-file order
+    lines = [f"# {exp} — per scene", ""]
+    for metric, fmt in (("chamfer", lambda v: f"{v*100:.1f}"), ("fscore@0.05", lambda v: f"{v:.2f}")):
+        if metric not in g.columns:
+            continue
+        lines += [f"## {metric}" + (" (cm)" if metric == "chamfer" else ""), "",
+                  "| run | " + " | ".join(scenes) + " | mean |", "|---|" + "---|" * (len(scenes) + 1)]
+        for run in runs:
+            r = g[g.run_name == run].set_index(g[g.run_name == run].scene.astype(str))[metric]
+            cells = [fmt(r[sc]) if sc in r.index and pd.notna(r[sc]) else "—" for sc in scenes]
+            lines.append(f"| {run} | " + " | ".join(cells) + f" | {fmt(r.mean())} |")
+        lines.append("")
+    return "\n".join(lines)
