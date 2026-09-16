@@ -1,0 +1,46 @@
+dataset:
+  name: arkitscenes
+  root: data/arkitscenes
+  scene: '47115299'
+  frame_stride: 5
+  max_frames: null
+  options:
+    split: Training
+    reference: faro_fused
+    fusion_resolution:
+    - 256
+    - 192
+depth:
+  source: gt
+  model: null
+  aligner: identity
+  aligner_fit_frames: 10
+  align_space: inverse
+  lidar_min_confidence: 0
+fusion:
+  voxel_size: 0.04
+  sdf_trunc: 0.12
+  depth_trunc: 5.0
+  depth_min: 0.1
+postprocess:
+  remove_small_clusters: true
+  min_cluster_triangles: 1000
+  simplify_target_triangles: null
+eval:
+  fscore_thresholds:
+  - 0.02
+  - 0.05
+  - 0.1
+  n_sample_points: 200000
+  compute_2d_metrics: true
+  mask_to_gt: true
+output:
+  root: experiments/results
+  experiment: exp3_frame_stride_gt
+  run_name: 47115299_s05
+  save_mesh: true
+  export_formats:
+  - ply
+runtime:
+  device: auto
+  seed: 0

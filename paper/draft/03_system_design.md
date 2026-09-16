@@ -66,7 +66,7 @@ class DepthSource(ABC):
 
 **สเปซที่ fit (ADR-010):** โมเดล affine-invariant เป็น affine ใน *disparity* ไม่ใช่ depth การ fit `gt ≈ s·pred + t` ในสเปซ depth เป็นโมเดลผิด
 เราจึง fit `1/gt ≈ s·(1/pred) + t` (least squares แบบ trim 20 % ของ residual 3 รอบ) แล้ว invert กลับ
-บนฉากจริง การเปลี่ยนสเปซนี้อย่างเดียวย้าย mono+oracle จาก 15.2 → 5.4 cm — ตัวอย่างว่าทำไม aligner ต้องเป็นสิ่งที่ทดสอบแยกได้
+บนฉาก 42444474 การเปลี่ยนสเปซนี้อย่างเดียวย้าย mono+oracle จาก 15.2 → 5.4 cm — ตัวอย่างว่าทำไม aligner ต้องเป็นสิ่งที่ทดสอบแยกได้
 
 ## 3.5 ส่วนคงที่: fusion, post-process, evaluation
 

@@ -111,7 +111,7 @@ src/roomscan/
 
 ทุก run ทิ้ง `config.yaml` + `metrics.json` ไว้ที่ `experiments/results/<exp>/<scene>_<run>/` — `roomscan report` รวมเป็นตาราง
 
-## 7. Phase → module (สถานะ 2026-09-15: 0–4 ผ่าน gate บนฉากจริง 42444474; Exp1–4 รันแล้ว 1 ฉาก — รอฉากเพิ่ม)
+## 7. Phase → module (สถานะ 2026-09-17: 0–4 ผ่าน gate; Exp1–4 รันครบ 6 ฉาก 138 run; ร่างเปเปอร์ครบทุกบทใน `paper/draft/`)
 
 | Phase | ต้องทำให้ทำงาน | gate |
 |---|---|---|

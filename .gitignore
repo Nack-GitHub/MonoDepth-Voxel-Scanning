@@ -10,7 +10,7 @@ experiments/results/**/*.glb
 experiments/results/**/*.npy
 experiments/results/**/*.npz
 experiments/results/**/*.png
-paper/figures/*.ply
+paper/figures/**/*.ply
 
 # ---- Model weights ----
 checkpoints/

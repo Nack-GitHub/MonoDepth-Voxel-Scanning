@@ -57,14 +57,14 @@ make smoke             # gt / lidar / mono_oracle / mono_scene sweep + report ta
 make figures-smoke     # error heatmaps -> outputs/figures_smoke/
 ```
 
-## Status (2026-09-15)
+## Status (2026-09-17)
 
 | Phase | State |
 |---|---|
-| 0 loader + sanity | ✅ on real scan 42444474 (poses interpolated between 10 Hz traj rows; 235/236 highres frames kept) |
-| 1 GT/LiDAR pipeline, metrics, reference builder | ✅ 42444474 @ 4 cm: gt chamfer 1.78 cm / F@5cm 0.965, lidar 2.84 cm / 0.904 |
-| 2 monocular + scale alignment + 2D metrics | ✅ DA-v2 Large: oracle 5.4 cm, per_scene 23.9 cm, metric-indoor 53.2 cm (ADR-010) |
-| 3 sweep / report / MiDaS | ✅ Exp1–4 run on 42444474 (`experiments/results/*/table.md`); MiDaS small works via torch.hub |
-| 4 figures | ✅ `paper/figures/` — heatmap ply + top-down png per run + Exp1 grid |
-| Real data | ⏳ **1 scene only** (42444474: open-plan kitchen/dining, 9.8×5.2 m, sloped ceiling, glass table + balustrade). Need 2–5 more — `data/README.md`; disk is the limit (17 GB free, ~2–3 GB/scene) |
-| 5 paper | ⏳ outline only |
+| 0 loader + sanity | ✅ 6 real scans (poses interpolated between 10 Hz traj rows) |
+| 1 GT/LiDAR pipeline, metrics, reference builder | ✅ 6 scenes @ 4 cm: gt chamfer 2.06 ± 0.54 cm / F@5cm 0.97, lidar 3.04 ± 0.57 / 0.93 |
+| 2 monocular + scale alignment + 2D metrics | ✅ DA-v2 Large: oracle 6.45 ± 2.42 cm, per_scene 22.7 ± 2.6, metric-indoor 49.0 ± 14.7 (ADR-010) |
+| 3 sweep / report / MiDaS | ✅ Exp1–4 on all 6 scenes, 138 runs (`experiments/results/*/table.md` + `per_scene.md`); Exp3 = gt control / oracle / per_scene at 4 strides |
+| 4 figures + analysis | ✅ `paper/figures/<exp>_topdown_grid.png` (scenes × runs); per-frame scale analysis on 6 scenes → `paper/analysis/scale_drift_summary.md` |
+| Real data | ✅ **6 scenes**, 2,352 Faro frames, 13 GB (`data/README.md`; 42444474 was the development scene, the other 5 are held-out) |
+| 5 paper | ✅ full Thai draft `paper/draft/00–09` from real numbers; open: English translation, BibTeX check, `sparse_points` aligner (§8.3) |

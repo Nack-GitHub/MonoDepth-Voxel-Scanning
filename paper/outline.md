@@ -17,4 +17,4 @@
 
 Figures → `figures/` (gitignore `.ply`; commit `.png`/`.pdf` ที่ใช้จริง)
 Failure analysis ต่อฉาก → `analysis/<scene>_failure_analysis.md` (วัตถุดิบบท 6 และ 8)
-ร่างบท → `draft/` (บทละไฟล์)
+ร่างบท → `draft/` (บทละไฟล์; 00 abstract – 09 conclusion ครบแล้ว 2026-09-17 ด้วยตัวเลข 6 ฉาก)

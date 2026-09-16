@@ -6,7 +6,7 @@ VENV := .venv
 BIN := $(VENV)/bin
 ROOMSCAN := $(BIN)/roomscan
 
-.PHONY: venv setup setup-gt synthetic smoke figures-smoke sanity reference run-gt run-lidar run-mono sweep-exp1 sweep-exp2 sweep-exp3 sweep-exp4 report test lint
+.PHONY: venv setup setup-gt synthetic smoke figures-smoke figures sanity reference run-gt run-lidar run-mono sweep-exp1 sweep-exp2 sweep-exp3 sweep-exp4 report test lint
 
 venv:
 	test -d $(VENV) || $(PY) -m venv $(VENV)
@@ -58,6 +58,10 @@ sweep-exp3:       ## gt control + mono oracle + mono per_scene at strides 1/5/10
 
 sweep-exp4:
 	$(ROOMSCAN) sweep configs/experiments/exp4_model_size.yaml
+
+figures:          ## scenes x runs top-down error grids for every experiment -> paper/figures/
+	for e in exp1_depth_source exp2_voxel_size exp3_frame_stride_gt exp3_frame_stride_oracle exp3_frame_stride exp4_model_size; do \
+	  $(BIN)/python scripts/make_figures.py experiments/results/$$e --out paper/figures; done
 
 report:           ## aggregate experiments/results/**/metrics.json -> summary tables
 	$(ROOMSCAN) report experiments/results

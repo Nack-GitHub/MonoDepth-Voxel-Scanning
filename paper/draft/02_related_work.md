@@ -15,7 +15,7 @@ Depth Anything [da1] และ Depth Anything V2 [da2] ขยายแนวค�
 
 **Metric.** ZoeDepth [zoedepth] และ DA-v2 รุ่น metric (fine-tune บน Hypersim / Virtual KITTI) พยายามให้ depth เป็นเมตรโดยตรง
 Metric3D [metric3d] ชี้ว่าความกำกวมหลักคือ focal length ของกล้อง และแก้ด้วยการ normalize ภาพเข้า canonical camera
-งานเหล่านี้รายงาน AbsRel/δ₁ ต่อภาพบน NYUv2/KITTI; ผลของเรา (§6.2) ชี้ว่าบนวิดีโอห้องจริง scale ต่อเฟรมของโมเดล metric ยังแกว่ง ±40 %
+งานเหล่านี้รายงาน AbsRel/δ₁ ต่อภาพบน NYUv2/KITTI; ผลของเรา (§6.2) ชี้ว่าบนวิดีโอห้องจริง scale ต่อเฟรมของโมเดล metric ยังแกว่งตั้งแต่ −60 % ถึง +80 % ภายใน scan เดียว
 ซึ่งเป็นสิ่งที่ตัวชี้วัดต่อภาพไม่แสดง แต่ปรากฏทันทีเมื่อ fuse หลายเฟรมเข้า volume เดียว
 
 **Depth จาก LiDAR ในมือถือ.** ARKit ให้ depth 256×192 ที่ fuse LiDAR กับภาพ; ARKitScenes [arkitscenes] เป็น dataset แรกที่ปล่อยทั้ง depth นี้

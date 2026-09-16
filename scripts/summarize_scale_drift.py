@@ -33,7 +33,8 @@ def summarize(path: Path) -> dict:
     near = gm < 1.0
     out = {
         "scene": d["scene"], "model": d["model"], "n": len(rows),
-        "s_range": s.max() / s.min(), "s_iqr": np.percentile(s, 75) / np.percentile(s, 25),
+        "s_range": np.percentile(s, 95) / np.percentile(s, 5), "s_neg": int((s <= 0).sum()),
+        "s_iqr": np.percentile(s, 75) / np.percentile(s, 25),
         "corr_time": _corr(s, t), "corr_depth": _corr(s, gm),
         "oracle": po.mean(), "per_scene": ps.mean(), "per_scene_max": ps.max(),
         "per_scene_far": ps[~near].mean() if (~near).any() else float("nan"), "n_near": int(near.sum()),
@@ -62,16 +63,24 @@ def main() -> None:
                       f"{r['t_med']:+.2f} | {r['raw']:.3f} | {r['scale_only']:.3f} | {r['oracle']:.3f} | "
                       f"{r['per_scene']:.3f} |")
         else:
-            print("| scene | n | s max/min | s p75/p25 | corr(s,t) | corr(s,depth) | AbsRel oracle | per_scene | "
+            print("| scene | n | s p95/p5 | s p75/p25 | corr(s,t) | corr(s,depth) | AbsRel oracle | per_scene | "
                   "per_scene w/o close-up | scale-only(depth) | close-ups |")
             print("|---|---|---|---|---|---|---|---|---|---|---|")
             for r in rows:
-                print(f"| {r['scene']} | {r['n']} | {r['s_range']:.1f}× | {r['s_iqr']:.2f} | {r['corr_time']:+.2f} | "
-                      f"{r['corr_depth']:+.2f} | {r['oracle']:.3f} | {r['per_scene']:.3f} | {r['per_scene_far']:.3f} | "
-                      f"{r['scale_only']:.3f} | {r['n_near']}/{r['n']} |")
+                flag = "*" if r["s_neg"] else ""
+                print(f"| {r['scene']} | {r['n']} | {r['s_range']:.1f}×{flag} | {r['s_iqr']:.2f} | "
+                      f"{r['corr_time']:+.2f} | {r['corr_depth']:+.2f} | {r['oracle']:.3f} | {r['per_scene']:.3f} | "
+                      f"{r['per_scene_far']:.3f} | {r['scale_only']:.3f} | {r['n_near']}/{r['n']} |")
         if len(rows) > 1:
-            keys = ["oracle", "per_scene", "scale_only"] + (["raw"] if "raw" in rows[0] else [])
-            print("| **mean** | | | | | | " + " | ".join(f"{np.mean([r[k] for r in rows]):.3f}" for k in keys) + " |")
+            m = {k: f"{np.mean([r[k] for r in rows]):.3f}"
+                 for k in ("oracle", "per_scene", "per_scene_far", "scale_only", "raw") if k in rows[0]}
+            if "raw" in m:
+                print(f"| **mean** | | | | | {m['raw']} | {m['scale_only']} | {m['oracle']} | {m['per_scene']} |")
+            else:
+                print(f"| **mean** | | | | | | {m['oracle']} | {m['per_scene']} | {m['per_scene_far']} | "
+                      f"{m['scale_only']} | |")
+            if any(r["s_neg"] for r in rows):
+                print("\n\\* at least one frame's oracle fit gave s <= 0 (degenerate view, e.g. mirror / flat wall)")
 
 
 if __name__ == "__main__":
