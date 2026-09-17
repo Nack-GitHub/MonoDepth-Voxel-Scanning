@@ -21,6 +21,13 @@ mono = [
     "transformers>=4.40",   # Depth Anything V2 via HuggingFace
     "timm",                 # MiDaS via torch.hub
 ]
+# Phase 6 web front (roomscan_web): upload a capture, queue a reconstruction, view the mesh.
+web = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "python-multipart",
+    "httpx",                # fastapi.testclient
+]
 dev = [
     "pytest>=7",
     "ruff",

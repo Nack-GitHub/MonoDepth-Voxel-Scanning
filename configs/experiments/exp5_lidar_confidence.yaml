@@ -1,0 +1,21 @@
+# Experiment 5 — does ARKit's per-pixel confidence help LiDAR fusion? (ADR-012)
+# Same pipeline as Exp1's `lidar` row; only what each confidence tier contributes changes.
+#   lidar        = every pixel once (Exp1 baseline)
+#   lidar_conf1  = drop confidence-0 pixels          (masking)
+#   lidar_conf2  = keep only confidence-2 pixels     (masking)
+#   lidar_w012   = weight 0 / 1 / 2 by tier          (weighting)
+#   lidar_w124   = weight 1 / 2 / 4 by tier          (weighting, nothing dropped)
+experiment: exp5_lidar_confidence
+base: configs/base.yaml
+scenes: [42444474, 47333774, 47115299, 42897743, 47429736, 45261556]
+runs:
+  - name: lidar
+    overrides: {depth.source: lidar, depth.aligner: identity}
+  - name: lidar_conf1
+    overrides: {depth.source: lidar, depth.aligner: identity, depth.lidar_min_confidence: 1}
+  - name: lidar_conf2
+    overrides: {depth.source: lidar, depth.aligner: identity, depth.lidar_min_confidence: 2}
+  - name: lidar_w012
+    overrides: {depth.source: lidar, depth.aligner: identity, fusion.confidence_weights: "[0,1,2]"}
+  - name: lidar_w124
+    overrides: {depth.source: lidar, depth.aligner: identity, fusion.confidence_weights: "[1,2,4]"}

@@ -26,7 +26,7 @@ from roomscan.evaluation.metrics_3d import Metrics3D, evaluate_mesh
 from roomscan.export import export_mesh
 from roomscan.geometry.postprocess import clean_mesh
 from roomscan.geometry.scale_align import ScaleAligner, build_aligner
-from roomscan.geometry.tsdf_fusion import TSDFFusion
+from roomscan.geometry.tsdf_fusion import TSDFFusion, confidence_weights
 from roomscan.types import Intrinsics, Timing
 
 
@@ -111,7 +111,10 @@ class ReconstructionPipeline:
                                                   cfg.fusion.depth_min, cfg.fusion.depth_trunc))
 
             t0 = time.perf_counter()
-            fusion.integrate(frame.rgb, depth_m, frame.pose_c2w)
+            # ADR-012: optional per-pixel weights from the sensor's confidence side-channel
+            weights = confidence_weights(frame.extra.get("lidar_confidence"),
+                                         cfg.fusion.get("confidence_weights"))
+            fusion.integrate(frame.rgb, depth_m, frame.pose_c2w, weights=weights)
             t.fusion += time.perf_counter() - t0
 
         t0 = time.perf_counter()

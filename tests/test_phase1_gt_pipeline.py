@@ -55,3 +55,29 @@ def test_gt_pipeline_reconstructs_room(root, tmp_path):
     assert m.recall[0.10] > 0.6, m                 # hidden furniture faces cap recall at ~0.75
     assert (res.out_dir / "metrics.json").exists() and (res.out_dir / "mesh.ply").exists()
     assert np.isfinite(res.timing.total)
+
+
+def test_weighted_integration_pulls_surface_toward_heavier_frame():
+    """Two fronto-parallel walls (z=2.0 weight 1, z=2.1 weight 3) -> TSDF surface near 2.075."""
+    from roomscan.geometry.tsdf_fusion import TSDFFusion, confidence_weights
+    from roomscan.types import Intrinsics
+
+    intr = Intrinsics(fx=100.0, fy=100.0, cx=32.0, cy=24.0, width=64, height=48)
+    rgb = np.zeros((48, 64, 3), np.uint8)
+    near, far = np.full((48, 64), 2.0, np.float32), np.full((48, 64), 2.1, np.float32)
+
+    def build(w_near, w_far):
+        f = TSDFFusion(0.02, 0.2, 5.0, 0.1, intr)
+        f.integrate(rgb, near, np.eye(4), weights=np.full(near.shape, w_near, np.int32))
+        f.integrate(rgb, far, np.eye(4), weights=np.full(far.shape, w_far, np.int32))
+        v = np.asarray(f.extract_mesh().vertices)
+        return float(np.median(v[:, 2]))
+
+    assert abs(build(1, 1) - 2.05) < 0.015
+    assert abs(build(1, 3) - 2.075) < 0.015
+    assert abs(build(3, 1) - 2.025) < 0.015
+
+    conf = np.array([[0, 1, 2]], np.uint8)
+    assert confidence_weights(conf, [0, 1, 2]).tolist() == [[0, 1, 2]]
+    assert confidence_weights(conf, [1, 2, 4]).tolist() == [[1, 2, 4]]
+    assert confidence_weights(conf, None) is None and confidence_weights(None, [0, 1, 2]) is None

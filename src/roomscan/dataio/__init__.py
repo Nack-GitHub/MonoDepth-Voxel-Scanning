@@ -6,7 +6,7 @@ _REGISTRY: dict[str, str] = {
     "arkitscenes": "roomscan.dataio.arkitscenes:ARKitScenesScene",   # primary (ADR-009)
     "scannet":     "roomscan.dataio.scannet:ScanNetScene",           # fallback
     # "replica": "roomscan.dataio.replica:ReplicaScene",             # synthetic fallback
-    # "custom":  "roomscan.dataio.custom:ColmapScene",               # MVP: real room via COLMAP/ARKit
+    "custom":      "roomscan.dataio.custom:CustomCaptureScene",     # MVP: our own app's capture folder
 }
 
 

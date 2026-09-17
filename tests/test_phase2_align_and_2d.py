@@ -67,3 +67,26 @@ def test_inverse_space_recovers_disparity_affine():
     assert depth_metrics(out, gt).abs_rel < 0.01
     bad = OraclePerFrameAligner(space="depth").align(pred, f)
     assert depth_metrics(bad, gt).abs_rel > depth_metrics(out, gt).abs_rel
+
+
+def test_sparse_points_aligner_from_proxy_and_fallback():
+    from roomscan.dataio.sparse_proxy import sample_sparse_depth
+    from roomscan.geometry.scale_align import SparsePointsAligner
+
+    pred, gt = _pair(11, outliers=0.0)
+    conf = np.full(gt.shape, 2, np.uint8)
+    sparse = sample_sparse_depth(gt, conf, 200, seed=0)
+    assert (sparse > 0).sum() == 200 and np.allclose(sparse[sparse > 0], gt[sparse > 0])
+    f = Frame(0, np.zeros((1, 1, 3), np.uint8), np.eye(4), extra={"sparse_depth": sparse})
+    al = SparsePointsAligner(space="depth")
+    out = al.align(pred, f)
+    assert depth_metrics(out, gt).abs_rel < 0.02
+    # a frame with too few points reuses the last fit instead of failing
+    few = Frame(1, np.zeros((1, 1, 3), np.uint8), np.eye(4),
+                extra={"sparse_depth": sample_sparse_depth(gt, conf, 5, seed=1)})
+    out2 = al.align(pred, few)
+    assert al.n_fallback == 1 and np.allclose(out, out2)
+    # low-confidence pixels never become proxy points
+    conf[:, :128] = 0
+    left_only = sample_sparse_depth(gt, conf, 50, min_confidence=2, seed=2)
+    assert (left_only[:, :128] == 0).all() and (left_only > 0).sum() == 50

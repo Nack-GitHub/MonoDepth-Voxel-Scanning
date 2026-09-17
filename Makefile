@@ -6,14 +6,14 @@ VENV := .venv
 BIN := $(VENV)/bin
 ROOMSCAN := $(BIN)/roomscan
 
-.PHONY: venv setup setup-gt synthetic smoke figures-smoke figures sanity reference run-gt run-lidar run-mono sweep-exp1 sweep-exp2 sweep-exp3 sweep-exp4 report test lint
+.PHONY: venv setup setup-gt synthetic smoke figures-smoke figures paper-figures paper sanity reference run-gt run-lidar run-mono sweep-exp1 sweep-exp2 sweep-exp3 sweep-exp4 sweep-exp5 report web test lint
 
 venv:
 	test -d $(VENV) || $(PY) -m venv $(VENV)
 	$(BIN)/pip install -q --upgrade pip
 
-setup: venv       ## full env (GT + monocular models + dev tools)
-	$(BIN)/pip install -e ".[mono,dev]"
+setup: venv       ## full env (GT + monocular models + dev tools + web)
+	$(BIN)/pip install -e ".[mono,dev,web]"
 	@echo "done — run tools via 'make ...' or 'source .venv/bin/activate'"
 
 setup-gt: venv    ## minimal env, enough for Phase 0-1 (no torch)
@@ -59,12 +59,24 @@ sweep-exp3:       ## gt control + mono oracle + mono per_scene at strides 1/5/10
 sweep-exp4:
 	$(ROOMSCAN) sweep configs/experiments/exp4_model_size.yaml
 
+sweep-exp5:       ## LiDAR confidence masking / weighting (ADR-012)
+	$(ROOMSCAN) sweep configs/experiments/exp5_lidar_confidence.yaml --skip-existing
+
 figures:          ## scenes x runs top-down error grids for every experiment -> paper/figures/
 	for e in exp1_depth_source exp2_voxel_size exp3_frame_stride_gt exp3_frame_stride_oracle exp3_frame_stride exp4_model_size; do \
 	  $(BIN)/python scripts/make_figures.py experiments/results/$$e --out paper/figures; done
 
+paper-figures:    ## analysis figures (scale drift, pipeline diagram) -> paper/figures/
+	$(BIN)/python scripts/make_paper_figures.py
+
+paper:            ## compile paper/latex/main.tex -> paper/latex/main.pdf (needs tectonic)
+	cd paper/latex && tectonic main.tex
+
 report:           ## aggregate experiments/results/**/metrics.json -> summary tables
 	$(ROOMSCAN) report experiments/results
+
+web:              ## Phase 6: upload/queue/view API on http://localhost:8765 (needs .[web])
+	$(BIN)/uvicorn --factory roomscan_web.app:create_app --host 0.0.0.0 --port 8765
 
 test:
 	$(BIN)/pytest -q

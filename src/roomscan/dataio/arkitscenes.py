@@ -30,7 +30,8 @@ Frame mapping (ADR-009):
     rgb        = best RGB asset available at its NATIVE resolution
     gt_depth   = highres_depth resampled to fusion_resolution, or None
     pose_c2w   = inv(traj)
-    extra      = lidar_depth / lidar_confidence (fusion res), timestamp, sky_direction
+    extra      = lidar_depth / lidar_confidence (fusion res), timestamp, sky_direction,
+                 sparse_depth (VIO proxy sampled from lidar_depth, only if sparse_points > 0)
     intrinsics = lowres_wide .pincam scaled to fusion_resolution
 """
 
@@ -113,7 +114,8 @@ class ARKitScenesScene(SceneDataset):
                  reference: str = "faro_fused", fusion_resolution: tuple[int, int] = (256, 192),
                  frame_source: str = "auto", rgb_asset: str = "auto",
                  match_tolerance: float = 0.02, pose_max_gap: float = 0.25,
-                 sky_direction: str | None = None):
+                 sky_direction: str | None = None, sparse_points: int = 0,
+                 sparse_min_confidence: int = 2, sparse_noise: float = 0.0):
         if reference not in self.REFERENCES:
             raise ValueError(f"reference must be one of {self.REFERENCES}")
         self.root = Path(root)
@@ -125,6 +127,10 @@ class ARKitScenesScene(SceneDataset):
         self.fusion_resolution = (int(fusion_resolution[0]), int(fusion_resolution[1]))
         self.tol = float(match_tolerance)
         self.pose_max_gap = float(pose_max_gap)
+        # VIO-proxy for the sparse_points aligner (ADR-011): 0 = off
+        self.sparse_points = int(sparse_points)
+        self.sparse_min_confidence = int(sparse_min_confidence)
+        self.sparse_noise = float(sparse_noise)
         if not self.scene_dir.is_dir():
             raise FileNotFoundError(f"scene dir not found: {self.scene_dir}")
 
@@ -194,6 +200,12 @@ class ARKitScenesScene(SceneDataset):
             extra["lidar_depth"] = lidar
         if conf is not None:
             extra["lidar_confidence"] = conf
+        if self.sparse_points > 0 and lidar is not None:
+            from roomscan.dataio.sparse_proxy import sample_sparse_depth
+
+            extra["sparse_depth"] = sample_sparse_depth(
+                lidar, conf, self.sparse_points, min_confidence=self.sparse_min_confidence,
+                noise=self.sparse_noise, seed=idx)
         return Frame(idx=idx, rgb=rgb, pose_c2w=pose, gt_depth=gt, extra=extra)
 
     def gt_mesh(self):

@@ -3,6 +3,8 @@ data/*
 !data/README.md
 outputs/*
 !outputs/.gitkeep
+# roomscan_web work dir (uploads + meshes)
+outputs/web/
 # Results: commit config + metrics (small), ignore meshes/arrays (large)
 experiments/results/**/*.ply
 experiments/results/**/*.obj
@@ -11,6 +13,13 @@ experiments/results/**/*.npy
 experiments/results/**/*.npz
 experiments/results/**/*.png
 paper/figures/**/*.ply
+# LaTeX build
+paper/latex/*.aux
+paper/latex/*.bbl
+paper/latex/*.blg
+paper/latex/*.log
+paper/latex/*.out
+paper/latex/*.synctex.gz
 
 # ---- Model weights ----
 checkpoints/

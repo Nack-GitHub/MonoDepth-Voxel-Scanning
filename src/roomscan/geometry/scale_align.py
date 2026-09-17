@@ -28,15 +28,15 @@ def _valid(pred: np.ndarray, ref: np.ndarray, mask: np.ndarray | None) -> np.nda
 
 
 def fit_scale_shift(pred: np.ndarray, ref: np.ndarray, mask: np.ndarray | None = None,
-                    robust_iters: int = 3, trim: float = 0.2) -> tuple[float, float]:
+                    robust_iters: int = 3, trim: float = 0.2, min_points: int = 100) -> tuple[float, float]:
     """Least squares for ref ~= s * pred + t over valid pixels, with iterative
     trimming of the worst `trim` fraction of residuals (depth discontinuities are
     heavy-tailed; plain LS gets dragged by them)."""
     if pred.shape != ref.shape:
         raise ValueError("pred/ref shape mismatch")
     m = _valid(pred, ref, mask)
-    if m.sum() < 100:
-        raise ValueError("too few valid pixels to fit scale/shift")
+    if m.sum() < min_points:
+        raise ValueError(f"too few valid pixels to fit scale/shift ({int(m.sum())} < {min_points})")
     x, y = pred[m].astype(np.float64).ravel(), ref[m].astype(np.float64).ravel()
     keep = np.ones_like(x, dtype=bool)
     s = t = 0.0
@@ -155,16 +155,33 @@ class PerSceneAligner(_AffineAligner):
 
 
 class SparsePointsAligner(_AffineAligner):
-    """MVP path: fit against frame.extra['sparse_depth'] (H,W, 0 = no point) from SLAM."""
+    """MVP path: per-frame fit against frame.extra['sparse_depth'] (H,W, 0 = no point) — a few
+    hundred metric points from the device tracker (ADR-011 uses a LiDAR-sampled proxy).
+    Frames with fewer than `min_points` usable points reuse the previous frame's (s, t), which is
+    what a deployed system would do when tracking momentarily loses features."""
 
     name = "sparse_points"
+
+    def __init__(self, space: str = "inverse", min_points: int = 20, trim: float = 0.1):
+        super().__init__(space)
+        self.min_points = int(min_points)
+        self.trim = float(trim)
+        self._last: tuple[float, float] | None = None
+        self.n_fallback = 0
 
     def align(self, pred: np.ndarray, frame: Frame) -> np.ndarray:
         sparse = frame.extra.get("sparse_depth")
         if sparse is None:
             raise ValueError("sparse_points needs frame.extra['sparse_depth']")
         x, y = self._xy(pred, _match(sparse, pred))
-        s, t = fit_scale_shift(x, y, robust_iters=1, trim=0.0)
+        try:
+            s, t = fit_scale_shift(x, y, robust_iters=2, trim=self.trim, min_points=self.min_points)
+            self._last = (s, t)
+        except ValueError:
+            if self._last is None:
+                raise
+            self.n_fallback += 1
+            s, t = self._last
         return self._map(pred, s, t)
 
 
@@ -183,7 +200,7 @@ def build_aligner(cfg) -> ScaleAligner:
         "identity": lambda: IdentityAligner(),
         "oracle_frame": lambda: OraclePerFrameAligner(space),
         "per_scene": lambda: PerSceneAligner(int(cfg.get("aligner_fit_frames", 10)), space),
-        "sparse_points": lambda: SparsePointsAligner(space),
+        "sparse_points": lambda: SparsePointsAligner(space, int(cfg.get("sparse_min_points", 20))),
     }
     try:
         return table[cfg.aligner]()

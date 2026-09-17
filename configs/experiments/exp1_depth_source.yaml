@@ -12,6 +12,9 @@ runs:
     overrides: {depth.source: mono, depth.model: depth_anything_v2_large, depth.aligner: oracle_frame}
   - name: mono_scene
     overrides: {depth.source: mono, depth.model: depth_anything_v2_large, depth.aligner: per_scene}
+  - name: mono_sparse               # MVP path: per-frame fit on ~200 sparse metric points (VIO proxy, ADR-011)
+    overrides: {depth.source: mono, depth.model: depth_anything_v2_large, depth.aligner: sparse_points,
+                dataset.options.sparse_points: 200}
   - name: mono_metric
     overrides: {depth.source: mono, depth.model: depth_anything_v2_metric_indoor, depth.aligner: identity}
   # - name: arcore        # only if an Android capture of the same room exists (custom dataset)

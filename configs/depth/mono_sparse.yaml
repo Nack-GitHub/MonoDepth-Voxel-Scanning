@@ -1,0 +1,13 @@
+# Phase 5 — monocular model + per-frame (s, t) from a few hundred sparse metric points
+# (the MVP path: what a phone's VIO tracker gives). ARKitScenes has no feature points,
+# so the loader samples a proxy from the LiDAR frame (ADR-011).
+_base_: configs/base.yaml
+dataset:
+  options:
+    sparse_points: 200
+depth:
+  source: mono
+  model: depth_anything_v2_large
+  aligner: sparse_points
+output:
+  experiment: phase5_sparse
