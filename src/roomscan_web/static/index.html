@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>roomscan viewer</title>
+<style>
+  :root { --bg:#fcfcfb; --ink:#0b0b0b; --muted:#52514e; --line:#e6e6e3; --accent:#2a78d6; --ok:#008300; --bad:#e34948; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#1a1a19; --ink:#fff; --muted:#c3c2b7; --line:#333; --accent:#3987e5; } }
+  * { box-sizing:border-box }
+  body { margin:0; font:14px/1.45 system-ui,sans-serif; color:var(--ink); background:var(--bg); display:grid; grid-template-columns:320px 1fr; height:100vh }
+  aside { border-right:1px solid var(--line); padding:16px; overflow:auto }
+  h1 { font-size:16px; margin:0 0 12px }
+  form { display:grid; gap:8px; margin-bottom:16px }
+  input,select,button { font:inherit; padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:transparent; color:inherit }
+  button { background:var(--accent); color:#fff; border:0; cursor:pointer }
+  ul { list-style:none; padding:0; margin:0 }
+  li { padding:8px; border:1px solid var(--line); border-radius:6px; margin-bottom:6px; cursor:pointer }
+  li.active { border-color:var(--accent) }
+  .st { font-size:12px; color:var(--muted) }
+  .st.done { color:var(--ok) } .st.failed { color:var(--bad) }
+  #view { position:relative } canvas { display:block }
+  #hud { position:absolute; left:12px; bottom:12px; font-size:12px; color:var(--muted); background:var(--bg); padding:6px 8px; border-radius:6px; border:1px solid var(--line) }
+  @media (max-width:768px) { body { grid-template-columns:1fr; grid-template-rows:auto 1fr } aside { border-right:0; border-bottom:1px solid var(--line) } }
+</style>
+</head>
+<body>
+<aside>
+  <h1>roomscan</h1>
+  <form id="up">
+    <input type="file" name="file" accept=".zip" required>
+    <select name="source">
+      <option value="lidar">LiDAR depth (depth/ in zip)</option>
+      <option value="mono_sparse">Monocular DA-v2 S + sparse points (sparse/ in zip)</option>
+      <option value="mono_metric">Monocular DA-v2 metric (no calibration)</option>
+    </select>
+    <button type="submit">Upload &amp; reconstruct</button>
+  </form>
+  <ul id="jobs"></ul>
+</aside>
+<div id="view"><div id="hud">select a finished scan</div></div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
+
+const PRESETS = {
+  lidar: {},
+  mono_sparse: { 'depth.source': 'mono', 'depth.model': 'depth_anything_v2_small', 'depth.aligner': 'sparse_points' },
+  mono_metric: { 'depth.source': 'mono', 'depth.model': 'depth_anything_v2_metric_indoor', 'depth.aligner': 'identity' },
+};
+
+const view = document.getElementById('view'), hud = document.getElementById('hud');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+view.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(55, 1, 0.05, 100);
+const controls = new OrbitControls(camera, renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.1));
+const dir = new THREE.DirectionalLight(0xffffff, 0.6); dir.position.set(2, 3, 4); scene.add(dir);
+let mesh = null;
+function resize() {
+  const w = view.clientWidth, h = view.clientHeight;
+  renderer.setSize(w, h, false); renderer.setPixelRatio(devicePixelRatio);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+scene.background = new THREE.Color(getComputedStyle(document.body).getPropertyValue('--bg').trim());
+(function loop() { controls.update(); renderer.render(scene, camera); requestAnimationFrame(loop); })();
+
+async function showMesh(id) {
+  hud.textContent = 'loading mesh…';
+  const geo = await new PLYLoader().loadAsync(`/scans/${id}/mesh.ply`);
+  geo.computeVertexNormals();
+  if (mesh) { scene.remove(mesh); mesh.geometry.dispose(); mesh.material.dispose(); }
+  const mat = new THREE.MeshStandardMaterial({ vertexColors: geo.hasAttribute('color'), side: THREE.DoubleSide, flatShading: false });
+  mesh = new THREE.Mesh(geo, mat);
+  mesh.rotation.x = -Math.PI / 2;               // z-up capture -> y-up viewer
+  scene.add(mesh);
+  const box = new THREE.Box3().setFromObject(mesh), c = box.getCenter(new THREE.Vector3()), s = box.getSize(new THREE.Vector3()).length();
+  controls.target.copy(c); camera.position.copy(c).add(new THREE.Vector3(s * 0.7, s * 0.6, s * 0.8)); camera.near = s / 200; camera.far = s * 10; camera.updateProjectionMatrix();
+  hud.textContent = `${id}: ${geo.attributes.position.count.toLocaleString()} vertices`;
+}
+
+let active = null;
+async function refresh() {
+  const jobs = await (await fetch('/scans')).json();
+  const ul = document.getElementById('jobs'); ul.innerHTML = '';
+  for (const j of jobs.slice().reverse()) {
+    const li = document.createElement('li');
+    const m = j.result?.metrics_3d;
+    li.innerHTML = `<div>${j.id} <span class="st ${j.status}">${j.status}</span></div>` +
+      (m ? `<div class="st">chamfer ${(m.chamfer * 100).toFixed(1)} cm · F@5cm ${m['fscore@0.05'].toFixed(2)}</div>` :
+       j.result ? `<div class="st">${j.result.n_frames} frames · ${j.result.timing.total.toFixed(0)} s</div>` :
+       j.error ? `<div class="st failed">${j.error}</div>` : '');
+    if (j.id === active) li.classList.add('active');
+    li.onclick = () => { if (j.status === 'done') { active = j.id; showMesh(j.id); refresh(); } };
+    ul.appendChild(li);
+  }
+  if (jobs.some(j => j.status === 'queued' || j.status === 'running')) setTimeout(refresh, 2000);
+}
+document.getElementById('up').onsubmit = async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const src = fd.get('source'); fd.delete('source');
+  fd.set('overrides', JSON.stringify(PRESETS[src]));
+  const r = await fetch('/scans', { method: 'POST', body: fd });
+  if (!r.ok) { alert(await r.text()); return; }
+  e.target.reset(); refresh();
+};
+refresh();
+</script>
+</body>
+</html>
