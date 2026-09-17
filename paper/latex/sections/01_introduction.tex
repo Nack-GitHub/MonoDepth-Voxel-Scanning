@@ -22,8 +22,7 @@ the single swappable variable}, and measure the mesh geometry against a laser-sc
 
 \begin{table*}[t]
 \centering\small
-\begin{adjustbox}{max width=\textwidth}
-\begin{tabular}{@{}ll@{}}
+\begin{tabularx}{\textwidth}{@{}lX@{}}
 \toprule
 Depth source & Stands for \\
 \midrule
@@ -31,8 +30,7 @@ Faro laser (\code{highres\_depth}) & upper bound of the pipeline: its own loss w
 ARKit LiDAR (\code{lowres\_depth}, $256\times192$) & what iPhone~Pro does today \\
 Monocular (Depth Anything V2, MiDaS) $\times$ scale strategy & what a device without LiDAR can do \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabularx}
 \end{table*}
 
 Isolating \emph{ScaleAligner} as a separate stage lets us separate ``wrong shape'' from ``wrong scale'' in the

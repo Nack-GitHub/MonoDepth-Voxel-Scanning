@@ -18,8 +18,7 @@ $<$\SI{1}{m}). The ratio swings by $2$--$4\times$ within every scan with no mono
 \centering\small
 \caption{DA-v2 Large, per-scene values across the six scenes.}
 \label{tab:drift}
-\begin{adjustbox}{max width=\textwidth}
-\begin{tabular}{@{}lll@{}}
+\begin{tabularx}{\textwidth}{@{}lXX@{}}
 \toprule
  & Range over scenes & Meaning \\
 \midrule
@@ -31,8 +30,7 @@ AbsRel oracle $\rightarrow$ per\_scene & 0.040 $\rightarrow$ 0.241 (\textbf{6$\t
 per\_scene without close-ups ($<$\SI{1}{m}) & 0.154 (still $4\times$ oracle) & close-ups hurt but are not the only cause \\
 scale-only per frame, depth space & 0.298 $\approx$ per\_scene & a disparity shift is needed in every scene \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabularx}
 \end{table*}
 \begin{figure}[t]
 \centering
@@ -68,8 +66,7 @@ outage looks like.
 DA-v2 Metric-Indoor should output metres directly. Per-frame analysis over the six scenes:
 \begin{table*}[t]
 \centering\small
-\begin{adjustbox}{max width=\textwidth}
-\begin{tabular}{@{}lll@{}}
+\begin{tabularx}{\textwidth}{@{}lXX@{}}
 \toprule
  & Range over scenes & Meaning \\
 \midrule
@@ -79,8 +76,7 @@ oracle $t$ in inverse space & $-0.08 \ldots +0.04$ ($\approx 0$) & \textbf{no sh
 AbsRel raw $\rightarrow$ scale-only/frame $\rightarrow$ oracle $(s,t)$ & 0.328 $\rightarrow$ \textbf{0.057} $\rightarrow$ 0.046 & one scalar per frame recovers 96\% of the gap \\
 AbsRel with one scale per scene & 0.174 & like per\_scene for the relative model: the median is not enough \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabularx}
 \end{table*}
 In 3D the same surface from several frames is placed at several distances and TSDF averages them into a thick slab:
 accuracy \SI{69}{cm} but completeness \SI{29}{cm} (Table~\ref{tab:exp1})---everything is there, in the wrong place.
@@ -120,8 +116,7 @@ LiDAR (\SI{\rsSPARSEGAPLIDAR}{cm}) is this shape term.
 \subsection{Conclusions for system design}
 \begin{table*}[t]
 \centering\small
-\begin{adjustbox}{max width=\textwidth}
-\begin{tabular}{@{}ll@{}}
+\begin{tabularx}{\textwidth}{@{}XX@{}}
 \toprule
 Assumed beforehand & What the data say \\
 \midrule
@@ -134,6 +129,5 @@ more frames mean more accuracy & more frames mean more coverage; mono accuracy i
 LiDAR confidence maps are free accuracy & no measurable gain from masking or weighting (Exp.~5) \\
 LiDAR's hard scenes are mono's hard scenes & no (blank bedroom: hard for mono, easy for LiDAR) \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabularx}
 \end{table*}

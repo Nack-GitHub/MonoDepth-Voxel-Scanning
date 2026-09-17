@@ -33,11 +33,10 @@ metric model (\SI{49}{cm}).
 \end{itemize}
 
 \subsection{Where to invest: scale first, model second}
-\begin{table}[h]
+\begin{table*}[t]
 \centering\small
 \caption{What eats mono's error, six scenes.}
-\begin{adjustbox}{max width=\columnwidth}
-\begin{tabular}{@{}llll@{}}
+\begin{tabularx}{\textwidth}{@{}lXXX@{}}
 \toprule
 Error source & Size (Chamfer) & Remedy & Cost \\
 \midrule
@@ -47,9 +46,8 @@ voxel 4 $\rightarrow$ \SI{2}{cm} & $-$\SI{0.9}{cm} & $\sim$4$\times$ larger mesh
 MiDaS $\rightarrow$ DA-v2 S & $-$\SI{5.7}{cm} & newer model, same size & zero \\
 LiDAR confidence weighting & $\pm$\SI{0.03}{cm} & --- & (not worth it) \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{table}
+\end{tabularx}
+\end{table*}
 The order the data dictate: \textbf{(1) solve per-frame scale $\rightarrow$ (2) ship DA-v2 S on device by default
 $\rightarrow$ (3) consider L or a compressed model once (1) is stable}. Investing in the model before scale returns
 $<$\SI{3}{cm} on a \SI{22}{cm} base---invisible in the product.
@@ -83,8 +81,7 @@ on a server with L'' is feasible without waiting for on-device models. The \code
 \subsection{Positioning}
 \begin{table*}[t]
 \centering\small
-\begin{adjustbox}{max width=\textwidth}
-\begin{tabular}{@{}lllll@{}}
+\begin{tabularx}{\textwidth}{@{}lXXXX@{}}
 \toprule
  & RoomPlan / Polycam (LiDAR) & this work on a LiDAR device & this work without LiDAR, one-off calibration & this work without LiDAR $+$ VIO points \\
 \midrule
@@ -93,8 +90,7 @@ measured accuracy & not disclosed & \SI{3.0}{cm}, \fscore{} 0.93 & \SI{22.7}{cm}
 use case served & (claims floor plan) & furniture placement & not even overview & furniture placement (nearly) \\
 needs from device & LiDAR & LiDAR $+$ VIO & camera $+$ VIO & camera $+$ VIO $+$ feature points \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabularx}
 \end{table*}
 What can be said from these data: \emph{``The same system gives \SI{3}{cm} on a LiDAR device and about
 \SI{\rsSPARSECM}{cm} on a device without one, provided the tracker's sparse points are used per frame---what separates the

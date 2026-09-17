@@ -26,8 +26,7 @@ Frame stride (Exp.~3) is a dataset parameter; voxel size (Exp.~2) is a fusion pa
 Fig.~\ref{fig:pipeline} shows the data flow. Per frame there are three typed hand-over points:
 \begin{table*}[t]
 \centering\small
-\begin{adjustbox}{max width=\textwidth}
-\begin{tabular}{@{}lll@{}}
+\begin{tabularx}{\textwidth}{@{}lXX@{}}
 \toprule
 Point & Type & Owner \\
 \midrule
@@ -35,8 +34,7 @@ Point & Type & Owner \\
 \code{pred: (H,W) float32}, relative \emph{or} metric & \code{DepthSource.get\_depth(frame)} & source declares \code{is\_metric} \\
 \code{depth\_m: (H,W) float32} metres, $0=$ invalid & \code{ScaleAligner.align(pred, frame)} & invariant: metric after the aligner \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabularx}
 \end{table*}
 
 Invariants enforced in code, not just documented: (i) values are metres after the aligner; (ii) \code{pose\_c2w} is
@@ -66,8 +64,7 @@ A relative model gives depth up to an affine transform. \emph{How} $(s,t)$ is ob
 that should be measured separately from the model, so it is its own stage:
 \begin{table*}[t]
 \centering\small
-\begin{adjustbox}{max width=\textwidth}
-\begin{tabular}{@{}lll@{}}
+\begin{tabularx}{\textwidth}{@{}lXX@{}}
 \toprule
 Aligner & Fits $(s,t)$ & Meaning \\
 \midrule
@@ -76,8 +73,7 @@ Aligner & Fits $(s,t)$ & Meaning \\
 \code{per\_scene} & once, on $N$ frames spread over the scan, then frozen & one-off calibration \\
 \code{sparse\_points} & per frame, against $\sim$200 sparse metric points & the MVP path (VIO feature points) \\
 \bottomrule
-\end{tabular}
-\end{adjustbox}
+\end{tabularx}
 \end{table*}
 The gap \code{oracle\_frame} $\rightarrow$ \code{per\_scene} is ``the price of not knowing scale''---an experimental
 result, not noise; \code{sparse\_points} measures how much of that price a phone's tracker can pay back.
@@ -116,7 +112,7 @@ depth, to tell whether error arises before or after fusion.
 \end{itemize}
 
 \subsection{Config, registry and experiments}
-\code{configs/base.yaml} defines every value; \code{configs/experiments/expN.yaml} $=$ base $+$ a list of runs, each a
+\path{configs/base.yaml} defines every value; \path{configs/experiments/expN.yaml} $=$ base $+$ a list of runs, each a
 handful of dotted-key overrides. \code{roomscan sweep} runs every run $\times$ every scene and writes a resolved
 \code{config.yaml} plus \code{metrics.json} per run; \code{roomscan report} aggregates them into \code{summary.csv}
 and one \code{table.md} per experiment. The tables in \S\ref{sec:results} are copied from those files.
