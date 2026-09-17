@@ -20,7 +20,7 @@
   li.active { border-color:var(--accent) }
   .st { font-size:12px; color:var(--muted) }
   .st.done { color:var(--ok) } .st.failed { color:var(--bad) }
-  #view { position:relative } canvas { display:block }
+  #view { position:relative; min-width:0; min-height:0; overflow:hidden } canvas { display:block; width:100% !important; height:100% !important }
   #hud { position:absolute; left:12px; bottom:12px; font-size:12px; color:var(--muted); background:var(--bg); padding:6px 8px; border-radius:6px; border:1px solid var(--line) }
   @media (max-width:768px) { body { grid-template-columns:1fr; grid-template-rows:auto 1fr } aside { border-right:0; border-bottom:1px solid var(--line) } }
 </style>
@@ -70,7 +70,9 @@ const dir = new THREE.DirectionalLight(0xffffff, 0.6); dir.position.set(2, 3, 4)
 let mesh = null;
 function resize() {
   const w = view.clientWidth, h = view.clientHeight;
-  renderer.setSize(w, h, false); renderer.setPixelRatio(devicePixelRatio);
+  // updateStyle must stay on: with it off the canvas takes its (pixelRatio x) buffer size as CSS size,
+  // the grid track grows to fit it, and the framed mesh lands off-screen on Retina displays
+  renderer.setPixelRatio(devicePixelRatio); renderer.setSize(w, h);
   camera.aspect = w / h; camera.updateProjectionMatrix();
 }
 addEventListener('resize', resize); resize();
