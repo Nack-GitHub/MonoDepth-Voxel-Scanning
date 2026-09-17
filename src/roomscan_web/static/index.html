@@ -14,7 +14,8 @@
   form { display:grid; gap:8px; margin-bottom:16px }
   input,select,button { font:inherit; padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:transparent; color:inherit }
   button { background:var(--accent); color:#fff; border:0; cursor:pointer }
-  ul { list-style:none; padding:0; margin:0 }
+  ul { list-style:none; padding:0; margin:12px 0 0 }
+  label.st { display:block }
   li { padding:8px; border:1px solid var(--line); border-radius:6px; margin-bottom:6px; cursor:pointer }
   li.active { border-color:var(--accent) }
   .st { font-size:12px; color:var(--muted) }
@@ -36,6 +37,7 @@
     </select>
     <button type="submit">Upload &amp; reconstruct</button>
   </form>
+  <label class="st"><input type="checkbox" id="zup"> capture is Z-up (ARKit/ARCore are Y-up: leave off)</label>
   <ul id="jobs"></ul>
 </aside>
 <div id="view"><div id="hud">select a finished scan</div></div>
@@ -82,10 +84,18 @@ async function showMesh(id) {
   if (mesh) { scene.remove(mesh); mesh.geometry.dispose(); mesh.material.dispose(); }
   const mat = new THREE.MeshStandardMaterial({ vertexColors: geo.hasAttribute('color'), side: THREE.DoubleSide, flatShading: false });
   mesh = new THREE.Mesh(geo, mat);
-  mesh.rotation.x = -Math.PI / 2;               // z-up capture -> y-up viewer
+  mesh.rotation.x = document.getElementById('zup').checked ? -Math.PI / 2 : 0;   // z-up capture -> y-up viewer
   scene.add(mesh);
-  const box = new THREE.Box3().setFromObject(mesh), c = box.getCenter(new THREE.Vector3()), s = box.getSize(new THREE.Vector3()).length();
-  controls.target.copy(c); camera.position.copy(c).add(new THREE.Vector3(s * 0.7, s * 0.6, s * 0.8)); camera.near = s / 200; camera.far = s * 10; camera.updateProjectionMatrix();
+  mesh.updateMatrixWorld(true);
+  // robust framing: median vertex as centre, 90th-percentile radius as size (floaters would blow up a bbox)
+  const pos = geo.attributes.position, step = Math.max(1, Math.floor(pos.count / 20000));
+  const xs = [], ys = [], zs = [], v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i += step) { v.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld); xs.push(v.x); ys.push(v.y); zs.push(v.z); }
+  const med = a => { const b = a.slice().sort((p, q) => p - q); return b[b.length >> 1]; };
+  const c = new THREE.Vector3(med(xs), med(ys), med(zs));
+  const d = xs.map((x, i) => Math.hypot(x - c.x, ys[i] - c.y, zs[i] - c.z)).sort((p, q) => p - q);
+  const s = 2 * d[Math.floor(d.length * 0.9)];
+  controls.target.copy(c); camera.position.copy(c).add(new THREE.Vector3(s * 0.7, s * 0.6, s * 0.8)); camera.near = s / 200; camera.far = s * 20; camera.updateProjectionMatrix();
   hud.textContent = `${id}: ${geo.attributes.position.count.toLocaleString()} vertices`;
 }
 
@@ -106,6 +116,7 @@ async function refresh() {
   }
   if (jobs.some(j => j.status === 'queued' || j.status === 'running')) setTimeout(refresh, 2000);
 }
+document.getElementById('zup').onchange = () => { if (active) showMesh(active); };
 document.getElementById('up').onsubmit = async (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);

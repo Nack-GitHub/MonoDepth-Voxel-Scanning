@@ -6,7 +6,7 @@ VENV := .venv
 BIN := $(VENV)/bin
 ROOMSCAN := $(BIN)/roomscan
 
-.PHONY: venv setup setup-gt synthetic smoke figures-smoke figures paper-figures paper sanity reference run-gt run-lidar run-mono sweep-exp1 sweep-exp2 sweep-exp3 sweep-exp4 sweep-exp5 report web test lint
+.PHONY: venv setup setup-gt synthetic smoke figures-smoke figures paper-figures paper capture-zip sanity reference run-gt run-lidar run-mono sweep-exp1 sweep-exp2 sweep-exp3 sweep-exp4 sweep-exp5 report web test lint
 
 venv:
 	test -d $(VENV) || $(PY) -m venv $(VENV)
@@ -74,6 +74,9 @@ paper:            ## compile paper/latex/main.tex -> paper/latex/main.pdf (needs
 
 report:           ## aggregate experiments/results/**/metrics.json -> summary tables
 	$(ROOMSCAN) report experiments/results
+
+capture-zip:      ## export a scene as the app's capture zip for the web UI -> outputs/captures/<scene>.zip
+	$(BIN)/python scripts/export_capture.py --scene $(or $(SCENE),42444474) --stride 5
 
 web:              ## Phase 6: upload/queue/view API on http://localhost:8765 (needs .[web])
 	$(BIN)/uvicorn --factory roomscan_web.app:create_app --host 0.0.0.0 --port 8765

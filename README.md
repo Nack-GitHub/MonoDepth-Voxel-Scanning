@@ -34,7 +34,8 @@ make sweep-exp1        # Phase 3 ablations ... sweep-exp5
 make report            # -> experiments/results/summary.csv + per-experiment table.md
 make figures paper-figures   # top-down error grids + scale-drift / pipeline figures -> paper/figures/
 make paper             # paper/latex/main.tex -> main.pdf (tectonic)
-make web               # Phase 6: http://localhost:8765 — upload a capture.zip, get a mesh in the browser
+make capture-zip       # export scene 42444474 (SCENE=... to change) as outputs/captures/<scene>.zip in the app capture format
+make web               # Phase 6: http://localhost:8765 — upload that zip, get a mesh in the browser
 ```
 
 Any single run: `roomscan run --config configs/depth/gt.yaml --set fusion.voxel_size=0.02`
