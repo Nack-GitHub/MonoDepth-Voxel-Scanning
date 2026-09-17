@@ -1,0 +1,75 @@
+\section{Introduction and Business Motivation}
+
+\subsection{Problem}
+Scanning a room into a 3D model is already a consumer feature on iPhone~Pro and iPad~Pro through Apple RoomPlan and
+apps such as Polycam, all of which rely on the \emph{LiDAR sensor} for directly metric depth. Devices with LiDAR are,
+however, a minority of the market: non-Pro iPhones and almost every Android phone have none. The alternative for these
+devices is \emph{monocular depth estimation}---networks that predict depth from a single RGB image---which advanced
+rapidly between 2020 and 2024 (MiDaS, Depth Anything) to the point of producing visually convincing results on single images.
+
+The question a product team must answer before investing is: \textbf{if LiDAR is replaced by a monocular model while the
+rest of the system stays the same, by how many centimetres is the reconstructed room wrong, and which use cases does that
+still serve} (floor-area estimation, furniture placement, renovation measurement)? Monocular-depth research reports
+per-image metrics (AbsRel, $\delta_1$) on benchmarks, which do not translate into ``how crooked is the wall.''
+End-to-end reconstruction systems (Atlas, NeuralRecon, SimpleRecon) design their whole pipeline around their own model,
+so the \emph{depth source} cannot be compared in isolation.
+
+\subsection{Approach}
+This is a \emph{system-development} study. We build a classical room-reconstruction pipeline (per-frame depth
+$\rightarrow$ scale alignment $\rightarrow$ TSDF voxel fusion $\rightarrow$ mesh) in which \textbf{the depth source is
+the single swappable variable}, and measure the mesh geometry against a laser-scanner reference on real rooms
+(ARKitScenes) with three sources through one and the same pipeline:
+
+\begin{table*}[t]
+\centering\small
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Depth source & Stands for \\
+\midrule
+Faro laser (\code{highres\_depth}) & upper bound of the pipeline: its own loss with perfect depth \\
+ARKit LiDAR (\code{lowres\_depth}, $256\times192$) & what iPhone~Pro does today \\
+Monocular (Depth Anything V2, MiDaS) $\times$ scale strategy & what a device without LiDAR can do \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}
+
+Isolating \emph{ScaleAligner} as a separate stage lets us separate ``wrong shape'' from ``wrong scale'' in the
+monocular rows: \code{oracle\_frame} (fit per frame against GT) is the model's ceiling; \code{per\_scene}
+(one calibration) is what a one-off calibration achieves; \code{sparse\_points} (fit per frame on a few hundred
+metric points) is what a deployed system with a VIO tracker can do.
+
+\subsection{Main results (6 scenes, \SI{4}{cm} voxels)}
+\begin{itemize}
+\item The pipeline itself loses \SI{2.1 \pm 0.5}{cm} (Chamfer) when fed laser depth; iPad LiDAR loses
+\SI{3.0 \pm 0.6}{cm}---a \SI{1}{cm} gap that is the same in every room type.
+\item Monocular depth with the correct scale on every frame (oracle) loses \SI{6.5 \pm 2.4}{cm}: \SI{3.4}{cm} behind
+LiDAR, i.e.\ ``Android is about \SI{3}{cm} behind iPhone~Pro \emph{if} the scale problem is solved.''
+\item Monocular depth calibrated once per room loses \SI{22.7 \pm 2.6}{cm}, uniformly across rooms; a ``metric'' model
+without calibration loses \SI{49 \pm 15}{cm}. \textbf{The real problem of monocular depth is not shape but a scale that
+swings per view} (\S\ref{sec:discussion}).
+\item Fitting scale per frame on $\sim$200 sparse metric points closes that gap to \SI{\rsSPARSECM}{cm}
+(\fscore{} \rsSPARSEF)---within \SI{\rsSPARSEGAP}{cm} of the oracle (\S\ref{sec:results}).
+\item A $13\times$ smaller model (DA-v2 Small) costs \SI{2.8}{cm} but runs $7\times$ faster; MiDaS small is a further
+$4.5\times$ faster with $2.3\times$ the error of Large. Model size matters $6\times$ less than scale.
+\item Frame count governs coverage, not accuracy: $\geq 0.8$~fps is needed to capture the whole room.
+\end{itemize}
+
+\subsection{Contributions}
+\begin{enumerate}
+\item An open-source pipeline in which \code{DepthSource} and \code{ScaleAligner} are interfaces switched from config
+without touching the orchestrator, so every experiment table is ``one loop, one variable'' and the same code serves
+as a product backend (\S\ref{sec:design}).
+\item ``Centimetres on the wall'' for Faro / LiDAR / monocular depth through one pipeline on six real rooms with a
+laser-scanner reference (\S\ref{sec:setup}--\ref{sec:results}).
+\item An analysis showing that the oracle$\rightarrow$per-scene gap comes from per-view scale, not temporal drift, that
+$\sim$200 sparse metric points per frame recover the oracle, and what that implies for system design
+(\S\ref{sec:discussion}).
+\item Per-scan cost (time, frames, model size, LiDAR confidence weighting) for business decisions (\S\ref{sec:business}).
+\end{enumerate}
+
+\paragraph{What this paper does \emph{not} claim}
+It does not claim to beat Atlas / NeuralRecon / SimpleRecon---they are not compared, and this pipeline is not designed to
+compete. It does not claim that ``not needing LiDAR'' is a feature---the data say the opposite: without LiDAR some
+per-frame metric information is still required. No model is trained; all are used pretrained.

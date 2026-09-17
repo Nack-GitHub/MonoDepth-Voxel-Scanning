@@ -1,0 +1,64 @@
+\section{Related Work}
+
+\subsection{Monocular depth estimation}
+Monocular depth models fall into two families according to what their output promises.
+
+\paragraph{Relative / affine-invariant} MiDaS~\cite{midas} introduced training across many datasets with a loss that
+ignores scale and shift, giving strong cross-domain generalisation at the price of an output that is \emph{disparity up
+to an affine transform}: two constants $(s, t)$ per image must be known to obtain metres. Depth Anything~\cite{da1}
+and Depth Anything~V2~\cite{da2} extend the idea with large unlabelled corpora and synthetic teachers, giving much sharper
+edges and detail while remaining affine-invariant in disparity. We use DA-v2 (Large / Small) and MiDaS small as
+representatives of this family and \textbf{treat $(s,t)$ as an experimental variable} (the \code{ScaleAligner}) rather
+than hiding it in the model.
+
+\paragraph{Metric} ZoeDepth~\cite{zoedepth} and the metric variants of DA-v2 (fine-tuned on Hypersim / Virtual KITTI)
+aim to output metres directly. Metric3D~\cite{metric3d} identifies the camera focal length as the main ambiguity and
+resolves it by normalising images to a canonical camera. These works report per-image AbsRel/$\delta_1$ on NYUv2/KITTI;
+our results (\S\ref{sec:metric}) show that on real room video the per-frame scale of a metric model still swings from
+$-60\%$ to $+80\%$ within one scan---invisible to per-image metrics, immediately visible once frames are fused into one
+volume.
+
+\paragraph{Mobile LiDAR depth} ARKit provides $256\times192$ depth fusing LiDAR with imagery; ARKitScenes~\cite{arkitscenes}
+is the first dataset to release both this depth and Faro laser-scanner depth for the same rooms, making a direct
+``mobile LiDAR vs.\ laser'' comparison possible. We use both as two rows of the same table.
+
+\subsection{Multi-view 3D reconstruction from video}
+\paragraph{Classical depth fusion} Volumetric TSDF fusion~\cite{curless96} and KinectFusion~\cite{kinectfusion}
+combine many depth frames through a truncated signed distance per voxel and extract the surface with marching cubes.
+The property we need is that \textbf{fusion neither knows nor cares where depth comes from}---as long as it is metric
+and posed---so it is a fair ``fixed part'' for every source. We use the Open3D implementation~\cite{open3d}.
+
+\paragraph{End-to-end learned reconstruction} Atlas~\cite{atlas} regresses a TSDF directly from multi-image features,
+NeuralRecon~\cite{neuralrecon} does so incrementally in real time, and SimpleRecon~\cite{simplerecon} shows that good
+multi-view depth plus classical fusion is competitive. These are strong ScanNet baselines, but all learn depth
+\emph{from multiple images}; they do not answer ``what room do you get from a per-image monocular model plus the
+device's VIO pose,'' which is the situation of an app on a device without LiDAR. We therefore \textbf{do not compare
+against this group} and make no claim of superiority.
+
+\paragraph{Scale in monocular SLAM / reconstruction} Using monocular depth inside SLAM requires per-frame scale
+recovery, e.g.\ from sparse tracked points (CNN-SLAM~\cite{cnnslam} and successors), or joint optimisation of
+scale/shift with pose (MonoSDF~\cite{monosdf} uses monocular priors in a neural surface). Our \code{sparse\_points}
+aligner follows this line; we evaluate it next to \code{oracle\_frame} and \code{per\_scene} so that the ``price of not
+knowing scale'' is measured at three levels of available metric information.
+
+\subsection{Room-scanning products}
+Apple RoomPlan~\cite{roomplan} produces a floor plan and furniture boxes from LiDAR on iPhone/iPad~Pro; Polycam and
+similar apps produce meshes or photogrammetry. All require LiDAR for room mode or fall back to slow offline
+photogrammetry with many photos. No public report states how many centimetres these products deviate from a laser
+scanner; this paper provides that number at least for our own pipeline.
+
+\subsection{Position of this work}
+\begin{table*}[t]
+\centering\small
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+ & Trains & Compares depth sources & Reference & Metrics \\
+\midrule
+Monocular depth papers & \checkmark & $\times$ (one model) & per-image depth & AbsRel, $\delta$ \\
+Atlas / NeuralRecon / SimpleRecon & \checkmark & $\times$ (multi-view only) & ScanNet mesh & Chamfer, F-score \\
+\textbf{This work} & $\times$ (pretrained) & \checkmark\ laser / LiDAR / mono $\times$ aligner & Faro laser (ARKitScenes) & Chamfer, F@$\tau$, per-frame AbsRel/$\delta$, time \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}

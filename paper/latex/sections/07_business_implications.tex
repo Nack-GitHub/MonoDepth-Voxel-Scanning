@@ -1,0 +1,109 @@
+\section{Business Implications}\label{sec:business}
+Numbers from \S\ref{sec:results}; times are Apple Silicon / MPS and serve only for ratios (\S\ref{sec:limitations}).
+
+\subsection{The one number a decision-maker needs: ``how crooked is the room'' per use case}
+Table~\ref{tab:usecase} translates Table~\ref{tab:exp1} into product language, requiring that a use case have
+$\geq 90\%$ of the surface within $\tau$ of the truth (recall@$\tau$).
+\begin{table*}[t]
+\centering\small
+\caption{Recall@$\tau$ averaged over 6 scenes. \checkmark\ $\geq 0.9$, $\sim$ 0.75--0.9, $\times$ $< 0.75$.}
+\label{tab:usecase}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}llrrrrrr@{}}
+\toprule
+Use case & $\tau$ & Faro & iPad LiDAR & mono $+$ oracle & mono $+$ sparse & mono $+$ per\_scene & mono metric \\
+\midrule
+room overview / virtual walk-through & \SI{10}{cm} & \checkmark\ 0.98 & \checkmark\ 0.97 & \checkmark\ 0.91 & \rsSPARSERten & $\times$ 0.47 & $\times$ 0.21 \\
+furniture placement / space planning & \SI{5}{cm} & \checkmark\ 0.96 & \checkmark\ 0.92 & $\sim$ 0.79 & \rsSPARSERfive & $\times$ 0.26 & $\times$ 0.10 \\
+floor-area sale / renovation (walls, trim) & \SI{2}{cm} & $\sim$ 0.84 & $\times$ 0.52 & $\times$ 0.44 & \rsSPARSERtwo & $\times$ 0.09 & $\times$ 0.02 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}
+\begin{itemize}
+\item \textbf{iPad~Pro today is enough for ``furniture placement'' but not for ``renovation measurement'':} at
+\SI{2}{cm} LiDAR reaches only half, and even Faro through this pipeline reaches 0.84 (the \SI{4}{cm} voxel eats it;
+\S5.2 shows \SI{2}{cm} voxels reach 0.92). A product promising centimetre accuracy needs finer voxels plus multiple
+LiDAR passes, or a laser. Confidence weighting does not move this (Exp.~5).
+\item \textbf{Devices without LiDAR serve no use case} with one-off calibration (per\_scene \SI{22.7}{cm}) or a raw
+metric model (\SI{49}{cm}).
+\item \textbf{With per-frame sparse points the same device reaches \SI{\rsSPARSECM}{cm}, recall@\SI{5}{cm} \rsSPARSERfive}---the
+``furniture placement'' tier at a level close to iPad~Pro, and the mono ceiling (oracle \SI{6.5}{cm}) is only
+\SI{3.4}{cm} behind LiDAR. This is the gap to invest in, not the model.
+\end{itemize}
+
+\subsection{Where to invest: scale first, model second}
+\begin{table}[h]
+\centering\small
+\caption{What eats mono's error, six scenes.}
+\begin{adjustbox}{max width=\columnwidth}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Error source & Size (Chamfer) & Remedy & Cost \\
+\midrule
+one scale per scene $\rightarrow$ per frame & \textbf{$-$\SI{16}{cm}} (22.7 $\rightarrow$ 6.5) & per-frame metric points from VIO (free from ARCore/ARKit) & one aligner (\code{sparse\_points}); measured: 22.7 $\rightarrow$ \rsSPARSECM \\
+model S $\rightarrow$ L & $-$\SI{2.8}{cm} (9.2 $\rightarrow$ 6.5) & $13\times$ larger model, $7\times$ slower & on-device / cloud compute \\
+voxel 4 $\rightarrow$ \SI{2}{cm} & $-$\SI{0.9}{cm} & $\sim$4$\times$ larger mesh & memory / bandwidth \\
+MiDaS $\rightarrow$ DA-v2 S & $-$\SI{5.7}{cm} & newer model, same size & zero \\
+LiDAR confidence weighting & $\pm$\SI{0.03}{cm} & --- & (not worth it) \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+The order the data dictate: \textbf{(1) solve per-frame scale $\rightarrow$ (2) ship DA-v2 S on device by default
+$\rightarrow$ (3) consider L or a compressed model once (1) is stable}. Investing in the model before scale returns
+$<$\SI{3}{cm} on a \SI{22}{cm} base---invisible in the product.
+
+\subsection{Cost per scan}
+Per room ($\sim$\SI{95}{s} of video $\approx$ 391 frames at 4~fps; MPS, unoptimised PyTorch):
+\begin{table*}[t]
+\centering\small
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Stage & LiDAR & DA-v2 L & DA-v2 S & MiDaS s \\
+\midrule
+depth per frame & 0 (sensor) & \SI{871}{ms} & \SI{121}{ms} & \SI{27}{ms} \\
+depth per scan @ 4 fps & 0 & \SI{341}{s} & \SI{47}{s} & \SI{11}{s} \\
+depth per scan @ 0.8 fps (stride 5) & 0 & \SI{68}{s} & \SI{9}{s} & \SI{2}{s} \\
+align $+$ fusion $+$ extract & \SI{1.6}{s} & $\sim$\SI{9}{s} & $\sim$\SI{6}{s} & $\sim$\SI{4}{s} \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}
+At 4~fps DA-v2 L takes $3.6\times$ the video length---not real time even on a laptop; DA-v2 S is at $0.5\times$
+(processable right after capture). Exp.~3 says per\_scene quality needs only 0.8~fps (same Chamfer), bringing L to
+\SI{68}{s} and S to \SI{9}{s} per room; with per-frame scale, $\geq 0.8$--4~fps is needed for coverage (\fscore{} 0.72
+at 0.8~fps vs 0.74 at 4~fps---0.8~fps is still the sweet spot). Fusion and extraction are a rounding error ($<3\%$ of
+L's time); TSDF is not what to optimise. Data: at 0.8~fps a room is $\sim$80 images at $640\times480$
+($\approx$10--\SI{20}{MB} JPEG) plus poses and sparse points---a few seconds to upload, so ``capture on device, process
+on a server with L'' is feasible without waiting for on-device models. The \code{roomscan\_web} package
+(\S\ref{sec:design}) is that architecture in its minimal form: upload a capture, poll a job, fetch the mesh.
+
+\subsection{Positioning}
+\begin{table*}[t]
+\centering\small
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+ & RoomPlan / Polycam (LiDAR) & this work on a LiDAR device & this work without LiDAR, one-off calibration & this work without LiDAR $+$ VIO points \\
+\midrule
+market & iPhone/iPad Pro & same & Android $+$ regular iPhone & same \\
+measured accuracy & not disclosed & \SI{3.0}{cm}, \fscore{} 0.93 & \SI{22.7}{cm}, \fscore{} 0.22 & \SI{\rsSPARSECM}{cm}, \fscore{} \rsSPARSEF{} (VIO-proxy upper bound) \\
+use case served & (claims floor plan) & furniture placement & not even overview & furniture placement (nearly) \\
+needs from device & LiDAR & LiDAR $+$ VIO & camera $+$ VIO & camera $+$ VIO $+$ feature points \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}
+What can be said from these data: \emph{``The same system gives \SI{3}{cm} on a LiDAR device and about
+\SI{\rsSPARSECM}{cm} on a device without one, provided the tracker's sparse points are used per frame---what separates the
+two numbers is measurable engineering, not model research.''} What \textbf{cannot} be said: ``no LiDAR, same
+accuracy''---the data say the opposite in every scene.
+
+\subsection{Risks the numbers do not cover}
+VIO pose on low-end Android may be worse than ARKit's, adding error to every row equally (not measured); regions Faro
+did not see (behind cabinets, high ceilings) are outside the numbers, so a product must handle ``the part not
+captured'' itself; the bathroom is the worst scene for every source (LiDAR 4.1, oracle 10.7)---if the target market is
+bathroom/kitchen renovation, more such scenes must be collected; and the sparse-point row uses LiDAR-sampled points,
+cleaner than real VIO features (\S\ref{sec:limitations}).

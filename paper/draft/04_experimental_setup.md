@@ -14,7 +14,7 @@
 | asset | ความละเอียด / อัตรา | บทบาทในงานนี้ |
 |---|---|---|
 | `vga_wide` RGB | 640×480, 30 fps | input ของโมเดล monocular (หมุนให้ตั้งตรงตาม `sky_direction`) |
-| `lowres_depth` + `confidence` | 256×192, 60 fps | depth source `lidar` |
+| `lowres_depth` + `confidence` | 256×192, 60 fps | depth source `lidar`; แหล่ง proxy ของ `sparse_points`; weight ใน Exp5 |
 | `highres_depth` (Faro) | 1920×1440, **~2.7–4 fps** | depth source `gt` และ **reference mesh** |
 | `lowres_wide.traj` | ~10 Hz | pose (VIO ของ ARKit) — interpolate slerp/lerp มาที่ timestamp ของแต่ละเฟรม |
 | `lowres_wide_intrinsics` | ต่อเฟรม | ใช้ค่า median ทั้ง scan แล้ว scale ตาม resolution |
@@ -75,6 +75,7 @@ aligner ทุกตัวที่ไม่ใช่ `identity` fit affine **�
 |---|---|---|
 | `oracle_frame` | GT depth ของเฟรมนั้น, ทุกเฟรม | เพดานของโมเดล (upper bound) |
 | `per_scene` | GT depth ของ **10 เฟรมกระจายทั่ว scan** (`frames[::k][:10]`) stack รวมกัน fit ครั้งเดียว แล้วใช้ `(S, T)` เดียวทุกเฟรม | สิ่งที่ระบบจริงทำได้ด้วย calibration ครั้งเดียว |
+| `sparse_points` | 200 pixel/เฟรม sample จาก LiDAR ที่ confidence 2 (seed = เฟรม; ADR-011) fit ต่อเฟรม trim 10 % 2 รอบ; เฟรมที่จุดใช้ได้ < 20 ใช้ `(s, t)` ของเฟรมก่อน | ขอบบนของระบบที่ใช้จุด VIO จริง |
 
 `per_scene` ใช้ GT ในการ fit ด้วย — ดังนั้นมันคือ **ขอบบนของ calibration ครั้งเดียว** ระบบจริงที่ calibrate จากไม้บรรทัดหรือจุด VIO จะได้ไม่ดีกว่านี้
 
@@ -95,12 +96,13 @@ normal consistency = mean |n_pred · n_ref| ของคู่จุดใกล
 
 | Exp | ตัวแปร | ค่า | ส่วนที่คงที่ |
 |---|---|---|---|
-| 1 depth source | `depth.source` × `depth.aligner` | gt / lidar / mono+oracle / mono+per_scene / mono-metric+identity | DA-v2 L, voxel 4 cm, stride 1 |
+| 1 depth source | `depth.source` × `depth.aligner` | gt / lidar / mono+oracle / mono+sparse / mono+per_scene / mono-metric+identity | DA-v2 L, voxel 4 cm, stride 1 |
 | 2 voxel size | `fusion.voxel_size` | 2 / 4 / 8 cm (sdf_trunc = 3×) | gt |
 | 3 frame stride | `dataset.frame_stride` | 1 / 5 / 10 / 20 × {gt, mono+oracle, mono+per_scene} | DA-v2 L, voxel 4 cm |
 | 4 model size | `depth.model` | DA-v2 L / DA-v2 S / MiDaS small | oracle_frame, voxel 4 cm |
+| 5 LiDAR confidence | `depth.lidar_min_confidence`, `fusion.confidence_weights` | ทุก pixel / mask ≥1 / mask =2 / weight [0,1,2] / [1,2,4] | lidar, voxel 4 cm |
 
 ทุก run = 1 ไฟล์ `config.yaml` ที่ resolve แล้ว + `metrics.json` ใน `experiments/results/<exp>/<scene>_<run>/` (commit ไว้ทั้งหมด);
 ตารางใน §5 สร้างจาก `roomscan report` โดยไม่แก้มือ ตัวเลขเป็น mean ± std ข้าม 6 ฉาก และมีตารางต่อฉากใน `per_scene.md`
 
-การทดลองทั้งหมดทำซ้ำได้ด้วย `make reference && make sweep-exp1 sweep-exp2 sweep-exp3 sweep-exp4 report` หลังโหลดข้อมูลตาม `data/README.md`
+การทดลองทั้งหมดทำซ้ำได้ด้วย `make reference && make sweep-exp1 sweep-exp2 sweep-exp3 sweep-exp4 sweep-exp5 report` หลังโหลดข้อมูลตาม `data/README.md`

@@ -1,0 +1,132 @@
+\section{System Design}\label{sec:design}
+
+\subsection{Design principle: one pipeline, one variable}
+The research question (``change only the depth source---how much changes?'') imposes three architectural requirements:
+\begin{enumerate}
+\item \textbf{Every depth source must pass through the same code after the point where it is produced}---no special
+branch for mono or LiDAR in fusion or evaluation.
+\item \textbf{Whatever can be swapped is swapped from config}, not by editing code: one result table $=$ one YAML file.
+\item \textbf{The paper's code is the product's code}: the same system must accept ARCore depth or a smaller model on
+the day an MVP ships, without a rewrite.
+\end{enumerate}
+Requirement~1 leads to the \code{DepthSource} interface; requirement~2 to a string$\rightarrow$class registry and
+base-plus-override configs; requirement~3 to a single monolithic package with no service, database or experiment
+tracker---appropriate for a one-person, ten-week project.
+
+\subsection{Overview}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{pipeline}
+\caption{Pipeline components. The two highlighted boxes are the only things that change between rows of a result
+table; everything to their right is fixed (Open3D \code{ScalableTSDFVolume}, marching cubes, cluster filtering).
+Frame stride (Exp.~3) is a dataset parameter; voxel size (Exp.~2) is a fusion parameter.}
+\label{fig:pipeline}
+\end{figure*}
+
+Fig.~\ref{fig:pipeline} shows the data flow. Per frame there are three typed hand-over points:
+\begin{table*}[t]
+\centering\small
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Point & Type & Owner \\
+\midrule
+\code{Frame\{rgb, pose\_c2w, gt\_depth?, extra\}} & from \code{SceneDataset} & dataset mapping \\
+\code{pred: (H,W) float32}, relative \emph{or} metric & \code{DepthSource.get\_depth(frame)} & source declares \code{is\_metric} \\
+\code{depth\_m: (H,W) float32} metres, $0=$ invalid & \code{ScaleAligner.align(pred, frame)} & invariant: metric after the aligner \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}
+
+Invariants enforced in code, not just documented: (i) values are metres after the aligner; (ii) \code{pose\_c2w} is
+camera-to-world and is inverted in exactly one place (\code{TSDFFusion.integrate}); (iii) intrinsics are bound to a
+resolution---resizing requires \code{Intrinsics.scaled()}; (iv) \code{is\_metric=True} $\Rightarrow$
+\code{aligner=identity} and \code{is\_metric=False} $\Rightarrow$ \code{aligner$\neq$identity}---the pipeline fails at
+construction if the pair is wrong.
+
+\subsection{DepthSource: depth as a strategy}
+{\small\begin{verbatim}
+class DepthSource(ABC):
+    name: str
+    is_metric: bool
+    def get_depth(self, frame) -> np.ndarray
+        # (H,W) float32; 0/NaN = invalid
+\end{verbatim}}
+It takes the whole \code{Frame} rather than an RGB image because each source needs different inputs: \code{gt}
+reads \code{frame.gt\_depth}, \code{lidar} reads \code{frame.extra["lidar\_depth"]} (plus confidence), \code{mono}
+reads \code{frame.rgb}. One signature covers all cases without edits when \code{arcore} is added.
+\code{MonocularDepth} does three things that belong neither to the model nor to the aligner: it rotates the image
+upright according to \code{sky\_direction}, converts disparity to $1/x$ so that ``larger $=$ farther,'' and masks
+invalid values. Models (\code{DepthModel}: DA-v2, MiDaS) form a second registry under \code{mono}, so Exp.~4 (model
+size) is just \code{depth.model=\ldots}.
+
+\subsection{ScaleAligner: scale as a separate stage}
+A relative model gives depth up to an affine transform. \emph{How} $(s,t)$ is obtained is a \textbf{system decision}
+that should be measured separately from the model, so it is its own stage:
+\begin{table*}[t]
+\centering\small
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Aligner & Fits $(s,t)$ & Meaning \\
+\midrule
+\code{identity} & --- & GT / LiDAR / metric models \\
+\code{oracle\_frame} & per frame, against GT depth & model ceiling (not deployable) \\
+\code{per\_scene} & once, on $N$ frames spread over the scan, then frozen & one-off calibration \\
+\code{sparse\_points} & per frame, against $\sim$200 sparse metric points & the MVP path (VIO feature points) \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}
+The gap \code{oracle\_frame} $\rightarrow$ \code{per\_scene} is ``the price of not knowing scale''---an experimental
+result, not noise; \code{sparse\_points} measures how much of that price a phone's tracker can pay back.
+
+\paragraph{Fitting space} Affine-invariant models are affine in \emph{disparity}, not depth; fitting
+$gt \approx s\cdot pred + t$ in depth space is the wrong model. We therefore fit $1/gt \approx s\cdot(1/pred) + t$
+(least squares with three rounds of trimming the worst 20\% of residuals) and invert back. On scene 42444474 this
+change alone moved mono$+$oracle from \SI{15.2}{cm} to \SI{5.4}{cm}---an example of why the aligner must be testable in
+isolation.
+
+\paragraph{Sparse points} ARKitScenes ships no ARKit feature points, so \code{sparse\_points} is evaluated against a
+proxy: $N{=}200$ pixels sampled per frame (deterministically) from the LiDAR frame at confidence~2, which is what a
+tracker hands the pipeline---a few hundred metric depths per frame, nothing dense. The fit is per frame in inverse
+depth with two rounds of 10\% trimming; frames with fewer than 20 usable points reuse the previous frame's $(s,t)$,
+as a deployed system would when tracking momentarily loses features. The proxy is optimistic in one respect (LiDAR
+points are cleaner than triangulated VIO features) and pessimistic in another (VIO points cluster on texture, ours are
+uniform); we treat the row as an \emph{upper bound of real VIO}.
+
+\subsection{Fixed parts: fusion, post-processing, evaluation}
+\begin{itemize}
+\item \textbf{Fusion:} Open3D \code{ScalableTSDFVolume}, \SI{4}{cm} voxels, \code{sdf\_trunc}$=3\times$voxel,
+depth \SIrange{0.1}{5}{m}; every source is resampled to $256\times192$ (the LiDAR resolution) before integration for
+fairness, and only pixels where the reference has depth are integrated (\code{mask\_to\_gt})---no source is penalised
+for seeing beyond the Faro coverage. An optional per-pixel integer weight from the sensor's confidence map
+(\code{fusion.confidence\_weights}) is off for every main result and used only in Exp.~5.
+\item \textbf{Post-processing:} small clusters removed; no decimation.
+\item \textbf{Reference:} ARKitScenes provides no laser mesh; we fuse Faro \code{highres\_depth} from every frame at
+\SI{1}{cm} voxels once per scene into \code{reference\_mesh.ply}. The \code{gt} row at \SI{4}{cm} therefore measures
+``pipeline loss,'' not zero.
+\item \textbf{3D metrics} (fixed protocol in \code{metrics\_3d.py}): 200k points sampled on both meshes (fixed seed);
+accuracy $=$ mean pred$\rightarrow$ref distance, completeness $=$ ref$\rightarrow$pred, Chamfer $=$ their mean;
+precision/recall/F-score at \SI{2}{}/\SI{5}{}/\SI{10}{cm} (\textbf{\fscore{} is the headline}); normal consistency
+$=$ mean $|n_{pred}\cdot n_{ref}|$.
+\item \textbf{2D metrics} per frame (RMSE, AbsRel, $\delta_{1\text{--}3}$) compare depth \emph{after} alignment with GT
+depth, to tell whether error arises before or after fusion.
+\end{itemize}
+
+\subsection{Config, registry and experiments}
+\code{configs/base.yaml} defines every value; \code{configs/experiments/expN.yaml} $=$ base $+$ a list of runs, each a
+handful of dotted-key overrides. \code{roomscan sweep} runs every run $\times$ every scene and writes a resolved
+\code{config.yaml} plus \code{metrics.json} per run; \code{roomscan report} aggregates them into \code{summary.csv}
+and one \code{table.md} per experiment. The tables in \S\ref{sec:results} are copied from those files.
+
+Every kind of extension is one new file plus one registry line, without touching \code{pipeline.py}: a depth source
+(ARCore), a model (a compressed variant), an aligner, a dataset (a real room captured by the app;
+\code{dataio/custom.py} reads the app's folder format), or an experiment. The rule that guards the design: if adding
+something requires editing \code{pipeline.py}, stop and write an architecture decision record. Over the project this
+happened exactly once (per-pixel confidence weights, two lines), and it is recorded as such.
+
+\subsection{Deliberately not done}
+GPU TSDF, an experiment tracker, and pose estimation (the dataset's ARKit VIO poses are used) are out of scope; a
+minimal web service and viewer exist as a separate package importing the pipeline, and none of these affect the numbers.

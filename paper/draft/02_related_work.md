@@ -1,7 +1,7 @@
 # 2. Related Work
 
 > ร่างแรก 2026-09-15 — เขียนจากความเข้าใจทั่วไปของแต่ละงาน **ต้องตรวจรายละเอียด/ปี/ชื่อผู้แต่งกับต้นฉบับก่อนส่ง**
-> รายการอ้างอิงท้ายไฟล์ใส่แค่ key + ชื่อ ให้เติม venue/ปีจาก BibTeX จริง
+> รายการอ้างอิงท้ายไฟล์ใส่แค่ key + ชื่อ — ข้อมูลเต็ม (venue/ปี/หน้า) อยู่ใน `paper/latex/refs.bib`
 
 ## 2.1 Monocular depth estimation
 
@@ -34,7 +34,7 @@ SimpleRecon [simplerecon] แสดงว่า multi-view depth ที่ดี
 
 **Scale ใน monocular SLAM / reconstruction.** การใช้ monocular depth ใน SLAM ต้องแก้ scale ต่อเฟรม เช่นด้วยจุด sparse จาก tracking
 (แนวทางใน CNN-SLAM [cnnslam] และงานตามมา) หรือ optimize scale/shift ร่วมกับ pose (เช่น [monosdf] ใช้ monocular prior ใน neural surface)
-งานนี้วาง `sparse_points` aligner ไว้เป็น interface ตามแนวทางนี้ แต่ประเมินเฉพาะ `oracle_frame` และ `per_scene` เพื่อวัด "ราคาของการไม่รู้ scale" ก่อน
+งานนี้วาง `sparse_points` aligner ตามแนวทางนี้ และประเมินคู่กับ `oracle_frame` และ `per_scene` เพื่อวัด "ราคาของการไม่รู้ scale" ที่สามระดับของข้อมูล metric ที่มี
 
 ## 2.3 ผลิตภัณฑ์ room scanning
 

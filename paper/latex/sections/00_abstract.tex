@@ -1,0 +1,21 @@
+\begin{abstract}
+Reconstructing a room in 3D from a phone currently depends on a LiDAR sensor that only a minority of devices carry.
+Monocular depth models have improved dramatically on single images, but there is no published number for how many
+centimetres a room drifts when such a model replaces LiDAR inside an otherwise unchanged reconstruction pipeline.
+This system-development paper builds a classical pipeline---per-frame depth $\rightarrow$ scale alignment
+$\rightarrow$ TSDF fusion $\rightarrow$ mesh---in which \emph{the depth source and the scale-recovery strategy are
+interfaces switched from a config file}, and measures mesh geometry against a laser-scanner reference on six real
+rooms from ARKitScenes (2{,}352 frames) under identical conditions.
+Results: the pipeline itself loses \SI{2.1 \pm 0.5}{cm} (Chamfer, \SI{4}{cm} voxels); iPad~Pro LiDAR adds only
+\SI{1.0 \pm 0.3}{cm} (\fscore{} 0.93); Depth Anything~V2 with the correct scale on every frame loses
+\SI{6.5 \pm 2.4}{cm} (\fscore{} 0.74), \SI{3.4}{cm} behind LiDAR.
+With scale calibrated only once per room the error jumps to \SI{22.7 \pm 2.6}{cm} (\fscore{} 0.22), and an
+uncalibrated ``metric'' model gives \SI{49}{cm}. Per-frame analysis shows the cause: the model's scale swings by
+several times with the content of each view, not with time.
+Fitting scale per frame on only $\sim$200 sparse metric points---the kind a phone's visual-inertial tracker
+provides for free---recovers \SI{\rsSPARSECM}{cm} (\fscore{} \rsSPARSEF), essentially the oracle.
+Model size (Large$\rightarrow$Small) costs just \SI{2.8}{cm} for a $7\times$ speed-up, and frame rate governs
+coverage rather than accuracy ($\geq 0.8$~fps is needed).
+The product conclusion is that the gap between devices with and without LiDAR is a per-frame scale problem, solvable
+with metric data from VIO rather than with a larger model. Code, every experiment config, and every run's metrics are released.
+\end{abstract}

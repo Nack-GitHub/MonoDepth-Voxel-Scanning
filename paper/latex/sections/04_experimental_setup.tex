@@ -1,0 +1,144 @@
+\section{Experimental Setup}\label{sec:setup}
+
+\subsection{Dataset: ARKitScenes}
+We use ARKitScenes~\cite{arkitscenes} because it is the only dataset that provides \textbf{all three} things the
+question needs for the same room: RGB video from a real device (iPad~Pro), depth from that device's LiDAR
+(\code{lowres\_depth}, $256\times192$), and depth from a Faro laser scanner registered to the camera poses
+(\code{highres\_depth}, $1920\times1440$). The ``iPhone~Pro today'' row and the reference therefore come from one scan,
+with no cross-sensor alignment of our own.
+
+\begin{table*}[t]
+\centering\small
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Asset & Resolution / rate & Role \\
+\midrule
+\code{vga\_wide} RGB & $640\times480$, 30 fps & input to monocular models (rotated upright) \\
+\code{lowres\_depth} $+$ \code{confidence} & $256\times192$, 60 fps & depth source \code{lidar}; sparse-point proxy; Exp.~5 weights \\
+\code{highres\_depth} (Faro) & $1920\times1440$, \textbf{$\sim$2.7--4 fps} & depth source \code{gt} and \textbf{reference mesh} \\
+\code{lowres\_wide.traj} & $\sim$10 Hz & pose (ARKit VIO), slerp/lerp-interpolated to each frame \\
+\code{lowres\_wide\_intrinsics} & per frame & scan median, scaled to resolution \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}
+
+Two dataset constraints shape the experiments: (1) Faro depth exists only for the frames Apple kept ($\sim$3~fps), so
+every source is evaluated \textbf{on this same frame set} and Exp.~3 (frame stride) measures coverage more than
+compute (\S\ref{sec:stride}); (2) no laser mesh is provided, so we build one (\S\ref{sec:reference}).
+
+\begin{table*}[t]
+\centering\small
+\caption{Scenes. Extent $=$ axis-aligned extent of the reference mesh (what Faro saw); Faro frames $=$ number of
+frames every row is evaluated on. Total: 2{,}352 frames / \SI{577}{s} of video.}
+\label{tab:scenes}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}lllrrl@{}}
+\toprule
+video\_id & Room (3DOD labels) & Extent (m) & Scan (s) & Faro frames & Role \\
+\midrule
+42444474 & open-plan kitchen/dining under sloped roof, glass table/rail, brick wall & $9.9\times5.1\times4.2$ & 88 & 236 & large $+$ glass (dev.\ scene) \\
+47333774 & standard bedroom (bed, shelf, cabinet, table) & $5.1\times4.9\times3.3$ & 90 & 375 & standard \#1 \\
+47115299 & large living room (4 tables, 2 sofas, TV) & $8.1\times6.1\times2.5$ & 91 & 324 & large \\
+42897743 & bathroom (bathtub, sink, toilet) & $8.0\times3.4\times3.6$ & 114 & 448 & mirror / tiles \\
+47429736 & bedroom $+$ closets (bed, 5 cabinets, 2 tables) & $6.6\times6.4\times2.7$ & 98 & 504 & standard \#2 \\
+45261556 & kitchen (10 cabinets, stove, sink) & $7.1\times6.1\times2.4$ & 98 & 465 & glossy \#2 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}
+
+Scenes (Table~\ref{tab:scenes}) were shortlisted from metadata without downloading: \code{highres\_depth} must exist,
+the video must be in the 3DOD split, and the set must span room types (standard / large / glossy-mirror) that are the
+expected failure cases of monocular depth. Scene 42444474 was used during development, so its numbers are not
+held-out; we report per-scene tables in \S\ref{sec:results} to show that the conclusions hold on the five scenes the
+pipeline never saw.
+
+\subsection{Reference mesh}\label{sec:reference}
+We fuse \code{highres\_depth} from \textbf{every} frame with TSDF at \SI{1}{cm} voxels (\code{sdf\_trunc} \SI{3}{cm})
+once per scene into \code{reference\_mesh.ply}, and never touch it again. Consequences for reading the tables:
+the \code{gt} row runs at the experiment's voxel size (\SI{4}{cm}) and therefore has non-zero Chamfer---the
+\textbf{discretisation loss of the pipeline itself}, a lower bound for every row; the reference covers only what Faro
+saw, so every source integrates only pixels where Faro has a value (\code{eval.mask\_to\_gt}); and the reference uses
+the same poses as every row, so VIO pose drift is \textbf{removed from the comparison by design}---all numbers are the
+effect of the depth source alone (limitation: \S\ref{sec:limitations}).
+
+\subsection{Pipeline configuration (fixed for every row)}
+\begin{table*}[t]
+\centering\small
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Part & Value & Reason \\
+\midrule
+fusion resolution & $256\times192$ & LiDAR resolution; every source resampled to it \\
+voxel / \code{sdf\_trunc} & \SI{4}{cm} / \SI{12}{cm} & Exp.~2 shows \SI{4}{cm} is the sweet spot \\
+depth range & \SIrange{0.1}{5.0}{m} & cuts near sensor noise and far Faro noise \\
+post-processing & drop clusters $<1000$ triangles & no decimation \\
+frame stride & 1 (every Faro frame) & except Exp.~3 \\
+confidence weights & off & except Exp.~5 \\
+device & Apple M-series (MPS) & reported times are on this machine \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}
+Monocular models (all pretrained): Depth Anything~V2 Large (335M parameters) / Small (25M) and DA-v2 Metric-Indoor
+(Large, fine-tuned on Hypersim); MiDaS v2.1 small (21M) for Exp.~4. Every model receives the upright image; its output
+is converted to depth-like ($1/\text{disparity}$) before the aligner.
+
+\subsection{Scale-alignment protocol}
+Every non-identity aligner fits an affine map \textbf{in inverse-depth space}: $(s,t)$ such that
+$1/gt \approx s\cdot(1/pred) + t$, by trimmed least squares---three rounds, dropping the worst 20\% of residuals each
+round---on pixels where both GT and prediction are valid within \SIrange{0.1}{5}{m}, then inverted back to metres.
+\begin{table*}[t]
+\centering\small
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Aligner & Fitted on & Interpretation \\
+\midrule
+\code{oracle\_frame} & that frame's GT depth, every frame & model ceiling (upper bound) \\
+\code{per\_scene} & GT depth of \textbf{10 frames spread over the scan}, stacked, fitted once; one $(S,T)$ for all frames & upper bound of a one-off calibration \\
+\code{sparse\_points} & 200 LiDAR pixels/frame at confidence 2 (VIO proxy), per frame; 2 rounds of 10\% trimming; $<20$ points $\Rightarrow$ reuse previous $(s,t)$ & upper bound of a VIO-based system \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}
+\code{per\_scene} also uses GT to fit, so it is the \textbf{upper bound of one-off calibration}: a real system that
+calibrates from a ruler or a few VIO points will do no better.
+
+\subsection{Metrics}
+\paragraph{3D (headline)} Following \code{metrics\_3d.py} exactly for every row: 200{,}000 points sampled uniformly on
+the produced mesh and on the reference (seed 0); accuracy $=$ mean pred$\rightarrow$ref distance (did we build
+something that is not there?), completeness $=$ ref$\rightarrow$pred (did we miss something?), \textbf{Chamfer $=$
+their mean}; precision/recall/F-score at $\tau = $ \SI{2}{}/\SI{5}{}/\SI{10}{cm}---\textbf{\fscore{} is the headline}
+(\SI{5}{cm} $\approx$ the tolerance for furniture placement); normal consistency $=$ mean $|n_{pred}\cdot n_{ref}|$ over
+nearest pairs.
+\paragraph{2D (diagnostic)} Per frame, depth \emph{after} alignment vs.\ Faro depth on pixels where both lie in
+\SIrange{0.1}{5}{m}: RMSE, AbsRel, $\delta_1$ (fraction with $\max(p/g, g/p) < 1.25$), averaged over frames.
+\paragraph{Time} \code{time\_total\_s} $=$ data loading $+$ inference $+$ alignment $+$ fusion $+$ extraction on one
+machine; inference is reported separately in \S\ref{sec:business}.
+
+\subsection{Experiments}
+\begin{table*}[t]
+\centering\small
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Exp. & Variable & Values & Fixed \\
+\midrule
+1 depth source & \code{depth.source} $\times$ \code{depth.aligner} & gt / lidar / mono$+$oracle / mono$+$sparse / mono$+$per\_scene / metric$+$identity & DA-v2 L, \SI{4}{cm}, stride 1 \\
+2 voxel size & \code{fusion.voxel\_size} & 2 / 4 / \SI{8}{cm} (\code{sdf\_trunc} $=3\times$) & gt \\
+3 frame stride & \code{dataset.frame\_stride} & 1 / 5 / 10 / 20 $\times$ \{gt, mono$+$oracle, mono$+$per\_scene\} & DA-v2 L, \SI{4}{cm} \\
+4 model size & \code{depth.model} & DA-v2 L / DA-v2 S / MiDaS small & oracle\_frame, \SI{4}{cm} \\
+5 LiDAR confidence & \code{lidar\_min\_confidence}, \code{confidence\_weights} & all / mask$\geq$1 / mask$=$2 / weights [0,1,2] / [1,2,4] & lidar, \SI{4}{cm} \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}
+Every run is one resolved \code{config.yaml} plus \code{metrics.json} under
+\code{experiments/results/<exp>/<scene>\_<run>/} (all committed). Tables in \S\ref{sec:results} are generated by
+\code{roomscan report} without manual editing; numbers are mean $\pm$ std over the six scenes, with per-scene tables in
+\code{per\_scene.md}. Everything reproduces with \code{make reference \&\& make sweep-exp1 \ldots{} sweep-exp5 report}
+after downloading the data.

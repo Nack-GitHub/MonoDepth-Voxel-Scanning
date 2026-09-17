@@ -75,7 +75,7 @@ src/roomscan/
 ├── types.py            Intrinsics, Frame, Timing            ← ไม่ import อะไรใน package
 ├── config.py           YAML + _base_ + dotlist overrides
 ├── _registry.py        string → class (lazy import, GT path ไม่ต้องมี torch)
-├── dataio/             SceneDataset ABC + ARKitScenesScene (+ScanNet fallback) ← types
+├── dataio/             SceneDataset ABC + ARKitScenesScene, CustomCaptureScene (MVP), sparse_proxy (ADR-011) ← types
 ├── models/             DepthModel ABC + DA-v2, MiDaS         ← types
 ├── depth_sources/      DepthSource ABC + gt/lidar/mono/arcore ← models, types
 ├── geometry/           backproject, scale_align, tsdf_fusion, postprocess ← types
@@ -83,6 +83,7 @@ src/roomscan/
 ├── export.py
 ├── pipeline.py         orchestrator (ห้ามมี Open3D/torch call ตรง ๆ)
 └── cli.py              run / sweep / report
+src/roomscan_web/       Phase 6: FastAPI upload/queue/status + three.js viewer — imports roomscan.pipeline, never the reverse
 ```
 
 กฎ: import ไหลลงล่างเท่านั้น (`cli → pipeline → stages → types`) ไม่มี stage ไหน import `pipeline`
@@ -108,10 +109,11 @@ src/roomscan/
 | 2 Voxel size | 2/4/8 cm | `fusion.voxel_size`, `fusion.sdf_trunc` | `exp2_voxel_size.yaml` |
 | 3 Frame stride | 1/5/10/20 × {gt, mono+oracle, mono+per_scene} | `dataset.frame_stride` | `exp3_frame_stride_gt.yaml` (control: coverage อย่างเดียว) / `exp3_frame_stride_oracle.yaml` (+รูปทรงโมเดล) / `exp3_frame_stride.yaml` (+scale, deployable) — Faro มีแค่ ~2.7 fps คำถามจึงเป็น "ต้องเก็บกี่เฟรม/วินาที" ไม่ใช่ compute-vs-accuracy (ดู `paper/analysis/`) |
 | 4 Model size | L / S / MobileViT | `depth.model` | `exp4_model_size.yaml` |
+| 5 LiDAR confidence | all / mask ≥1 / mask =2 / weight [0,1,2] / [1,2,4] | `depth.lidar_min_confidence`, `fusion.confidence_weights` | `exp5_lidar_confidence.yaml` (ADR-012) — ผล: ไม่ต่างจาก baseline (3.04 → 3.07 cm) |
 
 ทุก run ทิ้ง `config.yaml` + `metrics.json` ไว้ที่ `experiments/results/<exp>/<scene>_<run>/` — `roomscan report` รวมเป็นตาราง
 
-## 7. Phase → module (สถานะ 2026-09-17: 0–4 ผ่าน gate; Exp1–4 รันครบ 6 ฉาก 138 run; ร่างเปเปอร์ครบทุกบทใน `paper/draft/`)
+## 7. Phase → module (สถานะ 2026-09-17: 0–6 ผ่าน gate; Exp1–5 รันครบ 6 ฉาก; ร่างไทย `paper/draft/` + ต้นฉบับอังกฤษ `paper/latex/`)
 
 | Phase | ต้องทำให้ทำงาน | gate |
 |---|---|---|
@@ -120,6 +122,8 @@ src/roomscan/
 | 2 | `models/depth_anything.py`, `depth_sources/monocular.py`, `scale_align.fit_scale_shift`, `PerSceneAligner.fit`, `metrics_2d.py` | `make run-mono` |
 | 3 | `models/midas.py`, `evaluation/report.py` | `make sweep-exp1..4` + `make report` |
 | 4 | `per_point_error()` สำหรับ heatmap (ใน metrics_3d) | figures |
+| 5 | `dataio/sparse_proxy.py` + `SparsePointsAligner` (ADR-011), `TSDFFusion.integrate(weights=)` (ADR-012), `dataio/custom.py` | แถว `mono_sparse` ใน Exp1 + Exp5 บน 6 ฉาก; `make test` ผ่านโดยไม่มีข้อมูลจริง |
+| 6 | `roomscan_web/` (upload zip → job → mesh.ply → three.js viewer) | `make web` แล้ว POST capture.zip ได้ mesh ใน browser |
 
 **ห้ามข้าม gate ของ Phase 1** — ถ้า GT depth ยังได้ mesh เละ ปัญหาอยู่ที่ pipeline ไม่ใช่โมเดล
 
@@ -137,11 +141,13 @@ src/roomscan/
 | [008](adr-008-pretrained-inference-only.md) | ใช้โมเดล pretrained, ไม่เทรน | Accepted |
 | [009](adr-009-dataset-arkitscenes.md) | **ARKitScenes** แทน ScanNet + วิธีสร้าง reference mesh | Accepted |
 | [010](adr-010-scale-alignment-in-inverse-depth.md) | fit scale/shift ใน inverse-depth (ขยาย 002) — oracle 15 → 5.4 cm | Accepted |
+| [011](adr-011-sparse-points-proxy.md) | ประเมิน `sparse_points` ด้วยจุด sparse จำลองจาก LiDAR (VIO proxy, 200 จุด/เฟรม) | Accepted |
+| [012](adr-012-confidence-weighted-fusion.md) | น้ำหนักต่อ pixel ใน TSDF จาก confidence (integrate ซ้ำตามระดับ) — แก้ `pipeline.py` 2 บรรทัด | Accepted |
 
 ## 9. สิ่งที่ตั้งใจ *ไม่* ทำตอนนี้
 
-- ❌ Web API / queue / three.js viewer — Phase 6 หลังส่งเปเปอร์; วางไว้เป็น package แยก (`roomscan_web/`) ที่ import `roomscan.pipeline`
-- ❌ Experiment tracker (W&B/MLflow) — 3 ฉาก × ~15 run = JSON ก็พอ
-- ❌ GPU TSDF — ใส่ได้ทีหลังหลัง interface `TSDFFusion` เดิม
-- ❌ Pose estimation (COLMAP/ARKit) — ARKitScenes ให้ pose (VIO) มาแล้ว; เป็นงานของ `dataio/custom.py` ตอน MVP
-- ❌ Depth upsampling / confidence-weighted fusion — น่าสนใจกับ ARKit confidence map แต่เป็นอีกเปเปอร์
+- ✅ ~~Web API / queue / three.js viewer~~ — ทำแล้วเป็น `src/roomscan_web/` (thread queue + FastAPI, ไม่มี broker); ยังไม่มี auth/multi-worker
+- ❌ Experiment tracker (W&B/MLflow) — 6 ฉาก × ~30 run = JSON ก็พอ
+- ❌ GPU TSDF — เครื่องพัฒนาเป็น Apple Silicon (Open3D CUDA ใช้ไม่ได้) และ fusion < 2 s/ฉาก ไม่ใช่คอขวด; ใส่ได้ทีหลังหลัง interface `TSDFFusion` เดิม
+- ❌ Pose estimation (COLMAP/ARKit) — ARKitScenes ให้ pose (VIO) มาแล้ว; `dataio/custom.py` รับ pose จากแอป (ARKit/ARCore) ใน `poses.json`
+- ✅ ~~confidence-weighted fusion~~ — ทำเป็น Exp5 (ADR-012): ไม่ช่วย (3.04 → 3.07 cm) — depth upsampling ยังไม่ทำ

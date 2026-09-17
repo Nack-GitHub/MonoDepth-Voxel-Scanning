@@ -1,0 +1,62 @@
+\section{Limitations and Future Work}\label{sec:limitations}
+
+\subsection{Limitations of the measurement}
+\textbf{(a) The reference is not an independent ground truth.} It is fused from Faro depth with the same pipeline
+(\SI{1}{cm} voxels) and uses the \textbf{same poses} as every row, so (i) the \code{gt} row is non-zero and measures our
+own discretisation, (ii) VIO pose drift is removed from every number---a real phone system incurs additional pose
+error this paper does not measure, and (iii) areas Faro did not see are masked from every source equally, so
+``completeness'' means ``complete relative to what Faro saw,'' not the whole room.
+
+\textbf{(b) Evaluated at $\sim$3~fps only.} Faro depth exists only for the frames Apple kept, so every source is
+evaluated on that set although LiDAR runs at 60~fps and RGB at 30~fps. What a real pipeline gains or loses from denser
+frames (smoothing vs.\ accumulated error) is not measured; Exp.~3 answers coverage, and compute-vs-accuracy only partly.
+
+\textbf{(c) Fusion resolution $256\times192$}, chosen to be fair to LiDAR, downsamples the monocular model (which predicts
+at $640\times480$) before fusion; DA-v2's sharp-edge advantage does not appear in the 3D numbers. ``Mono at its best''
+would require fusing at higher resolution and accepting a disadvantaged LiDAR row.
+
+\textbf{(d) Six rooms, one dataset, one device.} Every scan is an iPad~Pro in homes Apple selected; offices, empty
+rooms and low light are absent, and 42444474 was used during development, so its numbers are in-sample---per-scene
+tables show whether the other five confirm.
+
+\textbf{(e) Times are Apple Silicon (MPS) with unoptimised PyTorch}, not representative of on-device inference
+(CoreML / NNAPI); use them for \emph{ratios} between models, not absolute values.
+
+\subsection{Limitations of the system}
+\textbf{(a) \code{per\_scene} still calibrates on GT}: it is the upper bound of one-off calibration; a real system
+using a measured wall or camera height would do worse. \S\ref{sec:drift} shows even this bound is far from the oracle
+because scale swings per view---the assumption, not the calibration method, is the problem.
+
+\textbf{(b) \code{sparse\_points} is evaluated on a proxy.} ARKitScenes ships no ARKit feature points, so the aligner sees
+200 pixels sampled from the LiDAR frame at high confidence. Real VIO points are triangulated, noisier, and cluster on
+texture; the row is therefore an \emph{upper bound} of a VIO-based system. The loader exposes a noise knob
+(\code{sparse\_noise}) and point count for sensitivity studies; an evaluation on real ARKit/ARCore point clouds needs
+our own captures (\code{dataio/custom.py} reads them).
+
+\textbf{(c) No outlier rejection before fusion}: every posed frame is integrated equally. \S\ref{sec:drift} shows a
+minority of frames (close-ups, blank walls) create most of \code{per\_scene}'s error; frame weighting is what Exp.~5's
+mechanism provides, applied here only to LiDAR confidence so the main tables measure the depth source alone.
+
+\textbf{(d) Poses come from the dataset}: there is no tracking in the system; an MVP uses ARKit/ARCore poses of similar
+quality to the trajectories used here, possibly worse on low-end Android.
+
+\textbf{(e) No GPU fusion}: fusion is $<$\SI{2}{s} per scan on CPU, so it is not a bottleneck; a GPU backend fits behind
+the same \code{TSDFFusion} interface if higher resolutions are pursued.
+
+\subsection{Future work (ordered by impact on the MVP decision)}
+\begin{enumerate}
+\item \textbf{Real VIO points}: capture rooms with the app (ARKit \code{rawFeaturePoints} / ARCore point cloud) plus a
+reference (tape measurements or a rented laser scanner) and rerun the \code{sparse\_points} row on real, noisy, textured
+points; sweep \code{sparse\_noise} and point count on ARKitScenes meanwhile.
+\item \textbf{Metric model $+$ scale-only per frame}: \S\ref{sec:metric} suggests one parameter per frame suffices;
+test whether one VIO point per frame is enough.
+\item \textbf{Frame selection / weighting} for mono: drop or down-weight frames with median depth $<$\SI{1}{m} or low
+disparity variance before fusion, using the weight channel of ADR-012.
+\item \textbf{Android capture (ARCore depth source)}: \code{depth\_sources/arcore.py} has its registry slot; data must be
+collected with a reference.
+\item \textbf{Compressed models}: Exp.~4 provides the L / S / MiDaS baseline; a distilled or quantised model plugs in as
+\code{models/<x>.py} and reruns Exp.~4.
+\item \textbf{Fusion above $256\times192$ for mono}, to measure what downsampling costs DA-v2.
+\item \textbf{Semantic layer} (wall / floor / furniture labels on the mesh) for usable-area computation; sits after
+post-processing and does not affect the geometry numbers.
+\end{enumerate}

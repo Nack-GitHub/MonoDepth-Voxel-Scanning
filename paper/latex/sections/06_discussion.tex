@@ -1,0 +1,139 @@
+\section{Discussion}\label{sec:discussion}
+Material: per-frame scale analysis on 6 scenes (\code{analyze\_scale\_drift.py}, stride 5, 471 frames), the failure-frame
+study of scene 42444474, and Tables~\ref{tab:exp1}--\ref{tab:exp1scene}.
+
+\subsection{Why per\_scene loses to the oracle by $3.8\times$: the model's scale follows what is in the frame, not time}\label{sec:drift}
+An affine-invariant model promises $\text{disparity} \approx a\cdot(1/\text{depth}) + b$ with $(a,b)$ depending on
+the image. If $(a,b)$ were constant over a scan, one calibration (\code{per\_scene}) would equal the oracle. We measured
+how constant it is by refitting $(s,t)$ on every fifth frame (Fig.~\ref{fig:drift}, Table~\ref{tab:drift}).
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{scale_drift_timeline}
+\caption{Per-frame oracle scale divided by the per-scene scale, over time, for DA-v2 Large on all six scenes (log axis;
+1.0 $=$ the one-off calibration was right for that frame). Orange dots mark close-up frames (median GT depth
+$<$\SI{1}{m}). The ratio swings by $2$--$4\times$ within every scan with no monotone trend.}
+\label{fig:drift}
+\end{figure*}
+\begin{table*}[t]
+\centering\small
+\caption{DA-v2 Large, per-scene values across the six scenes.}
+\label{tab:drift}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}lll@{}}
+\toprule
+ & Range over scenes & Meaning \\
+\midrule
+$s$ p95 / p5 within one scene & \textbf{2.6--4.9$\times$} & the central 90\% of frames need scales 3--5$\times$ apart \\
+$s$ p75 / p25 & 1.45--1.72 & even the middle half swings $\pm25\%$ \\
+corr($s$, time) & $-0.40 \ldots +0.28$ (sign flips) & \textbf{not cumulative drift}: no direction \\
+corr($s$, frame's median depth) & \textbf{$-0.27 \ldots -0.71$ (negative in every scene)} & close-up frames need a different $s$: view-dependent \\
+AbsRel oracle $\rightarrow$ per\_scene & 0.040 $\rightarrow$ 0.241 (\textbf{6$\times$}) & in 2D, before fusion, one scale costs $6\times$ \\
+per\_scene without close-ups ($<$\SI{1}{m}) & 0.154 (still $4\times$ oracle) & close-ups hurt but are not the only cause \\
+scale-only per frame, depth space & 0.298 $\approx$ per\_scene & a disparity shift is needed in every scene \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{scale_vs_depth}
+\caption{The same ratio against the frame's median GT depth, all scenes pooled: the scale a frame needs correlates with
+how close the camera is to what it sees.}
+\label{fig:scalevsdepth}
+\end{figure}
+Three consequences:
+\begin{enumerate}
+\item \textbf{No number of fit frames helps \code{per\_scene}}: the $(S,T)$ fitted on 10 spread frames already sits at the
+median of the oracle values in every scene (e.g.\ 47333774: $S=0.00098$ vs.\ oracle median $\approx 0.0010$). The
+problem is that the median does not apply to most frames, not that it is estimated badly.
+\item \textbf{A $6\times$ per-frame error becomes a $3.8\times$ 3D error} not because TSDF averages it out but because
+the error concentrates in a minority of frames: frames with per\_scene AbsRel $>1$ (placed $\geq2\times$ wrong) are
+downward shots of table-tops or floor at 0.5--\SI{0.8}{m} and frame-filling blank walls or cabinets. These frames carry
+no size cue, so the model guesses disparity at ``room scale''; multiplied by the room's $(S,T)$, a table at \SI{0.5}{m}
+lands at 1.5--\SI{2}{m} as a phantom surface in the middle of the room---the red blob in every per\_scene panel of
+Fig.~\ref{fig:exp1}.
+\item \textbf{The effect is general, not a property of the development scene}: 47429736 (bedroom$+$closets) has
+close-ups in 53/101 frames yet per\_scene AbsRel 0.197, the same as a scene with 3/93 (45261556: 0.169); and the five
+unseen scenes give per\_scene Chamfer 19.9--\SI{26.2}{cm}, bracketing 42444474 (23.9).
+\end{enumerate}
+\textbf{System implication.} The assumption ``one scale per scene'' is false for this model family on real room video.
+Two ways remain: (a) \emph{per-frame} metric data---3D feature points from VIO, which ARKit/ARCore deliver with the pose
+anyway (\code{sparse\_points}); or (b) drop or down-weight cue-less frames before fusion---cheaper, but removing
+close-ups still leaves $4\times$ the oracle, so it can only supplement (a). Exp.~1 confirms (a): 200 points per frame
+bring the row to \SI{\rsSPARSECM}{cm}, \SI{\rsSPARSEGAP}{cm} from the oracle, with the same per-scene ordering. The per-frame
+fit needs no history and tolerates frames without points by carrying the previous $(s,t)$, exactly what a tracker
+outage looks like.
+
+\subsection{Why the ``metric'' model gives \SI{49}{cm}: right on average, wrong per frame}\label{sec:metric}
+DA-v2 Metric-Indoor should output metres directly. Per-frame analysis over the six scenes:
+\begin{table*}[t]
+\centering\small
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}lll@{}}
+\toprule
+ & Range over scenes & Meaning \\
+\midrule
+median(GT / pred) per scene & 0.69--0.96 & the model says 4--31\% too far on average (per-scene bias) \\
+GT / pred within a scene & e.g.\ 0.37--1.22, 0.58--1.80 & frames in one room are wrong from $-60\%$ to $+80\%$ \\
+oracle $t$ in inverse space & $-0.08 \ldots +0.04$ ($\approx 0$) & \textbf{no shift}: the shape is right in the affine sense \\
+AbsRel raw $\rightarrow$ scale-only/frame $\rightarrow$ oracle $(s,t)$ & 0.328 $\rightarrow$ \textbf{0.057} $\rightarrow$ 0.046 & one scalar per frame recovers 96\% of the gap \\
+AbsRel with one scale per scene & 0.174 & like per\_scene for the relative model: the median is not enough \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}
+In 3D the same surface from several frames is placed at several distances and TSDF averages them into a thick slab:
+accuracy \SI{69}{cm} but completeness \SI{29}{cm} (Table~\ref{tab:exp1})---everything is there, in the wrong place.
+The worst scene (kitchen 45261556, \SI{74}{cm}) is where the model's shape is best under the oracle (\SI{4.6}{cm}),
+confirming a pure scale effect. The worst frames in every scene look alike: a single flat, uniformly coloured surface
+filling the frame (white cabinets, tiles) with nothing distant to compare against---the model's prior pushes flat
+surfaces away. \textbf{Implication:} a metric model does not remove calibration; it reduces it from two parameters per
+frame $(s,t)$ to \textbf{one} $(s)$, which is a real advantage: a handful of VIO points suffice to fit one scalar
+stably, whereas $(s,t)$ needs points spread over the depth range.
+
+\subsection{Which rooms are hard, and for whom}\label{sec:rooms}
+Ranking scenes by Chamfer per row (Table~\ref{tab:exp1scene}): Faro/LiDAR go from bedroom 47333774 (easiest) to the
+bathroom (1.2--2.8 / 2.4--4.1); mono$+$oracle from kitchen 45261556 to the bathroom (4.6--10.7); mono$+$per\_scene from
+living room 47115299 to bedroom 47333774 (19.9--26.2).
+\begin{itemize}
+\item \textbf{The bathroom is hard for every source} (LiDAR $+1.3$, oracle $+6.6$ from LiDAR): the mirror yields
+phantom depth for LiDAR and model alike, glossy tiles reflect; it is the only scene where the oracle fit produced
+$s \leq 0$ on some frames (a frame-filling mirror). If the target market is bathroom renovation, this paper's averages
+are optimistic.
+\item \textbf{Standard bedroom 47333774 is easiest for LiDAR but second-hardest for mono} (oracle 8.1): a small room
+scanned close to walls and bed leaves most frames at 1--\SI{2}{m} of blank wall with no cue. Rooms with ``lots of
+stuff'' (kitchen 45261556: 10 cabinets; living room: 4 tables, 2 sofas) are easy for mono---the model likes objects of
+known size.
+\item The mono difficulty order does not match LiDAR's $\Rightarrow$ \textbf{``hard scenes'' must be assessed per
+source}; LiDAR experience does not predict where mono fails.
+\end{itemize}
+
+\subsection{Visible only in 3D: mono disagrees with itself across views}
+Exp.~3 shows what 2D metrics cannot: reducing frames from 391 to 20 (stride 20) \textbf{improves mono$+$oracle accuracy
+from 7.1 to \SI{5.1}{cm}} while 2D AbsRel stays at 0.040 and GT stays at 1.3. Even with every frame perfectly scaled,
+the shape of the same surface from different views \textbf{disagrees} at the $\sim$\SI{2}{cm} level, and fusing more
+frames thickens the surface rather than sharpening it---the multi-view consistency LiDAR has and a single-image model
+lacks. This is the part of the oracle$\rightarrow$LiDAR gap (\SI{3.4}{cm}) that scale alignment cannot fix, and the
+reason systems like SimpleRecon use multi-image cost volumes (\S2.2). The sparse row inherits it: its remaining gap to
+LiDAR (\SI{\rsSPARSEGAPLIDAR}{cm}) is this shape term.
+
+\subsection{Conclusions for system design}
+\begin{table*}[t]
+\centering\small
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Assumed beforehand & What the data say \\
+\midrule
+mono's problem is coarse shape & shape is \SI{3.4}{cm} behind LiDAR; scale is \SI{16}{cm} behind \\
+one calibration per room suffices & no: \SI{22.7}{cm} in every room; scale is view-dependent \\
+a metric model removes the scale problem & no: but it reduces it to one parameter per frame \\
+a few sparse metric points cannot fix a dense map & they can: 200 points/frame $\rightarrow$ within \SI{\rsSPARSEGAP}{cm} of the oracle \\
+a bigger model means a more accurate room & $+$\SI{2.8}{cm} S$\rightarrow$L vs.\ $+$\SI{16}{cm} from scale \\
+more frames mean more accuracy & more frames mean more coverage; mono accuracy improves with fewer frames \\
+LiDAR confidence maps are free accuracy & no measurable gain from masking or weighting (Exp.~5) \\
+LiDAR's hard scenes are mono's hard scenes & no (blank bedroom: hard for mono, easy for LiDAR) \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}

@@ -60,7 +60,7 @@ class DepthSource(ABC):
 | `identity` | — | สำหรับ GT / LiDAR / โมเดล metric |
 | `oracle_frame` | ต่อเฟรม กับ GT depth | เพดานของโมเดล (deploy ไม่ได้) |
 | `per_scene` | ครั้งเดียว บน N เฟรมกระจายทั่ว scan แล้วแช่แข็ง | calibration ครั้งเดียว — ระบบจริงทำได้ |
-| `sparse_points` | ต่อเฟรม กับจุด sparse จาก VIO | เส้นทางสู่ MVP (ยังไม่ประเมินในงานนี้) |
+| `sparse_points` | ต่อเฟรม กับจุด metric ~200 จุด (ARKitScenes ไม่มี VIO points → sample จาก LiDAR เป็น proxy, ADR-011) | เส้นทางสู่ MVP — ขอบบนของ VIO จริง |
 
 ช่องว่าง `oracle_frame` → `per_scene` = "ราคาของการไม่รู้ scale" ซึ่งเป็นผลการทดลอง ไม่ใช่ noise
 
@@ -71,7 +71,7 @@ class DepthSource(ABC):
 ## 3.5 ส่วนคงที่: fusion, post-process, evaluation
 
 - **Fusion:** Open3D `ScalableTSDFVolume` (ADR-004), voxel 4 cm, `sdf_trunc = 3 × voxel`, depth 0.1–5 m; ทุก source ถูก resample ลง 256×192 (ความละเอียดของ LiDAR) ก่อน integrate เพื่อความแฟร์
-  และ integrate เฉพาะ pixel ที่ reference มี depth (`mask_to_gt`) — ไม่ลงโทษ source ที่มองเห็นเกินขอบเขต Faro
+  และ integrate เฉพาะ pixel ที่ reference มี depth (`mask_to_gt`) — ไม่ลงโทษ source ที่มองเห็นเกินขอบเขต Faro; น้ำหนักต่อ pixel จาก confidence (`fusion.confidence_weights`, ADR-012) ปิดในทุกผลหลัก ใช้เฉพาะ Exp5
 - **Post-process:** ลบ cluster เล็ก, ไม่ decimate
 - **Reference:** ARKitScenes ไม่มี laser mesh ให้ตรง ๆ เราสร้าง `reference_mesh.ply` โดย fuse Faro `highres_depth` ทุกเฟรมที่ voxel 1 cm ครั้งเดียวต่อฉาก (ADR-009) — แถว `gt` ที่ voxel 4 cm จึงวัด "pipeline loss" ไม่ใช่ศูนย์
 - **Metrics 3D** (โปรโตคอลตายตัวใน `metrics_3d.py`): สุ่ม 200k จุดบนทั้งสอง mesh (seed คงที่); accuracy = mean dist pred→ref, completeness = ref→pred, Chamfer = ค่าเฉลี่ยของสอง;
@@ -94,10 +94,10 @@ class DepthSource(ABC):
 | dataset (ห้องจริงจากมือถือ) | `dataio/<x>.py` | ✗ |
 | การทดลอง | `configs/experiments/<x>.yaml` | ✗ |
 
-กฎที่ใช้ตรวจว่าการออกแบบยังไม่รั่ว: ถ้าการเพิ่มอะไรสักอย่างต้องแก้ `pipeline.py` ให้หยุดและเขียน ADR — ตลอด Phase 0–4 ยังไม่เกิดขึ้น
-(การเปลี่ยนที่ใหญ่สุดคือ ADR-010 ซึ่งอยู่ใน aligner ทั้งหมด)
+กฎที่ใช้ตรวจว่าการออกแบบยังไม่รั่ว: ถ้าการเพิ่มอะไรสักอย่างต้องแก้ `pipeline.py` ให้หยุดและเขียน ADR — ตลอดโครงการเกิดขึ้นครั้งเดียว
+(ADR-012: ส่ง weight ต่อ pixel ให้ fusion 2 บรรทัด); การเปลี่ยนที่ใหญ่สุดคือ ADR-010 ซึ่งอยู่ใน aligner ทั้งหมด และแถว `sparse_points` (ADR-011) + loader ของ capture จริง (`dataio/custom.py`) ไม่แตะ pipeline เลย
 
 ## 3.7 สิ่งที่ตั้งใจไม่ทำ
 
-GPU TSDF, experiment tracker, pose estimation (ใช้ VIO ของ ARKit ที่มากับ dataset), web API/viewer — ทั้งหมดเป็นงานหลังเปเปอร์
-และทุกอย่างเสียบเข้าที่ interface เดิมได้ (`TSDFFusion`, `SceneDataset`) โดยไม่กระทบผลการทดลอง
+GPU TSDF, experiment tracker, pose estimation (ใช้ VIO ของ ARKit ที่มากับ dataset) — เสียบเข้าที่ interface เดิมได้ (`TSDFFusion`, `SceneDataset`) โดยไม่กระทบผลการทดลอง
+web API/viewer มีเป็น package แยก `roomscan_web/` (upload capture.zip → job → mesh → three.js) ที่ import pipeline ทางเดียว ไม่มีอะไรใน `roomscan` รู้จักมัน

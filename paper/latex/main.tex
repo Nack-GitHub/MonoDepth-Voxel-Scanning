@@ -1,0 +1,58 @@
+% roomscan — English manuscript (IEEE conference format).
+% Translated from paper/draft/00–09 (Thai) on 2026-09-17; numbers from experiments/results/*/table.md.
+% Build:  make paper   (tectonic)   or   pdflatex main && bibtex main && pdflatex main && pdflatex main
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{adjustbox}
+\usepackage{url}
+\usepackage{xcolor}
+\usepackage{siunitx}
+\usepackage[hidelinks]{hyperref}
+\usepackage{cite}
+
+\graphicspath{{../figures/}}
+\sisetup{detect-all,range-phrase=--,range-units=single,separate-uncertainty=true,multi-part-units=single}
+\newcommand{\code}[1]{\texttt{#1}}
+\sloppy   % long code identifiers in prose: prefer loose lines over overfull boxes
+\newcommand{\fscore}{F@\SI{5}{cm}}
+
+\begin{document}
+
+\title{How Many Centimetres Does the Depth Source Cost?\\
+A Single-Variable Pipeline for Comparing Laser, Mobile LiDAR, and Monocular Depth in Room Reconstruction}
+
+% TODO: fill in author name(s) and affiliation before submission
+\author{\IEEEauthorblockN{Author Name}
+\IEEEauthorblockA{Affiliation\\
+email@example.com}}
+
+\maketitle
+
+\input{numbers}
+\input{sections/00_abstract}
+
+\begin{IEEEkeywords}
+monocular depth estimation, TSDF fusion, 3D room reconstruction, LiDAR, scale alignment, ARKitScenes
+\end{IEEEkeywords}
+
+\input{sections/01_introduction}
+\input{sections/02_related_work}
+\input{sections/03_system_design}
+\input{sections/04_experimental_setup}
+\input{sections/05_results}
+\input{sections/06_discussion}
+\input{sections/07_business_implications}
+\input{sections/08_limitations}
+\input{sections/09_conclusion}
+
+\bibliographystyle{IEEEtran}
+\bibliography{refs}
+
+\end{document}
