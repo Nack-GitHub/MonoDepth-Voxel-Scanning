@@ -13,6 +13,7 @@ One-off helpers ที่ *ไม่ใช่* ส่วนของ pipeline
 | `screen_scenes.py` | — | HEAD ขนาด asset + traj + 3DOD labels ของฉากใน metadata โดยไม่โหลด → เลือกฉากก่อนใช้ดิสก์ (ผลอยู่ใน data/README.md); `--fold Validation` สำหรับ val ของการเทรน |
 | `select_training_scenes.py` | ADR-013 | candidates (Training + Validation) → `configs/training/splits.yaml` แยกตาม `visit_id`, กันฉาก test ของ Exp1 |
 | `download_training_scenes.py` | ADR-013 | โหลดฉากใน `splits.yaml` (ไม่มี `color`, ไม่โหลด test) → unzip → ลบ zip; `--verify --md` นับเฟรม + ตรวจว่าไม่มีฉาก test บนดิสก์ |
+| `summarize_training.py` | ADR-013 | `log.jsonl` ของแต่ละ run → `experiments/training/RESULTS.md` (ตัวเลขบน val V เท่านั้น ไม่ใช่ test) |
 | `make_synthetic_scene.py` | — | ห้องสังเคราะห์ใน layout ARKitScenes สำหรับ `make test` / `make smoke` |
 
 ## โหลด ARKitScenes
