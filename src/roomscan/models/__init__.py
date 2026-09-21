@@ -11,6 +11,14 @@ _REGISTRY: dict[str, tuple[str, dict]] = {
                                         {"size": "metric_indoor"}),
     "depth_anything_v2_metric_indoor_small": ("roomscan.models.depth_anything:DepthAnythingV2Metric",
                                               {"size": "metric_indoor_small"}),
+    # ARKitScenes fine-tunes of metric_indoor (ADR-013) — private HF repos pushed by roomscan.training.push
+    "depth_anything_v2_ft_faro": ("roomscan.models.depth_anything:DepthAnythingV2Metric",
+                                  {"size": "ft_faro", "hf_id": "NackPanupong/roomscan-dav2-metric-large-ft-faro"}),
+    "depth_anything_v2_ft_lidar": ("roomscan.models.depth_anything:DepthAnythingV2Metric",
+                                   {"size": "ft_lidar", "hf_id": "NackPanupong/roomscan-dav2-metric-large-ft-lidar"}),
+    "depth_anything_v2_ft_lidar_all": ("roomscan.models.depth_anything:DepthAnythingV2Metric",
+                                       {"size": "ft_lidar_all",
+                                        "hf_id": "NackPanupong/roomscan-dav2-metric-large-ft-lidar-all"}),
     "midas_small": ("roomscan.models.midas:MiDaS", {"variant": "MiDaS_small"}),
     "midas_dpt_hybrid": ("roomscan.models.midas:MiDaS", {"variant": "DPT_Hybrid"}),
 }

@@ -1,0 +1,9 @@
+# R3: LiDAR teacher on A ∪ B (24 scenes) — the practical advantage: more data without a laser scanner.
+_base_: configs/training/base.yaml
+run_name: r3_ft_lidar_all
+data:
+  target: lidar
+  train_sets: [train_faro, train_lidar]
+  lidar_min_confidence: 1
+train:
+  max_steps: 12000

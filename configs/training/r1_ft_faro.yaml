@@ -1,0 +1,8 @@
+# R1: ceiling of fine-tuning — perfect teacher (Faro highres_depth) on A (10 scenes).
+_base_: configs/training/base.yaml
+run_name: r1_ft_faro
+data:
+  target: faro
+  train_sets: [train_faro]
+train:
+  max_steps: 6000

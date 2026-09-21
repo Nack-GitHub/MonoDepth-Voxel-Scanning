@@ -6,11 +6,12 @@ requires-python = ">=3.10"
 dependencies = [
     "numpy>=1.24",
     "opencv-python-headless>=4.8",
-    "open3d>=0.18",
+    "open3d>=0.18,<0.20",   # 0.20 returns an empty TSDF mesh in tests/test_custom_capture.py (seen 2026-09-21)
     "omegaconf>=2.3",
     "pandas>=2.0",
     "tqdm",
     "imageio",
+    "scipy",                # pose slerp in dataio/arkitscenes.py, KD-tree in evaluation/metrics_3d.py
 ]
 
 [project.optional-dependencies]
@@ -27,6 +28,15 @@ web = [
     "uvicorn>=0.29",
     "python-multipart",
     "httpx",                # fastapi.testclient
+]
+# Fine-tuning DA-v2 metric (ADR-013). On WSL2/CUDA install torch from the cu124 index first.
+train = [
+    "torch>=2.1",
+    "torchvision",
+    "transformers>=4.40",
+    "huggingface_hub>=0.23",
+    "safetensors",
+    "accelerate",
 ]
 dev = [
     "pytest>=7",

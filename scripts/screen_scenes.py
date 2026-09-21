@@ -1,15 +1,17 @@
 """Screen ARKitScenes candidates WITHOUT downloading them.
 
-For each eligible video (Training, highres_depth + laser scan + 3DOD) it HEADs the
+For each eligible video (highres_depth + laser scan + 3DOD, in the chosen fold) it HEADs the
 asset zips for their sizes and fetches only the tiny lowres_wide.traj (scan duration)
-and 3DOD annotation (object labels -> room type hint). ~6 requests per video.
+and 3DOD annotation (object labels -> room type hint). ~8 requests per video.
 
     python scripts/screen_scenes.py --n 40 --seed 0 > candidates.csv
+    python scripts/screen_scenes.py --n 20 --seed 1 --fold Validation > candidates_val.csv
 
 Reading the output:
-  * hi_MB ~= 0.8 MB per highres (Faro) frame -> under ~80 MB the reference mesh will be
+  * hi_MB ~= 0.4-0.8 MB per highres (Faro) frame -> under ~80 MB the reference mesh will be
     hollow; prefer >= 100 MB.
   * total_MB is what `download_data.py raw` with the assets in data/README.md will use.
+  * vga_MB / ld_MB / conf_MB: the per-asset sizes the fine-tuning download uses (ADR-013).
   * one video per visit_id so candidates are different homes/rooms.
 """
 
@@ -23,7 +25,8 @@ import random
 import sys
 import urllib.request
 
-BASE = "https://docs-assets.developer.apple.com/ml-research/datasets/arkitscenes/v1/raw/Training"
+BASE = "https://docs-assets.developer.apple.com/ml-research/datasets/arkitscenes/v1/raw"
+FOLDS = ("Training", "Validation")
 ZIPS = ("highres_depth", "lowres_depth", "vga_wide", "lowres_wide", "confidence")
 
 
@@ -43,11 +46,12 @@ def main() -> None:
     ap.add_argument("--metadata", default="data/arkitscenes/raw/metadata.csv")
     ap.add_argument("--n", type=int, default=40)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--fold", choices=FOLDS, default="Training")
     ap.add_argument("--video_id", nargs="*", help="screen exactly these instead of sampling")
     a = ap.parse_args()
 
     rows = [r for r in csv.DictReader(open(a.metadata))
-            if r["fold"] == "Training" and r["is_in_upsampling"] == "True"
+            if r["fold"] == a.fold and r["is_in_upsampling"] == "True"
             and r["has_laser_scanner_point_clouds"] == "True" and r["is_in_threedod"] == "True"]
     if a.video_id:
         cands = [r for r in rows if r["video_id"] in set(a.video_id)]
@@ -57,13 +61,14 @@ def main() -> None:
             by_visit.setdefault(r["visit_id"], r)
         random.seed(a.seed)
         cands = random.sample(list(by_visit.values()), min(a.n, len(by_visit)))
-    print(f"{len(rows)} eligible videos, screening {len(cands)}", file=sys.stderr)
+    print(f"{len(rows)} eligible videos in {a.fold}, screening {len(cands)}", file=sys.stderr)
 
     out = csv.writer(sys.stdout)
-    out.writerow(["video_id", "visit_id", "traj_s", "traj_rows", "hi_MB", "total_MB", "objects"])
+    out.writerow(["video_id", "visit_id", "traj_s", "traj_rows", "hi_MB", "total_MB", "objects",
+                  "vga_MB", "ld_MB", "conf_MB"])
     for r in cands:
         v = r["video_id"]
-        u = f"{BASE}/{v}"
+        u = f"{BASE}/{a.fold}/{v}"
         try:
             traj = _get(f"{u}/lowres_wide.traj").decode().strip().splitlines()
             ts = [float(line.split()[0]) for line in traj]
@@ -73,7 +78,8 @@ def main() -> None:
             sizes["mesh"] = _head_size(f"{u}/{v}_3dod_mesh.ply")
             out.writerow([v, r["visit_id"], round(ts[-1] - ts[0], 1), len(traj),
                           sizes["highres_depth"] >> 20, sum(sizes.values()) >> 20,
-                          " ".join(f"{k}:{n}" for k, n in labels.most_common())])
+                          " ".join(f"{k}:{n}" for k, n in labels.most_common()),
+                          sizes["vga_wide"] >> 20, sizes["lowres_depth"] >> 20, sizes["confidence"] >> 20])
             sys.stdout.flush()
         except Exception as e:  # noqa: BLE001 — keep screening the rest
             print(v, "ERR", e, file=sys.stderr)

@@ -6,7 +6,7 @@ VENV := .venv
 BIN := $(VENV)/bin
 ROOMSCAN := $(BIN)/roomscan
 
-.PHONY: venv setup setup-gt synthetic smoke figures-smoke figures paper-figures paper capture-zip sanity reference run-gt run-lidar run-mono sweep-exp1 sweep-exp2 sweep-exp3 sweep-exp4 sweep-exp5 report web test lint
+.PHONY: venv setup setup-gt synthetic smoke figures-smoke figures paper-figures paper capture-zip sanity reference run-gt run-lidar run-mono sweep-exp1 sweep-exp2 sweep-exp3 sweep-exp4 sweep-exp5 report web train test lint
 
 venv:
 	test -d $(VENV) || $(PY) -m venv $(VENV)
@@ -80,6 +80,9 @@ capture-zip:      ## export a scene as the app's capture zip for the web UI -> o
 
 web:              ## Phase 6: upload/queue/view API on http://localhost:8765 (needs .[web])
 	$(BIN)/uvicorn --factory roomscan_web.app:create_app --host 0.0.0.0 --port 8765
+
+train:            ## fine-tune DA-v2 metric (ADR-013): make train RUN=configs/training/r1_ft_faro.yaml
+	$(BIN)/python -m roomscan.training.train --config $(RUN)
 
 test:
 	$(BIN)/pytest -q

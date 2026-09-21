@@ -10,7 +10,9 @@ One-off helpers ที่ *ไม่ใช่* ส่วนของ pipeline
 | `analyze_scale_drift.py` | 4 | per-frame oracle (s, t) / abs_rel ของ oracle vs per_scene vs scale-only → ตอบว่า gap มาจากโมเดลหรือจาก scale ต่อมุมมอง (ผลใน `paper/analysis/`) |
 | `scene_info.py` | — | ตาราง 4.1: ขนาดห้อง (จาก reference mesh), ความยาว scan, จำนวนเฟรม Faro/VGA ของทุกฉากที่โหลดแล้ว (`--md`) |
 | `summarize_scale_drift.py` | 4 | รวม JSON ของ `analyze_scale_drift.py` ทุกฉาก → ตาราง markdown ต่อโมเดล (บท 6) |
-| `screen_scenes.py` | — | HEAD ขนาด asset + traj + 3DOD labels ของฉากใน metadata โดยไม่โหลด → เลือกฉากก่อนใช้ดิสก์ (ผลอยู่ใน data/README.md) |
+| `screen_scenes.py` | — | HEAD ขนาด asset + traj + 3DOD labels ของฉากใน metadata โดยไม่โหลด → เลือกฉากก่อนใช้ดิสก์ (ผลอยู่ใน data/README.md); `--fold Validation` สำหรับ val ของการเทรน |
+| `select_training_scenes.py` | ADR-013 | candidates (Training + Validation) → `configs/training/splits.yaml` แยกตาม `visit_id`, กันฉาก test ของ Exp1 |
+| `download_training_scenes.py` | ADR-013 | โหลดฉากใน `splits.yaml` (ไม่มี `color`, ไม่โหลด test) → unzip → ลบ zip; `--verify --md` นับเฟรม + ตรวจว่าไม่มีฉาก test บนดิสก์ |
 | `make_synthetic_scene.py` | — | ห้องสังเคราะห์ใน layout ARKitScenes สำหรับ `make test` / `make smoke` |
 
 ## โหลด ARKitScenes

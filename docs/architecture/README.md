@@ -80,6 +80,7 @@ src/roomscan/
 ├── depth_sources/      DepthSource ABC + gt/lidar/mono/arcore ← models, types
 ├── geometry/           backproject, scale_align, tsdf_fusion, postprocess ← types
 ├── evaluation/         metrics_2d, metrics_3d, report
+├── training/           fine-tune DA-v2 metric (ADR-013) ← dataio, evaluation.metrics_2d, types, config (ไม่ใช่ pipeline/geometry/open3d)
 ├── export.py
 ├── pipeline.py         orchestrator (ห้ามมี Open3D/torch call ตรง ๆ)
 └── cli.py              run / sweep / report
@@ -138,11 +139,12 @@ src/roomscan_web/       Phase 6: FastAPI upload/queue/status + three.js viewer �
 | [005](adr-005-config-driven-experiments.md) | YAML + OmegaConf, ไม่ใช้ Hydra | Accepted |
 | [006](adr-006-results-layout.md) | ผลการทดลองเป็นไฟล์ flat, ไม่มี DB/tracker | Accepted |
 | [007](adr-007-src-layout-single-package.md) | `src/` layout, package เดียว, ไม่แยก repo | Accepted |
-| [008](adr-008-pretrained-inference-only.md) | ใช้โมเดล pretrained, ไม่เทรน | Accepted |
+| [008](adr-008-pretrained-inference-only.md) | ใช้โมเดล pretrained, ไม่เทรน | Superseded by 013 |
 | [009](adr-009-dataset-arkitscenes.md) | **ARKitScenes** แทน ScanNet + วิธีสร้าง reference mesh | Accepted |
 | [010](adr-010-scale-alignment-in-inverse-depth.md) | fit scale/shift ใน inverse-depth (ขยาย 002) — oracle 15 → 5.4 cm | Accepted |
 | [011](adr-011-sparse-points-proxy.md) | ประเมิน `sparse_points` ด้วยจุด sparse จำลองจาก LiDAR (VIO proxy, 200 จุด/เฟรม) | Accepted |
 | [012](adr-012-confidence-weighted-fusion.md) | น้ำหนักต่อ pixel ใน TSDF จาก confidence (integrate ซ้ำตามระดับ) — แก้ `pipeline.py` 2 บรรทัด | Accepted |
+| [013](adr-013-finetune-with-lidar-teacher.md) | Fine-tune DA-v2 metric ด้วยครู LiDAR/Faro ใน `training/` (freeze encoder), split scene-disjoint ตาม `visit_id` | Accepted |
 
 ## 9. สิ่งที่ตั้งใจ *ไม่* ทำตอนนี้
 

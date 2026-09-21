@@ -49,11 +49,13 @@ class DepthAnythingV2(_HFDepth):
 
 
 class DepthAnythingV2Metric(_HFDepth):
-    """Metric variant fine-tuned on Hypersim (indoor). Output in metres, no alignment."""
+    """Metric variant fine-tuned on Hypersim (indoor). Output in metres, no alignment.
+    `hf_id` loads another checkpoint of the same architecture instead (our ARKitScenes fine-tunes, ADR-013):
+    a Hub repo id or a local save_pretrained folder."""
 
     is_metric = True
     output_kind = "depth"
 
-    def __init__(self, size: str = "metric_indoor", device: str = "auto"):
+    def __init__(self, size: str = "metric_indoor", device: str = "auto", hf_id: str | None = None):
         self.name = f"depth_anything_v2_{size}"
-        super().__init__(HF_IDS[size], device)
+        super().__init__(hf_id or HF_IDS[size], device)

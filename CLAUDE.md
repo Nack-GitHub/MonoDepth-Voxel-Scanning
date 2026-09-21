@@ -12,4 +12,5 @@
 - Dev env is `./.venv` (Python 3.12, open3d 0.19, torch 2.14 MPS OK, fastapi for `roomscan_web`); if missing, `make setup`.
 - Long sweeps (mono on 6 scenes ≈ 30 min) must be launched detached (`nohup ... &`); the Bash tool's 10-min timeout kills background jobs, and never run two sweeps on the same experiment concurrently (they race on `metrics.json`).
 - `sparse_points` numbers are a LiDAR-sampled VIO proxy (ADR-011) — always label them as an upper bound of real VIO.
+- Fine-tuning (ADR-013, supersedes ADR-008 "pretrained-only"): `src/roomscan/training/`, `make train RUN=<yaml>`, env `pip install -e ".[train,dev]"` on WSL2/CUDA. Weights (`experiments/training/*/best|last`) never committed — HF Hub private. The 6 test scenes of Exp1 are never used for training/val/checkpoint choice; splits are visit-disjoint (`configs/training/splits.yaml`).
 - Paper: Thai draft `paper/draft/`, English IEEE manuscript `paper/latex/` (`make paper` needs tectonic), `refs.bib` there; keep both in sync when numbers change.

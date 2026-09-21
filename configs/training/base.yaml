@@ -1,0 +1,53 @@
+# Fine-tuning defaults (ADR-013, SPEC §6). Runs override via _base_ + a few keys.
+run_name: base
+output_dir: experiments/training
+
+model:
+  hf_id: depth-anything/Depth-Anything-V2-Metric-Indoor-Large-hf
+  freeze_backbone: true          # DINOv2 frozen; DPT neck + head trained
+  grad_checkpointing: false      # OOM fallback #2 (plan T10)
+
+data:
+  root: data/arkitscenes
+  splits: configs/training/splits.yaml
+  train_sets: [train_faro]       # names in splits.yaml (A = train_faro, B = train_lidar)
+  val_set: val                   # V, Validation fold; never "test"
+  target: faro                   # faro | lidar
+  stride_faro: 1                 # every highres_depth frame (~10 fps)
+  stride_lidar: 3                # vga_wide 30 fps -> ~10 fps
+  max_depth: 10.0                # metres; labels beyond are masked
+  lidar_min_confidence: 1        # ARKit confidence {0,1,2}; SPEC Q1 default
+  max_train_scenes: null         # R0 uses 1
+  max_val_scenes: null
+  num_workers: 4
+
+transform:
+  size: 518                      # crop side / eval short side, multiple of 14
+  hflip_p: 0.5
+  jitter: 0.2
+
+loss:
+  beta: 0.15
+  scale: 10.0
+  lambda_l1: 0.0
+
+optim:
+  lr: 5.0e-5
+  weight_decay: 0.01
+  betas: [0.9, 0.999]
+  warmup_steps: 200
+
+train:
+  batch_size: 2
+  grad_accum: 4                  # effective batch 8
+  max_steps: 6000
+  save_every: 500
+  grad_clip: 1.0
+  precision: bf16                # autocast on CUDA only
+  device: auto
+  seed: 0
+
+val:
+  every: 500                     # optimizer steps
+  stride: 5                      # every 5th Faro frame of each V scene
+  max_depth: 5.0                 # metres; metrics_2d default = paper tables

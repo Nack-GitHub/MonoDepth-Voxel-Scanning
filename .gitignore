@@ -12,6 +12,10 @@ experiments/results/**/*.glb
 experiments/results/**/*.npy
 experiments/results/**/*.npz
 experiments/results/**/*.png
+# Training runs: commit config.yaml + log.jsonl only; weights go to HF Hub (ADR-013)
+experiments/training/*/best/
+experiments/training/*/last/
+experiments/training/*.out
 paper/figures/**/*.ply
 # LaTeX build
 paper/latex/*.aux

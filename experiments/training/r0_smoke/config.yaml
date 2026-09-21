@@ -1,0 +1,48 @@
+run_name: r0_smoke
+output_dir: experiments/training
+model:
+  hf_id: depth-anything/Depth-Anything-V2-Metric-Indoor-Large-hf
+  freeze_backbone: true
+  grad_checkpointing: false
+data:
+  root: data/arkitscenes
+  splits: configs/training/splits.yaml
+  train_sets:
+  - train_faro
+  val_set: val
+  target: faro
+  stride_faro: 1
+  stride_lidar: 3
+  max_depth: 10.0
+  lidar_min_confidence: 1
+  max_train_scenes: 1
+  max_val_scenes: null
+  num_workers: 4
+transform:
+  size: 518
+  hflip_p: 0.5
+  jitter: 0.2
+loss:
+  beta: 0.15
+  scale: 10.0
+  lambda_l1: 0.0
+optim:
+  lr: 5.0e-05
+  weight_decay: 0.01
+  betas:
+  - 0.9
+  - 0.999
+  warmup_steps: 200
+train:
+  batch_size: 2
+  grad_accum: 4
+  max_steps: 30
+  save_every: 0
+  grad_clip: 1.0
+  precision: bf16
+  device: auto
+  seed: 0
+val:
+  every: 30
+  stride: 5
+  max_depth: 5.0

@@ -1,0 +1,12 @@
+# R0: does the loop fit in 8 GB and does the loss go down? (SPEC §10.4) — Large, 30 steps, 1 scene of A.
+_base_: configs/training/base.yaml
+run_name: r0_smoke
+data:
+  target: faro
+  train_sets: [train_faro]
+  max_train_scenes: 1
+train:
+  max_steps: 30
+  save_every: 0
+val:
+  every: 30
