@@ -238,6 +238,11 @@ class ARKitScenesScene(SceneDataset):
     def has_faro_depth(self) -> bool:
         return len(self._idx["highres_depth"]) > 0
 
+    def has_asset_at(self, asset: str, idx: int) -> bool:
+        """True if `asset` has a file within the match tolerance of frame `idx` (no image is read).
+        Real scans have gaps (e.g. lowres_depth missing for some vga_wide timestamps)."""
+        return self._idx[asset].nearest(self._timestamps[idx], self.tol) is not None
+
     # ------------------------------------------------------------------ internals
     def _pose_at(self, ts: float) -> np.ndarray | None:
         """Camera-to-world at `ts`, interpolated between the bracketing traj rows."""

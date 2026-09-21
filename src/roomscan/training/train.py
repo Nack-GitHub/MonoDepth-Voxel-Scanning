@@ -200,6 +200,7 @@ def train(cfg: DictConfig, *, overwrite: bool = False) -> Path:
         "params_trainable": sum(p.numel() for p in params),
         "train_sets": list(d.train_sets), "n_train_scenes": len(train_scenes), "n_train_frames": len(dataset),
         "train_frames_per_scene": dataset.frames_per_scene(),
+        "n_train_frames_skipped_no_label": dataset.n_skipped,
         "n_val_scenes": len(val_scenes), "val_scenes": [s.scene_id for s in val_scenes],
         "effective_batch": int(tr.batch_size) * int(tr.grad_accum),
     })

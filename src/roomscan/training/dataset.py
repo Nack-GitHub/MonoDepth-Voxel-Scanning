@@ -24,7 +24,8 @@ class DepthPairDataset(Dataset):
         self.transform = transform
         self.max_depth = float(max_depth)                  # metres
         self.lidar_min_confidence = int(lidar_min_confidence)
-        self.items = [(s, i) for s, scene in enumerate(self.scenes) for i in iter_indices(scene, stride)]
+        self.items = [(s, i) for s, scene in enumerate(self.scenes) for i in iter_indices(scene, stride, target)]
+        self.n_skipped = sum(len(iter_indices(scene, stride)) for scene in self.scenes) - len(self.items)
 
     def __len__(self) -> int:
         return len(self.items)

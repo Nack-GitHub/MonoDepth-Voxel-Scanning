@@ -38,8 +38,17 @@ def open_training_scene(root: str | Path, video_id: str, *, fold: str = "Trainin
                             rgb_asset="vga_wide", frame_source=FRAME_SOURCE[target])
 
 
-def iter_indices(scene: ARKitScenesScene, stride: int = 1) -> list[int]:
-    return list(range(0, len(scene), max(1, int(stride))))
+REQUIRED_ASSETS = {"faro": ("highres_depth",), "lidar": ("lowres_depth", "confidence")}
+
+
+def iter_indices(scene: ARKitScenesScene, stride: int = 1, target: str | None = None) -> list[int]:
+    """Every `stride`-th frame; with `target`, only frames whose label assets exist within tolerance
+    (LiDAR streams have gaps — a vga_wide frame without lowres_depth cannot be a training pair)."""
+    idx = range(0, len(scene), max(1, int(stride)))
+    if target is None:
+        return list(idx)
+    need = REQUIRED_ASSETS[target]
+    return [i for i in idx if all(scene.has_asset_at(a, i) for a in need)]
 
 
 def make_pair(scene: ARKitScenesScene, idx: int, *, target: str, max_depth: float = 10.0,

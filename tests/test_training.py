@@ -345,3 +345,16 @@ def test_push_dry_run_lists_files_without_network(two_step_run, capsys, monkeypa
     push.main()
     out = capsys.readouterr().out
     assert "model.safetensors" in out and "PRIVATE" in out
+
+
+def test_lidar_frames_without_depth_are_skipped(tmp_path):
+    """Real LiDAR streams have gaps: a vga_wide frame with no lowres_depth within tolerance is dropped."""
+    write_synthetic_scene(tmp_path, "90000003", n_frames=N_FRAMES, hires=(256, 192), write_color=False)
+    missing = sorted((tmp_path / "raw" / "Training" / "90000003" / "lowres_depth").glob("*.png"))[2]
+    missing.unlink()
+    scene = open_training_scene(tmp_path, "90000003", target="lidar")
+    assert 2 not in iter_indices(scene, 1, "lidar") and len(iter_indices(scene, 1, "lidar")) == N_FRAMES - 1
+    ds = DepthPairDataset([scene], target="lidar", transform=TrainTransform(266))
+    assert len(ds) == N_FRAMES - 1 and ds.n_skipped == 1
+    for i in range(len(ds)):
+        ds[i]
