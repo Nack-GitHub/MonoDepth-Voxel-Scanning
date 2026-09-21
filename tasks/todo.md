@@ -61,7 +61,7 @@ Where: 🍎 = Mac ทำได้ · 🪟 = ต้องทำบน WSL2/RTX 30
 - [x] R0 ผ่าน · `make test`/`make lint` เขียวบน WSL · push branch · review step-0 กับผู้ใช้ก่อนใช้ GPU หลายชั่วโมง
 
 ## Phase 4 — Runs + ส่งกลับ
-- [ ] T11 🪟 `R1_ft_faro` (`nohup`, ~1 ชม.) — best val/abs_rel < step 0 (เป้า < 0.10) · commit log
+- [x] T11 🪟 `R1_ft_faro` (`nohup`, ~1 ชม.) — best val/abs_rel < step 0 (เป้า < 0.10) · commit log
 - [ ] T12 🪟 `R2_ft_lidar` (หลัง R1 จบ) — best < step 0; บันทึก R2/R1 (เป้า ≤ 1.5×) · commit log
 - [ ] T13 🪟 `R3_ft_lidar_all` (~2 ชม.) — best ≤ R2 หรือรายงานเป็น finding; `n_frames` ≈ 22k · commit log
 - [x] T14 🍎 `training/push.py` + `DepthAnythingV2Metric(hf_id=)` + registry `depth_anything_v2_ft_{faro,lidar,lidar_all}` (ทำระหว่างรอ T11–T13)
