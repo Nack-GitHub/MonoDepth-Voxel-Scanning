@@ -111,6 +111,7 @@ src/roomscan_web/       Phase 6: FastAPI upload/queue/status + three.js viewer �
 | 3 Frame stride | 1/5/10/20 × {gt, mono+oracle, mono+per_scene} | `dataset.frame_stride` | `exp3_frame_stride_gt.yaml` (control: coverage อย่างเดียว) / `exp3_frame_stride_oracle.yaml` (+รูปทรงโมเดล) / `exp3_frame_stride.yaml` (+scale, deployable) — Faro มีแค่ ~2.7 fps คำถามจึงเป็น "ต้องเก็บกี่เฟรม/วินาที" ไม่ใช่ compute-vs-accuracy (ดู `paper/analysis/`) |
 | 4 Model size | L / S / MobileViT | `depth.model` | `exp4_model_size.yaml` |
 | 5 LiDAR confidence | all / mask ≥1 / mask =2 / weight [0,1,2] / [1,2,4] | `depth.lidar_min_confidence`, `fusion.confidence_weights` | `exp5_lidar_confidence.yaml` (ADR-012) — ผล: ไม่ต่างจาก baseline (3.04 → 3.07 cm) |
+| 6 Fine-tune teacher | pretrained / ft_faro / ft_lidar / ft_lidar_all (RGB-only, `aligner=identity`) | `depth.model` | `exp6_finetune.yaml` (ADR-013) — DA-v2 metric ที่ fine-tune บน ARKitScenes ด้วยครู Faro เทียบครู LiDAR; 6 ฉากเทสต์ถูกกันออกจาก train/val ทั้งหมด |
 
 ทุก run ทิ้ง `config.yaml` + `metrics.json` ไว้ที่ `experiments/results/<exp>/<scene>_<run>/` — `roomscan report` รวมเป็นตาราง
 

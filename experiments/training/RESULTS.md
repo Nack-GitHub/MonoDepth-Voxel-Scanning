@@ -48,3 +48,20 @@ Validation curve (abs_rel every 500 steps):
 | 12000 |  |  | 0.166 |
 
 Cost: r1_ft_faro 0.6282 s/step, 3.2 GB reserved, r2_ft_lidar 0.6204 s/step, 3.2 GB reserved, r3_ft_lidar_all 0.6158 s/step, 3.2 GB reserved (RTX 3070 Ti, bf16, batch 2×4).
+
+## Checkpoint load check on the Mac (T15 / SPEC §10.7)
+
+`build_depth_model(...)` pulls each checkpoint from the Hub and predicts through `MonocularDepth`
+(upright rotation from PR #1) on **held-out test scenes**, 3 frames each, vs Faro depth (0.1–5 m):
+
+| model | 42444474 (`Left`) median pred/gt · abs_rel | 47115299 (`Up`) median pred/gt · abs_rel |
+|---|---|---|
+| pretrained metric_indoor | 1.511 · 0.432 | 1.173 · 0.156 |
+| ft_faro (R1) | 0.931 · 0.160 | 0.862 · 0.184 |
+| ft_lidar (R2) | 1.110 · **0.146** | 0.914 · **0.138** |
+| ft_lidar_all (R3) | 0.813 · 0.205 | 0.788 · 0.190 |
+
+All four load and return (H, W) float32 metres; every median ratio is inside the [0.7, 1.4] gate. Two
+things to keep in mind for the paper: the LiDAR teacher (R2) beats the Faro teacher (R1) on both test
+scenes, and R3 — the best run on V — is the *worst* fine-tune here, i.e. V picked it optimistically.
+Six frames are a smoke test, not a result; the numbers that go in the paper come from `exp6_finetune`.

@@ -68,7 +68,7 @@ Where: 🍎 = Mac ทำได้ · 🪟 = ต้องทำบน WSL2/RTX 30
   - Acceptance: `build_depth_model("depth_anything_v2_ft_faro")` กับ hf_id = path local ใช้ได้, `is_metric`; `push.py --dry-run` ไม่ต่อเน็ต
   - Verify: `pytest tests/test_training.py -k registry && make test && make lint`
   - Files: `src/roomscan/training/push.py`, `src/roomscan/models/depth_anything.py`, `src/roomscan/models/__init__.py`, `tests/test_training.py`
-- [ ] T15 🪟→🍎 push 3 checkpoint ขึ้น HF private; ใส่ `<hf_user>` ใน registry; commit + `git push -u origin training`; บน Mac pull แล้ว predict 1 เฟรมของ T (median ratio ∈ [0.7, 1.4])
+- [x] T15 🪟→🍎 push 3 checkpoint ขึ้น HF private; ใส่ `<hf_user>` ใน registry; commit + `git push -u origin training`; บน Mac pull แล้ว predict 1 เฟรมของ T (median ratio ∈ [0.7, 1.4])
   - Verify: `git status` สะอาด; ไม่มี safetensors ใน history; SPEC §10 ครบ
 
 ### ✅ Checkpoint D — Complete

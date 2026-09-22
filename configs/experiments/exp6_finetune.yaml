@@ -1,0 +1,18 @@
+# Experiment 6 — does a LiDAR teacher replace a laser scanner? (ADR-013)
+# Same pipeline and scenes as Exp1; the only variable is WHICH metric model predicts depth.
+# Every row here is RGB-only at test time, aligner=identity (no scale is fitted, ever).
+# Compare against exp1_depth_source: gt / lidar (upper bounds), mono_metric (pretrained DA-v2),
+# mono_oracle (per-frame oracle scale = what a perfect aligner would buy).
+# The six scenes below were held out of training, validation and checkpoint selection (splits.yaml).
+experiment: exp6_finetune
+base: configs/base.yaml
+scenes: [42444474, 47333774, 47115299, 42897743, 47429736, 45261556]
+runs:
+  - name: mono_metric               # pretrained baseline, re-run here so every row shares one code version
+    overrides: {depth.source: mono, depth.model: depth_anything_v2_metric_indoor, depth.aligner: identity}
+  - name: mono_ft_faro              # R1: fine-tuned with the Faro teacher (10 scenes) — the "perfect teacher"
+    overrides: {depth.source: mono, depth.model: depth_anything_v2_ft_faro, depth.aligner: identity}
+  - name: mono_ft_lidar             # R2: same 10 scenes, iPad LiDAR as teacher — the paper's question
+    overrides: {depth.source: mono, depth.model: depth_anything_v2_ft_lidar, depth.aligner: identity}
+  - name: mono_ft_lidar_all         # R3: LiDAR teacher on 24 scenes — what a laser-free dataset buys
+    overrides: {depth.source: mono, depth.model: depth_anything_v2_ft_lidar_all, depth.aligner: identity}

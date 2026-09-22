@@ -6,7 +6,7 @@ VENV := .venv
 BIN := $(VENV)/bin
 ROOMSCAN := $(BIN)/roomscan
 
-.PHONY: venv setup setup-gt synthetic smoke figures-smoke figures paper-figures paper capture-zip sanity reference run-gt run-lidar run-mono sweep-exp1 sweep-exp2 sweep-exp3 sweep-exp4 sweep-exp5 report web train test lint
+.PHONY: venv setup setup-gt synthetic smoke figures-smoke figures paper-figures paper capture-zip sanity reference run-gt run-lidar run-mono sweep-exp1 sweep-exp2 sweep-exp3 sweep-exp4 sweep-exp5 sweep-exp6 report web train test lint
 
 venv:
 	test -d $(VENV) || $(PY) -m venv $(VENV)
@@ -61,6 +61,9 @@ sweep-exp4:
 
 sweep-exp5:       ## LiDAR confidence masking / weighting (ADR-012)
 	$(ROOMSCAN) sweep configs/experiments/exp5_lidar_confidence.yaml --skip-existing
+
+sweep-exp6:       ## ADR-013: the three ARKitScenes fine-tunes vs the pretrained metric model, RGB-only
+	$(ROOMSCAN) sweep configs/experiments/exp6_finetune.yaml --skip-existing
 
 figures:          ## scenes x runs top-down error grids for every experiment -> paper/figures/
 	for e in exp1_depth_source exp2_voxel_size exp3_frame_stride_gt exp3_frame_stride_oracle exp3_frame_stride exp4_model_size; do \
