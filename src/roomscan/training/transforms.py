@@ -22,8 +22,8 @@ IMAGENET_STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
 # k for np.rot90 (counter-clockwise quarter turns) that makes the image upright. Verified against gravity
 # from the poses on all 27 fine-tuning scenes (2026-09-21, world is z-up): after rot90(k) the image-down
 # axis must point to -z (Up/Down scenes: -0.7..-0.9). "Left" needs a CLOCKWISE turn (k=3; k=1 scored
-# +0.7..+0.9 = upside-down on all 12 Left scenes). depth_sources/monocular.py still maps Left->1 —
-# reported, not changed here (outside ADR-013 scope). download_training_scenes.py --verify re-checks this.
+# +0.7..+0.9 = upside-down on all 12 Left scenes). depth_sources/monocular.py had the same bug (Left->1);
+# fixed on main in PR #1 to this same table. download_training_scenes.py --verify re-checks this.
 _ROT = {"Up": 0, "Left": 3, "Down": 2, "Right": 1}
 
 Arrays = tuple[np.ndarray, np.ndarray, np.ndarray]   # rgb (H,W,3) uint8, depth (H,W) f32, mask (H,W) bool
