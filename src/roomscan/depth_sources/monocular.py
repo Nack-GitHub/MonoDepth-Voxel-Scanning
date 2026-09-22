@@ -16,7 +16,11 @@ from roomscan.depth_sources.base import DepthSource
 from roomscan.models.base import DepthModel
 from roomscan.types import Frame
 
-_ROT = {"Up": 0, "Left": 1, "Down": 2, "Right": 3}   # k for np.rot90 to make the image upright
+# k for np.rot90 (counter-clockwise quarter turns) that makes the image upright. sky=Left means the image's
+# left edge is the sky, so it needs a CLOCKWISE turn (k=3). Verified against gravity from the ARKit poses
+# (world z-up) on 27 ARKitScenes scenes, 2026-09-21: with the old Left->1 every Left scene came out
+# upside-down. Right is the mirror case (k=1).
+_ROT = {"Up": 0, "Left": 3, "Down": 2, "Right": 1}
 
 
 class MonocularDepth(DepthSource):
