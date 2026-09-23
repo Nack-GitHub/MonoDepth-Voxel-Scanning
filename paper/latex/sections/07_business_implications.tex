@@ -44,7 +44,7 @@ Error source & Size (Chamfer) & Remedy & Cost \\
 \midrule
 one scale per scene $\rightarrow$ per frame & \textbf{$-$\SI{18}{cm}} (\rsSCENECM $\rightarrow$ \rsORACLECM) & per-frame metric points from VIO (free from ARCore/ARKit) & one aligner (\code{sparse\_points}); measured: \rsSCENECM $\rightarrow$ \rsSPARSECM \\
 teach the model the scale instead & $-$\SI{38}{cm} (\rsMETRICCM $\rightarrow$ \rsFTLIDARCM) & fine-tune on scenes captured with a phone's own LiDAR & one training run ($\sim$1~h on an RTX~3070); no run-time cost \\
-model S $\rightarrow$ L & $-$\SI{2.8}{cm} (9.2 $\rightarrow$ 6.5) & $13\times$ larger model, $7\times$ slower & on-device / cloud compute \\
+model S $\rightarrow$ L & $-$\SI{1.0}{cm} (\rsDASMALLCM $\rightarrow$ \rsDALARGECM) & $13\times$ larger model, $6\times$ slower & on-device / cloud compute \\
 voxel 4 $\rightarrow$ \SI{2}{cm} & $-$\SI{0.9}{cm} & $\sim$4$\times$ larger mesh & memory / bandwidth \\
 MiDaS $\rightarrow$ DA-v2 S & $-$\SI{5.7}{cm} & newer model, same size & zero \\
 LiDAR confidence weighting & $\pm$\SI{0.03}{cm} & --- & (not worth it) \\
@@ -74,8 +74,8 @@ align $+$ fusion $+$ extract & \SI{1.6}{s} & $\sim$\SI{9}{s} & $\sim$\SI{6}{s} &
 \end{table*}
 At 4~fps DA-v2 L takes $3.6\times$ the video length---not real time even on a laptop; DA-v2 S is at $0.5\times$
 (processable right after capture). Exp.~3 says per\_scene quality needs only 0.8~fps (same Chamfer), bringing L to
-\SI{68}{s} and S to \SI{9}{s} per room; with per-frame scale, $\geq 0.8$--4~fps is needed for coverage (\fscore{} 0.72
-at 0.8~fps vs 0.74 at 4~fps---0.8~fps is still the sweet spot). Fusion and extraction are a rounding error ($<3\%$ of
+\SI{68}{s} and S to \SI{9}{s} per room; with per-frame scale, $\geq 0.8$--4~fps is needed for coverage (\fscore{} \rsSTRORACLEFIVEF{}
+at 0.8~fps vs \rsSTRORACLEONEF{} at 4~fps---0.8~fps is still the sweet spot). Fusion and extraction are a rounding error ($<3\%$ of
 L's time); TSDF is not what to optimise. Data: at 0.8~fps a room is $\sim$80 images at $640\times480$
 ($\approx$10--\SI{20}{MB} JPEG) plus poses and sparse points---a few seconds to upload, so ``capture on device, process
 on a server with L'' is feasible without waiting for on-device models. The \code{roomscan\_web} package

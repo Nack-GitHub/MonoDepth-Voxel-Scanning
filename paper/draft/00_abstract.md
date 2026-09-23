@@ -12,6 +12,6 @@ depth → scale alignment → TSDF fusion → mesh โดยให้ **แห�
 อีกทางหนึ่งคือใส่ scale ให้โมเดลด้วยการเทรน: fine-tune checkpoint metric ตัวเดิมบน ARKitScenes (freeze encoder เทรนเฉพาะ DPT head) ทำให้แถวที่ไม่ calibrate
 เหลือ 14.6 cm เมื่อใช้ laser scanner เป็นครู และ 16.6 cm เมื่อใช้ LiDAR ของ iPad เป็นครูแทน (AbsRel 0.136 เท่ากันทั้งคู่)
 ⇒ supervision ที่เครื่องสแกนราคาหลักล้านให้ได้ เก็บด้วยเซนเซอร์ในมือถือแทนได้ และเครื่องที่ไม่มีเซนเซอร์ก็ได้ประโยชน์ต่อ
-ขนาดโมเดล (Large → Small) มีผลเพียง 2.8 cm ที่เวลาเร็วขึ้น 7× และจำนวนเฟรมกำหนด coverage ไม่ใช่ accuracy (ต้อง ≥ 0.8 fps)
+ขนาดโมเดล (Large → Small) มีผลเพียง 1.0 cm ที่เวลาเร็วขึ้น 6× และจำนวนเฟรมกำหนด coverage ไม่ใช่ accuracy (ต้อง ≥ 0.8 fps)
 ข้อสรุปสำหรับผลิตภัณฑ์: ช่องว่างระหว่างเครื่องมี/ไม่มี LiDAR อยู่ที่ปัญหา scale ต่อเฟรม ซึ่งแก้ได้ด้วยข้อมูล metric จาก VIO ไม่ใช่ด้วยโมเดลที่ใหญ่ขึ้น (และ confidence map ของ LiDAR ไม่ช่วยลด error ของ LiDAR เอง)
 โค้ด, config ของทุกการทดลอง และ metrics ของทุก run เปิดเผยเพื่อทำซ้ำได้

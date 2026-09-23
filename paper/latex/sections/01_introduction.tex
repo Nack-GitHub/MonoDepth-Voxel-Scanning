@@ -53,8 +53,8 @@ depth is not shape but a scale that swings per view} (\S\ref{sec:discussion}).
 \item Fine-tuning the metric model on ARKitScenes fixes the uncalibrated row without any alignment at run time:
 \SI{\rsFTFAROCM}{cm} with a laser teacher, \SI{\rsFTLIDARCM}{cm} with a consumer-LiDAR teacher
 ($\rsFTTEACHERRATIO\times$), from \SI{\rsMETRICCM}{cm} pretrained (\S\ref{sec:finetune}).
-\item A $13\times$ smaller model (DA-v2 Small) costs \SI{2.8}{cm} but runs $7\times$ faster; MiDaS small is a further
-$4.5\times$ faster with $2.3\times$ the error of Large. Model size matters $6\times$ less than scale.
+\item A $13\times$ smaller model (DA-v2 Small) costs \SI{1.0}{cm} but runs $6\times$ faster; MiDaS small is a further
+$3\times$ faster with $2.5\times$ the error of Large. Model size matters $17\times$ less than scale.
 \item Frame count governs coverage, not accuracy: $\geq 0.8$~fps is needed to capture the whole room.
 \end{itemize}
 

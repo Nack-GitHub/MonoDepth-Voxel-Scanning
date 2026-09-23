@@ -128,7 +128,7 @@ one calibration per room suffices & no: \SI{\rsSCENECM}{cm} in every room; scale
 a metric model removes the scale problem & no: but it reduces it to one parameter per frame \\
 a metric model cannot be fixed without a laser scanner & fine-tuning on a phone's own LiDAR is as good a teacher (\S\ref{sec:finetune}) \\
 a few sparse metric points cannot fix a dense map & they can: 200 points/frame $\rightarrow$ within \SI{\rsSPARSEGAP}{cm} of the oracle \\
-a bigger model means a more accurate room & $+$\SI{2.8}{cm} S$\rightarrow$L vs.\ $+$\SI{16}{cm} from scale \\
+a bigger model means a more accurate room & $+$\SI{1.0}{cm} S$\rightarrow$L vs.\ $+$\SI{17.6}{cm} from scale \\
 more frames mean more accuracy & more frames mean more coverage; mono accuracy improves with fewer frames \\
 LiDAR confidence maps are free accuracy & no measurable gain from masking or weighting (Exp.~5) \\
 LiDAR's hard scenes are mono's hard scenes & no (blank bedroom: hard for mono, easy for LiDAR) \\

@@ -124,13 +124,15 @@ Stride ($\approx$fps) & Frames & GT: Ch / acc / comp & $F$ & mono oracle: Ch / a
 \end{table*}
 \begin{itemize}
 \item \textbf{Control:} GT accuracy is constant at 1.2--\SI{1.3}{cm} at every stride; the growing Chamfer
-(2$\rightarrow$\SI{17}{cm}) is pure completeness. On this dataset stride measures \textbf{coverage}: a room swept once
+(\rsSTRGTONECM$\rightarrow$\SI{\rsSTRGTTWENTYCM}{cm}) is pure completeness. On this dataset stride measures \textbf{coverage}: a room swept once
 develops holes below 1~fps.
-\item \textbf{mono$+$oracle tracks the control plus a constant $\sim$\SI{4}{cm}}, and its accuracy \emph{improves} with
-stride (7.1$\rightarrow$5.0): fewer frames means fewer overlapping surfaces from different views; 2D AbsRel is 0.040 at
-every stride, confirming the model did not change.
+\item \textbf{mono$+$oracle tracks the control plus a constant \SIrange{2.7}{3.3}{cm}}, and its accuracy
+\emph{improves} with stride (\rsSTRORACLEONEACC$\rightarrow$\rsSTRORACLETWENTYACC): fewer frames means fewer
+overlapping surfaces from different views; 2D AbsRel is \rsSTRORACLEONEABSREL{} at every stride, confirming the model
+did not change.
 \item \textbf{mono$+$per\_scene is flat at $\sim$\SI{23}{cm} up to stride 10}: at stride 5 it saves $5\times$ the time
-(355$\rightarrow$\SI{72}{s}) with identical Chamfer (22.7), because the error is already dominated by scale. At stride 20
+(\rsSTRSCENEONESCAN$\rightarrow$\SI{\rsSTRSCENEFIVESCAN}{s}) at the same Chamfer (\rsSTRSCENEONECM{} vs.\
+\rsSTRSCENEFIVECM), because the error is already dominated by scale. At stride 20
 \code{per\_scene} fits on 10 of 20 frames (nearly a half-scene oracle), so that cell should not be over-interpreted.
 \item \textbf{For the business:} with good depth (LiDAR) capture $\geq 1$~fps for a complete room (\fscore{} $>0.9$);
 with mono$+$per\_scene, 0.8~fps gives the same result as 4~fps, $5\times$ faster---quality is capped by scale, not by
@@ -155,12 +157,13 @@ MiDaS v2.1 small & 21M & $\mathbf{\rsMIDASCM \pm \rsMIDASSD}$ & \rsMIDASF & \rsM
 \end{tabular}
 \end{adjustbox}
 \end{table}
-L$\rightarrow$S: $13\times$ smaller, $7\times$ faster, $+$\SI{2.8}{cm} ($F$ 0.74$\rightarrow$0.64); every scene moves
-the same way, the bathroom most (10.7$\rightarrow$15.7). S$\rightarrow$MiDaS: similar parameter count, a further
-$4.5\times$ faster, but $1.6\times$ the Chamfer and half the $F$---a matter of model generation (DA-v2 was trained
-with 62M unlabelled images), not size. At oracle scale DA-v2 S (\SI{9.2}{cm}) is still \SI{6}{cm} behind LiDAR (3.0).
-Model size is not the main bottleneck: Table~\ref{tab:exp1} shows scale (oracle$\rightarrow$per\_scene, $+$\SI{16}{cm})
-costs $6\times$ more than model size (L$\rightarrow$S, $+$\SI{2.8}{cm}).
+L$\rightarrow$S: $13\times$ smaller, $6\times$ faster, $+$\SI{1.0}{cm} ($F$ \rsDALARGEF$\rightarrow$\rsDASMALLF);
+every scene moves the same way except the bathroom, where Small is slightly \emph{better} (7.5$\rightarrow$7.1).
+S$\rightarrow$MiDaS: similar parameter count, a further $3\times$ faster, but $2.1\times$ the Chamfer and $F$
+\rsMIDASF---a matter of model generation (DA-v2 was trained with 62M unlabelled images), not size. At oracle scale
+DA-v2 S (\SI{\rsDASMALLCM}{cm}) is still \SI{3.3}{cm} behind LiDAR (\rsLIDARCM).
+Model size is not the main bottleneck: Table~\ref{tab:exp1} shows scale (oracle$\rightarrow$per\_scene,
+$+$\SI{17.6}{cm}) costs $17\times$ more than model size (L$\rightarrow$S, $+$\SI{1.0}{cm}).
 
 \subsection{Exp.~5: does LiDAR confidence help?}\label{sec:exp5}
 ARKit ships a $\{0,1,2\}$ confidence map with every LiDAR frame. Masking or weighting by it is the cheapest possible
@@ -269,7 +272,7 @@ uncalibrated metric model & \SI{\rsMETRICCM}{cm}, \fscore{} \rsMETRICF \\
 fine-tuned on ARKitScenes, RGB-only & \SI{\rsFTFAROCM}{cm} (Faro teacher) vs \SI{\rsFTLIDARCM}{cm} (LiDAR teacher), \fscore{} \rsFTFAROF{} / \rsFTLIDARF \\
 voxel 2$\rightarrow$4$\rightarrow$\SI{8}{cm} & 1.2 $\rightarrow$ 2.1 $\rightarrow$ \SI{2.8}{cm} \\
 fps needed (LiDAR/GT) & $\geq 0.8$~fps for \fscore{} $\geq 0.9$; 0.4~fps leaves 0.83 \\
-L$\rightarrow$S$\rightarrow$MiDaS & 6.5 $\rightarrow$ 9.2 $\rightarrow$ \SI{15.0}{cm} at 871 $\rightarrow$ 121 $\rightarrow$ 27 ms/frame \\
+L$\rightarrow$S$\rightarrow$MiDaS & \rsDALARGECM $\rightarrow$ \rsDASMALLCM $\rightarrow$ \SI{\rsMIDASCM}{cm} at 871 $\rightarrow$ 121 $\rightarrow$ 27 ms/frame \\
 \bottomrule
 \end{tabularx}
 \end{table}

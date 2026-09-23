@@ -19,7 +19,7 @@ ARKitScenes (frozen encoder, DPT head only) brings the uncalibrated row to \SI{\
 labels come from the laser scanner and \SI{\rsFTLIDARCM}{cm} when they come from an iPad's own LiDAR instead
 (AbsRel \rsFTFAROABSREL{} vs \rsFTLIDARABSREL)---so the supervision a \$20k scanner provides can be collected with a
 consumer depth sensor, and devices without one inherit it.
-Model size (Large$\rightarrow$Small) costs just \SI{2.8}{cm} for a $7\times$ speed-up, and frame rate governs
+Model size (Large$\rightarrow$Small) costs just \SI{1.0}{cm} for a $6\times$ speed-up, and frame rate governs
 coverage rather than accuracy ($\geq 0.8$~fps is needed).
 The product conclusion is that the gap between devices with and without LiDAR is a per-frame scale problem, solvable
 with metric data from VIO rather than with a larger model. Code, every experiment config, and every run's metrics are released.
