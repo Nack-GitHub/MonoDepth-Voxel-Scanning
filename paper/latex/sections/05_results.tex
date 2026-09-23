@@ -114,10 +114,10 @@ causes: GT control (coverage only), mono$+$oracle ($+$ model shape), mono$+$per\
 \toprule
 Stride ($\approx$fps) & Frames & GT: Ch / acc / comp & $F$ & mono oracle: Ch / acc / comp & $F$ & mono per\_scene: Ch / acc / comp & $F$ & mono time (s) \\
 \midrule
-1 (4) & 391 & 2.1 / \textbf{1.3} / 2.8 & 0.97 & 6.5 / 7.1 / 5.8 & 0.74 & 22.7 / 23.8 / 21.7 & 0.22 & 355 \\
-5 (0.8) & 78 & 4.4 / \textbf{1.2} / 7.6 & 0.92 & 8.2 / 5.6 / 10.9 & 0.72 & 22.7 / 20.3 / 25.2 & 0.23 & 72 \\
-10 (0.4) & 40 & 8.9 / \textbf{1.2} / 16.6 & 0.83 & 12.7 / 5.0 / 20.3 & 0.65 & 25.0 / 18.9 / 31.0 & 0.20 & 36 \\
-20 (0.2) & 20 & 16.8 / \textbf{1.3} / 32.3 & 0.68 & 20.9 / 5.1 / 36.7 & 0.52 & 34.5 / 21.4 / 47.6 & 0.14 & 19 \\
+1 (4) & \rsSTRGTONEN & \rsSTRGTONECM / \textbf{\rsSTRGTONEACC} / \rsSTRGTONECOMP & \rsSTRGTONEF & \rsSTRORACLEONECM / \rsSTRORACLEONEACC / \rsSTRORACLEONECOMP & \rsSTRORACLEONEF & \rsSTRSCENEONECM / \rsSTRSCENEONEACC / \rsSTRSCENEONECOMP & \rsSTRSCENEONEF & \rsSTRSCENEONESCAN \\
+5 (0.8) & \rsSTRGTFIVEN & \rsSTRGTFIVECM / \textbf{\rsSTRGTFIVEACC} / \rsSTRGTFIVECOMP & \rsSTRGTFIVEF & \rsSTRORACLEFIVECM / \rsSTRORACLEFIVEACC / \rsSTRORACLEFIVECOMP & \rsSTRORACLEFIVEF & \rsSTRSCENEFIVECM / \rsSTRSCENEFIVEACC / \rsSTRSCENEFIVECOMP & \rsSTRSCENEFIVEF & \rsSTRSCENEFIVESCAN \\
+10 (0.4) & \rsSTRGTTENN & \rsSTRGTTENCM / \textbf{\rsSTRGTTENACC} / \rsSTRGTTENCOMP & \rsSTRGTTENF & \rsSTRORACLETENCM / \rsSTRORACLETENACC / \rsSTRORACLETENCOMP & \rsSTRORACLETENF & \rsSTRSCENETENCM / \rsSTRSCENETENACC / \rsSTRSCENETENCOMP & \rsSTRSCENETENF & \rsSTRSCENETENSCAN \\
+20 (0.2) & \rsSTRGTTWENTYN & \rsSTRGTTWENTYCM / \textbf{\rsSTRGTTWENTYACC} / \rsSTRGTTWENTYCOMP & \rsSTRGTTWENTYF & \rsSTRORACLETWENTYCM / \rsSTRORACLETWENTYACC / \rsSTRORACLETWENTYCOMP & \rsSTRORACLETWENTYF & \rsSTRSCENETWENTYCM / \rsSTRSCENETWENTYACC / \rsSTRSCENETWENTYCOMP & \rsSTRSCENETWENTYF & \rsSTRSCENETWENTYSCAN \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -148,9 +148,9 @@ the depth source.
 \toprule
 Model & Params & Chamfer & F@5 & AbsRel & $\delta_1$ & ms/frame (MPS) & s/scan \\
 \midrule
-DA-v2 Large & 335M & $\mathbf{6.45 \pm 2.42}$ & 0.74 & 0.040 & 0.979 & 871 & 355 \\
-DA-v2 Small & 25M & $\mathbf{9.22 \pm 3.48}$ & 0.64 & 0.054 & 0.964 & 121 & 56 \\
-MiDaS v2.1 small & 21M & $\mathbf{14.95 \pm 1.87}$ & 0.35 & 0.110 & 0.873 & 27 & 18 \\
+DA-v2 Large & 335M & $\mathbf{\rsDALARGECM \pm \rsDALARGESD}$ & \rsDALARGEF & \rsDALARGEABSREL & \rsDALARGEDELTAONE & 871 & \rsDALARGESCAN \\
+DA-v2 Small & 25M & $\mathbf{\rsDASMALLCM \pm \rsDASMALLSD}$ & \rsDASMALLF & \rsDASMALLABSREL & \rsDASMALLDELTAONE & 121 & \rsDASMALLSCAN \\
+MiDaS v2.1 small & 21M & $\mathbf{\rsMIDASCM \pm \rsMIDASSD}$ & \rsMIDASF & \rsMIDASABSREL & \rsMIDASDELTAONE & 27 & \rsMIDASSCAN \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

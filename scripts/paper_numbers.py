@@ -107,6 +107,35 @@ def main() -> None:
         macro("FTGAIN", _fmt(mean.loc["mono_metric", "chamfer"] / m6.loc["mono_ft_lidar", "chamfer"], 1))
         macro("FTGAPORACLE", _fmt((m6.loc["mono_ft_lidar", "chamfer"] - mean.loc["mono_oracle", "chamfer"]) * 100))
 
+    # Exp4 (model size, oracle scale) and Exp3 (frame stride): both run the monocular model, so both
+    # move whenever the depth code does -> macros rather than typed numbers (see git 48c1958).
+    e4 = df[df.experiment == "exp4_model_size"].groupby("run_name").mean(numeric_only=True)
+    e4sd = df[df.experiment == "exp4_model_size"].groupby("run_name").std(numeric_only=True)
+    for run, tag in (("da_large", "DALARGE"), ("da_small", "DASMALL"), ("midas_small", "MIDAS")):
+        if run not in e4.index:
+            continue
+        macro(f"{tag}CM", _fmt(e4.loc[run, "chamfer"] * 100, 2))
+        macro(f"{tag}SD", _fmt(e4sd.loc[run, "chamfer"] * 100, 2))
+        macro(f"{tag}F", _fmt(e4.loc[run, "fscore@0.05"], 2))
+        macro(f"{tag}ABSREL", _fmt(e4.loc[run, "abs_rel"], 3))
+        macro(f"{tag}DELTAONE", _fmt(e4.loc[run, "delta1"], 3))
+        macro(f"{tag}SCAN", _fmt(e4.loc[run, "time_total_s"], 0))
+
+    strides = (("s01", "ONE"), ("s05", "FIVE"), ("s10", "TEN"), ("s20", "TWENTY"))
+    for exp, tag in (("exp3_frame_stride_gt", "STRGT"), ("exp3_frame_stride_oracle", "STRORACLE"),
+                     ("exp3_frame_stride", "STRSCENE")):
+        g = df[df.experiment == exp].groupby("run_name").mean(numeric_only=True)
+        for run, word in strides:
+            if run not in g.index:
+                continue
+            macro(f"{tag}{word}CM", _fmt(g.loc[run, "chamfer"] * 100))
+            macro(f"{tag}{word}ACC", _fmt(g.loc[run, "accuracy"] * 100))
+            macro(f"{tag}{word}COMP", _fmt(g.loc[run, "completeness"] * 100))
+            macro(f"{tag}{word}F", _fmt(g.loc[run, "fscore@0.05"], 2))
+            macro(f"{tag}{word}ABSREL", _fmt(g.loc[run, "abs_rel"], 3))
+            macro(f"{tag}{word}N", _fmt(g.loc[run, "n_frames"], 0))
+            macro(f"{tag}{word}SCAN", _fmt(g.loc[run, "time_total_s"], 0))
+
     Path(args.out).write_text("\n".join(lines) + "\n")
     print(f"wrote {args.out} ({len(lines) - 2} macros)")
 
