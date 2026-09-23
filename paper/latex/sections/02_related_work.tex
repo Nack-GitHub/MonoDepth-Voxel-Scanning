@@ -18,6 +18,16 @@ our results (\S\ref{sec:metric}) show that on real room video the per-frame scal
 $-60\%$ to $+80\%$ within one scan---invisible to per-image metrics, immediately visible once frames are fused into one
 volume.
 
+\paragraph{Conditioning on the camera, or on a teacher} Two families answer the scale ambiguity differently. One
+conditions the network on camera intrinsics---Metric3D~\cite{metric3d}, UniDepth~\cite{unidepth}, and Depth
+Pro~\cite{depthpro}, which estimates the focal length itself---so a metre prediction is tied to a known field of view.
+The other adapts a pretrained model to the target domain with depth labels, which is what the metric DA-v2 variants do
+on Hypersim. We take the second route but change where the labels come from: instead of a laser scanner or a synthetic
+renderer, the teacher is the depth sensor already shipping in consumer phones. This puts a price on the teacher---the
+question a product team actually faces---rather than on the architecture, and it is measured in mesh centimetres on
+held-out rooms rather than in per-image AbsRel (\S\ref{sec:finetune}). The two families are complementary: an
+intrinsics-conditioned model could be fine-tuned with the same LiDAR labels.
+
 \paragraph{Mobile LiDAR depth} ARKit provides $256\times192$ depth fusing LiDAR with imagery; ARKitScenes~\cite{arkitscenes}
 is the first dataset to release both this depth and Faro laser-scanner depth for the same rooms, making a direct
 ``mobile LiDAR vs.\ laser'' comparison possible. We use both as two rows of the same table.
@@ -57,7 +67,7 @@ scanner; this paper provides that number at least for our own pipeline.
 \midrule
 Monocular depth papers & \checkmark & $\times$ (one model) & per-image depth & AbsRel, $\delta$ \\
 Atlas / NeuralRecon / SimpleRecon & \checkmark & $\times$ (multi-view only) & ScanNet mesh & Chamfer, F-score \\
-\textbf{This work} & $\times$ (pretrained) & \checkmark\ laser / LiDAR / mono $\times$ aligner & Faro laser (ARKitScenes) & Chamfer, F@$\tau$, per-frame AbsRel/$\delta$, time \\
+\textbf{This work} & head only (LiDAR teacher) & \checkmark\ laser / LiDAR / mono $\times$ aligner $\times$ teacher & Faro laser (ARKitScenes) & Chamfer, F@$\tau$, per-frame AbsRel/$\delta$, time \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

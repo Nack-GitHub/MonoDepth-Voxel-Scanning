@@ -18,6 +18,13 @@ Metric3D [metric3d] ชี้ว่าความกำกวมหลักค
 งานเหล่านี้รายงาน AbsRel/δ₁ ต่อภาพบน NYUv2/KITTI; ผลของเรา (§6.2) ชี้ว่าบนวิดีโอห้องจริง scale ต่อเฟรมของโมเดล metric ยังแกว่งตั้งแต่ −60 % ถึง +80 % ภายใน scan เดียว
 ซึ่งเป็นสิ่งที่ตัวชี้วัดต่อภาพไม่แสดง แต่ปรากฏทันทีเมื่อ fuse หลายเฟรมเข้า volume เดียว
 
+**การ condition ด้วยกล้อง หรือด้วย "ครู".** มีสองแนวทางที่ตอบความกำกวมของสเกลต่างกัน แนวแรก condition เน็ตเวิร์กด้วย intrinsics ของกล้อง —
+Metric3D [metric3d], UniDepth [unidepth] และ Depth Pro [depthpro] ที่ประมาณ focal length ให้เองด้วย — ทำให้ค่าเมตรผูกกับ field of view ที่รู้ค่า
+แนวที่สองคือ adapt โมเดล pretrained ไปยังโดเมนเป้าหมายด้วย label depth ซึ่งเป็นสิ่งที่ DA-v2 รุ่น metric ทำบน Hypersim
+งานนี้เดินแนวที่สอง แต่เปลี่ยน *ที่มาของ label*: แทน laser scanner หรือภาพเรนเดอร์สังเคราะห์ ครูคือเซนเซอร์ depth ที่มีอยู่แล้วในมือถือระดับผู้บริโภค
+⇒ เป็นการตีราคา "ครู" (คำถามที่ทีมผลิตภัณฑ์เจอจริง) ไม่ใช่ตีราคาสถาปัตยกรรม และวัดเป็นเซนติเมตรบน mesh ของห้องที่กันไว้ ไม่ใช่ AbsRel ต่อภาพ (§5.6)
+สองแนวนี้เสริมกันได้: โมเดลที่ condition ด้วย intrinsics ก็ fine-tune ด้วย label LiDAR ชุดเดียวกันได้
+
 **Depth จาก LiDAR ในมือถือ.** ARKit ให้ depth 256×192 ที่ fuse LiDAR กับภาพ; ARKitScenes [arkitscenes] เป็น dataset แรกที่ปล่อยทั้ง depth นี้
 และ depth จาก Faro laser scanner ในห้องเดียวกัน ทำให้เทียบ "LiDAR มือถือ vs laser" ได้ตรง ๆ — งานนี้ใช้ทั้งสองเป็น 2 แถวของตาราง
 
@@ -57,6 +64,8 @@ Apple RoomPlan [roomplan] ให้ floor plan + กล่องเฟอร์�
 - [da2] Yang et al., "Depth Anything V2"
 - [zoedepth] Bhat et al., "ZoeDepth: Zero-shot Transfer by Combining Relative and Metric Depth"
 - [metric3d] Yin et al., "Metric3D: Towards Zero-shot Metric 3D Prediction from a Single Image"
+- [unidepth] Piccinelli et al., "UniDepth: Universal Monocular Metric Depth Estimation" (CVPR 2024)
+- [depthpro] Bochkovskii et al., "Depth Pro: Sharp Monocular Metric Depth in Less Than a Second" (ICLR 2025)
 - [arkitscenes] Baruch et al., "ARKitScenes: A Diverse Real-World Dataset for 3D Indoor Scene Understanding Using Mobile RGB-D Data"
 - [curless96] Curless & Levoy, "A Volumetric Method for Building Complex Models from Range Images"
 - [kinectfusion] Newcombe et al., "KinectFusion: Real-Time Dense Surface Mapping and Tracking"
