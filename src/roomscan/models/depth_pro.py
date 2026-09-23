@@ -1,5 +1,11 @@
 """Depth Pro (Apple) — the intrinsics-conditioned metric baseline (Level 0 of ADR-013).
 
+NOT VALIDATED — do not report numbers from this model yet. With transformers 5.17 the documented call
+(`post_process_depth_estimation`) returns a map whose inverse ANTI-correlates with the Faro reference
+(-0.95 on ARKitScenes 47115299), i.e. near and far are swapped, while the model's raw `predicted_depth`
+correlates positively with depth (+0.92 on the same frame). Measurements and next steps:
+docs/notes/depth_pro_postprocessing.md.
+
 Unlike DA-v2 Metric it does not just regress metres: it predicts the field of view as well and
 divides by the resulting focal length, which is the standard answer to ``why not use a model that
 knows the camera?''. Inference only; RGB in, metres out, so it drops into MonocularDepth like any

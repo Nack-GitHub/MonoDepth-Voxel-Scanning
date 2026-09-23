@@ -82,4 +82,6 @@ Where: 🍎 = Mac ทำได้ · 🪟 = ต้องทำบน WSL2/RTX 30
 - [x] รัน exp3 (mono) + exp4 ใหม่หลังการหมุนภาพ → §5.3/§5.4 + "ขนาดโมเดลมีผลน้อยกว่า scale" 6 เท่า → **17 เท่า**
 - [x] regenerate `paper/analysis/` scale drift (12 ไฟล์) + บันทึกส่วนต่างท้าย `42444474_failure_analysis.md`
 - [x] `make figures` + `make paper-figures` ใหม่ + รูป `exp6_finetune_topdown_grid.png` เข้าเปเปอร์แล้ว
-- [ ] Level 0 baseline: รันแถว `mono_depth_pro` ใน exp6 (โค้ด + config พร้อมแล้ว, รอโหลด checkpoint ~1.9 GB) — ถ้าจะเทียบเพิ่มค่อยต่อด้วย UniDepth / Metric3D
+- [ ] Level 0 baseline: **ติดปัญหา** — `apple/DepthPro-hf` + transformers 5.17 ให้ depth ที่ใกล้/ไกลสลับกัน (`corr(1/pred, 1/gt) = -0.95`) แถวใน exp6 ถูก comment ไว้ ยังไม่มีตัวเลขรายงาน
+  - ต้องเทียบ 1 เฟรมกับ reference implementation ของ Apple ก่อน แล้วค่อยเปิดแถวกลับ: `docs/notes/depth_pro_postprocessing.md`
+  - ทางเลือก: ใช้ UniDepth v2 หรือ Metric3D v2 เป็น Level 0 แทน
