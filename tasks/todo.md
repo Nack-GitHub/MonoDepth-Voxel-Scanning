@@ -72,4 +72,14 @@ Where: 🍎 = Mac ทำได้ · 🪟 = ต้องทำบน WSL2/RTX 30
   - Verify: `git status` สะอาด; ไม่มี safetensors ใน history; SPEC §10 ครบ
 
 ### ✅ Checkpoint D — Complete
-- [ ] SPEC §10 ข้อ 1–9 ครบ → เริ่ม spec ฝั่ง Mac (Level 0 Depth Pro, `exp6_finetune.yaml`, เปเปอร์)
+- [x] SPEC §10 ข้อ 1–9 ครบ (2026-09-23) — checkpoint ทั้ง 3 ตัวโหลดบน Mac ได้, predict ฉาก T ผ่านเกณฑ์ median ratio
+
+## ฝั่ง Mac (ต่อจาก Checkpoint D)
+- [x] `exp6_finetune` 4 แถว × 6 ฉากเทสต์ → `experiments/results/exp6_finetune/` + `paper/analysis/finetune_teacher.md`
+  - ผล: pretrained 54.3 cm → ft_faro 14.6 / ft_lidar 16.6 / ft_lidar_all 15.7 cm (AbsRel 0.382 → 0.134–0.136)
+- [x] รัน exp1 ใหม่หลัง PR #1 (การหมุนภาพ) — 4 ฉาก `Left` ขยับ, 2 ฉาก `Up`/`Down` ไม่ขยับ
+- [x] เปเปอร์: abstract, intro, setup §4.5, results §5.6/Exp6, discussion, business, limitations, conclusion + `numbers.tex` (ทั้งไทยและอังกฤษ)
+- [ ] รัน exp3 (mono) + exp4 ใหม่หลังการหมุนภาพ → อัปเดตตัวเลข §5.3/§5.4 + ตาราง "L→S→MiDaS"
+- [ ] regenerate `paper/analysis/` scale drift + `42444474_failure_analysis.md` (ตัวเลขเดิมคำนวณก่อนแก้การหมุน)
+- [ ] `make figures` ใหม่ + รูป top-down ของ exp6
+- [ ] Level 0 baseline: Depth Pro / UniDepth / Metric3D (inference-only) ตอบคำถามรีวิวเวอร์เรื่องโมเดลที่รับ intrinsics
