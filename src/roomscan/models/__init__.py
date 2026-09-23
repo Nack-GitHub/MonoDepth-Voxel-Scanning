@@ -20,7 +20,9 @@ _REGISTRY: dict[str, tuple[str, dict]] = {
                                        {"size": "ft_lidar_all",
                                         "hf_id": "NackPanupong/roomscan-dav2-metric-large-ft-lidar-all"}),
     # Level-0 baseline (ADR-013): a metric model that conditions on / predicts the camera intrinsics
-    "depth_pro": ("roomscan.models.depth_pro:DepthPro", {}),
+    "depth_pro": ("roomscan.models.depth_pro:DepthPro", {}),                      # predicts its own FOV
+    # ARKitScenes vga_wide is one camera: fx = fy = 533 px at 640x480 in all six test scenes
+    "depth_pro_intrinsics": ("roomscan.models.depth_pro:DepthPro", {"focal_px": 532.8}),
     "midas_small": ("roomscan.models.midas:MiDaS", {"variant": "MiDaS_small"}),
     "midas_dpt_hybrid": ("roomscan.models.midas:MiDaS", {"variant": "DPT_Hybrid"}),
 }

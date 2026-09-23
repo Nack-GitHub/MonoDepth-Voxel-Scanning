@@ -16,9 +16,7 @@ runs:
     overrides: {depth.source: mono, depth.model: depth_anything_v2_ft_lidar, depth.aligner: identity}
   - name: mono_ft_lidar_all         # R3: LiDAR teacher on 24 scenes — what a laser-free dataset buys
     overrides: {depth.source: mono, depth.model: depth_anything_v2_ft_lidar_all, depth.aligner: identity}
-  # Level 0 (intrinsics-conditioned metric model) is PARKED: the transformers 5.17 post-processing for
-  # apple/DepthPro-hf returns a map that anti-correlates with GT depth (corr(1/pred, 1/gt) = -0.95 on a
-  # test frame) — see docs/notes/depth_pro_postprocessing.md. Re-enable only after the wrapper is
-  # validated against Apple's reference implementation.
-  # - name: mono_depth_pro
-  #   overrides: {depth.source: mono, depth.model: depth_pro, depth.aligner: identity}
+  # Level 0: an intrinsics-conditioned metric model, no fine-tuning — given the camera's true focal
+  # length (533 px), which is the strongest form of this baseline (docs/notes/depth_pro_postprocessing.md)
+  - name: mono_depth_pro
+    overrides: {depth.source: mono, depth.model: depth_pro_intrinsics, depth.aligner: identity}
