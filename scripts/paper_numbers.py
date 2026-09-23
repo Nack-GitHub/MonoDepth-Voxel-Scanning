@@ -99,6 +99,8 @@ def main() -> None:
         macro(f"{tag}F", _fmt(m6.loc[run, "fscore@0.05"], 2))
         macro(f"{tag}ABSREL", _fmt(m6.loc[run, "abs_rel"], 3))
         macro(f"{tag}DELTAONE", _fmt(m6.loc[run, "delta1"], 3))
+        for tau, word in (("0.02", "two"), ("0.05", "five"), ("0.1", "ten")):
+            macro(f"{tag}R{word}", _fmt(m6.loc[run, f"recall@{tau}"], 2))
     if {"mono_ft_faro", "mono_ft_lidar"} <= set(m6.index):
         # the paper's headline ratio: how much of the laser teacher's benefit a LiDAR teacher keeps
         macro("FTTEACHERRATIO", _fmt(m6.loc["mono_ft_lidar", "chamfer"] / m6.loc["mono_ft_faro", "chamfer"], 2))

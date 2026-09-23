@@ -9,13 +9,13 @@ $\geq 90\%$ of the surface within $\tau$ of the truth (recall@$\tau$).
 \caption{Recall@$\tau$ averaged over 6 scenes. \checkmark\ $\geq 0.9$, $\sim$ 0.75--0.9, $\times$ $< 0.75$.}
 \label{tab:usecase}
 \begin{adjustbox}{max width=\textwidth}
-\begin{tabular}{@{}llrrrrrr@{}}
+\begin{tabular}{@{}llrrrrrrr@{}}
 \toprule
-Use case & $\tau$ & Faro & iPad LiDAR & mono $+$ oracle & mono $+$ sparse & mono $+$ per\_scene & mono metric \\
+Use case & $\tau$ & Faro & iPad LiDAR & mono $+$ oracle & mono $+$ sparse & mono $+$ per\_scene & mono ft (LiDAR) & mono metric \\
 \midrule
-room overview / virtual walk-through & \SI{10}{cm} & \checkmark\ 0.98 & \checkmark\ 0.97 & \checkmark\ 0.91 & \rsSPARSERten & $\times$ 0.47 & $\times$ 0.21 \\
-furniture placement / space planning & \SI{5}{cm} & \checkmark\ 0.96 & \checkmark\ 0.92 & $\sim$ 0.79 & \rsSPARSERfive & $\times$ 0.26 & $\times$ 0.10 \\
-floor-area sale / renovation (walls, trim) & \SI{2}{cm} & $\sim$ 0.84 & $\times$ 0.52 & $\times$ 0.44 & \rsSPARSERtwo & $\times$ 0.09 & $\times$ 0.02 \\
+room overview / virtual walk-through & \SI{10}{cm} & \checkmark\ \rsGTRten & \checkmark\ \rsLIDARRten & \checkmark\ \rsORACLERten & \checkmark\ \rsSPARSERten & $\times$ \rsSCENERten & $\times$ \rsFTLIDARRten & $\times$ \rsMETRICRten \\
+furniture placement / space planning & \SI{5}{cm} & \checkmark\ \rsGTRfive & \checkmark\ \rsLIDARRfive & $\sim$ \rsORACLERfive & $\sim$ \rsSPARSERfive & $\times$ \rsSCENERfive & $\times$ \rsFTLIDARRfive & $\times$ \rsMETRICRfive \\
+floor-area sale / renovation (walls, trim) & \SI{2}{cm} & $\sim$ \rsGTRtwo & $\times$ \rsLIDARRtwo & $\times$ \rsORACLERtwo & $\times$ \rsSPARSERtwo & $\times$ \rsSCENERtwo & $\times$ \rsFTLIDARRtwo & $\times$ \rsMETRICRtwo \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -25,11 +25,13 @@ floor-area sale / renovation (walls, trim) & \SI{2}{cm} & $\sim$ 0.84 & $\times$
 \SI{2}{cm} LiDAR reaches only half, and even Faro through this pipeline reaches 0.84 (the \SI{4}{cm} voxel eats it;
 \S5.2 shows \SI{2}{cm} voxels reach 0.92). A product promising centimetre accuracy needs finer voxels plus multiple
 LiDAR passes, or a laser. Confidence weighting does not move this (Exp.~5).
-\item \textbf{Devices without LiDAR serve no use case} with one-off calibration (per\_scene \SI{22.7}{cm}) or a raw
-metric model (\SI{49}{cm}).
+\item \textbf{Devices without LiDAR serve no use case} with one-off calibration (per\_scene \SI{\rsSCENECM}{cm}) or a
+raw metric model (\SI{\rsMETRICCM}{cm}). Fine-tuning that metric model on data a phone can collect itself buys the
+``rough overview'' tier without any run-time calibration (\SI{\rsFTLIDARCM}{cm}, \S\ref{sec:finetune}) but not the
+``furniture placement'' tier.
 \item \textbf{With per-frame sparse points the same device reaches \SI{\rsSPARSECM}{cm}, recall@\SI{5}{cm} \rsSPARSERfive}---the
-``furniture placement'' tier at a level close to iPad~Pro, and the mono ceiling (oracle \SI{6.5}{cm}) is only
-\SI{3.4}{cm} behind LiDAR. This is the gap to invest in, not the model.
+``furniture placement'' tier at a level close to iPad~Pro, and the mono ceiling (oracle \SI{\rsORACLECM}{cm}) is only
+\SI{\rsORACLEGAPLIDARCM}{cm} behind LiDAR. This is the gap to invest in, not the model.
 \end{itemize}
 
 \subsection{Where to invest: scale first, model second}
@@ -40,7 +42,8 @@ metric model (\SI{49}{cm}).
 \toprule
 Error source & Size (Chamfer) & Remedy & Cost \\
 \midrule
-one scale per scene $\rightarrow$ per frame & \textbf{$-$\SI{16}{cm}} (22.7 $\rightarrow$ 6.5) & per-frame metric points from VIO (free from ARCore/ARKit) & one aligner (\code{sparse\_points}); measured: 22.7 $\rightarrow$ \rsSPARSECM \\
+one scale per scene $\rightarrow$ per frame & \textbf{$-$\SI{18}{cm}} (\rsSCENECM $\rightarrow$ \rsORACLECM) & per-frame metric points from VIO (free from ARCore/ARKit) & one aligner (\code{sparse\_points}); measured: \rsSCENECM $\rightarrow$ \rsSPARSECM \\
+teach the model the scale instead & $-$\SI{38}{cm} (\rsMETRICCM $\rightarrow$ \rsFTLIDARCM) & fine-tune on scenes captured with a phone's own LiDAR & one training run ($\sim$1~h on an RTX~3070); no run-time cost \\
 model S $\rightarrow$ L & $-$\SI{2.8}{cm} (9.2 $\rightarrow$ 6.5) & $13\times$ larger model, $7\times$ slower & on-device / cloud compute \\
 voxel 4 $\rightarrow$ \SI{2}{cm} & $-$\SI{0.9}{cm} & $\sim$4$\times$ larger mesh & memory / bandwidth \\
 MiDaS $\rightarrow$ DA-v2 S & $-$\SI{5.7}{cm} & newer model, same size & zero \\
@@ -86,7 +89,7 @@ on a server with L'' is feasible without waiting for on-device models. The \code
  & RoomPlan / Polycam (LiDAR) & this work on a LiDAR device & this work without LiDAR, one-off calibration & this work without LiDAR $+$ VIO points \\
 \midrule
 market & iPhone/iPad Pro & same & Android $+$ regular iPhone & same \\
-measured accuracy & not disclosed & \SI{3.0}{cm}, \fscore{} 0.93 & \SI{22.7}{cm}, \fscore{} 0.22 & \SI{\rsSPARSECM}{cm}, \fscore{} \rsSPARSEF{} (VIO-proxy upper bound) \\
+measured accuracy & not disclosed & \SI{3.0}{cm}, \fscore{} 0.93 & \SI{\rsSCENECM}{cm}, \fscore{} \rsSCENEF{} (\SI{\rsFTLIDARCM}{cm} fine-tuned, no calibration) & \SI{\rsSPARSECM}{cm}, \fscore{} \rsSPARSEF{} (VIO-proxy upper bound) \\
 use case served & (claims floor plan) & furniture placement & not even overview & furniture placement (nearly) \\
 needs from device & LiDAR & LiDAR $+$ VIO & camera $+$ VIO & camera $+$ VIO $+$ feature points \\
 \bottomrule
