@@ -25,11 +25,17 @@ AbsRel on the 3 validation rooms; that ranking (R3 $>$ R2 $>$ R1) does not repro
 so the Exp.~6 ordering between teachers should be read as ``no measurable difference'', and a larger validation set is
 the first thing to add. The six test rooms were never used for training, validation or checkpoint choice.
 
-\textbf{(f) One fine-tuning recipe, one architecture.} Only DA-v2 Metric-Indoor Large with a frozen encoder was
+\textbf{(f) The Level-0 row is one model, one implementation, one input resolution.} Depth Pro is run through
+its HuggingFace implementation on \SI{640x480}{} frames upsampled to $1536^2$ by its own processor, with the true
+focal length supplied; we did not test Apple's reference code, higher-resolution input (the dataset's
+$1920\times1440$ frames were not downloaded), or the other intrinsics-conditioned models (UniDepth, Metric3D).
+The claim we make is about this model on this input, not about the family.
+
+\textbf{(g) One fine-tuning recipe, one architecture.} Only DA-v2 Metric-Indoor Large with a frozen encoder was
 fine-tuned; whether unfreezing the encoder, a different loss or another architecture would widen or close the
 Faro-vs-LiDAR teacher gap is untested, as is training on more than 24 rooms.
 
-\textbf{(g) Times are Apple Silicon (MPS) with unoptimised PyTorch}, not representative of on-device inference
+\textbf{(h) Times are Apple Silicon (MPS) with unoptimised PyTorch}, not representative of on-device inference
 (CoreML / NNAPI); use them for \emph{ratios} between models, not absolute values.
 
 \subsection{Limitations of the system}

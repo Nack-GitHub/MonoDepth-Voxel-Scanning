@@ -50,6 +50,9 @@ problem is solved.''
 depth is not shape but a scale that swings per view} (\S\ref{sec:discussion}).
 \item Fitting scale per frame on $\sim$200 sparse metric points closes that gap to \SI{\rsSPARSECM}{cm}
 (\fscore{} \rsSPARSEF)---within \SI{\rsSPARSEGAP}{cm} of the oracle (\S\ref{sec:results}).
+\item An intrinsics-conditioned metric model (Depth Pro), given the camera's real focal length and no
+fine-tuning, reaches only \SI{\rsDEPTHPROCM}{cm} (\fscore{} \rsDEPTHPROF)---knowing the camera is not what the
+problem needs.
 \item Fine-tuning the metric model on ARKitScenes fixes the uncalibrated row without any alignment at run time:
 \SI{\rsFTFAROCM}{cm} with a laser teacher, \SI{\rsFTLIDARCM}{cm} with a consumer-LiDAR teacher
 ($\rsFTTEACHERRATIO\times$), from \SI{\rsMETRICCM}{cm} pretrained (\S\ref{sec:finetune}).

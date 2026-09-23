@@ -38,6 +38,8 @@
 - Monocular ที่ calibrate scale ครั้งเดียวต่อฉาก เสีย 22.9 ± 2.1 cm ทุกห้องเท่า ๆ กัน; โมเดล "metric" ที่ไม่ต้อง calibrate เสีย 54.3 ± 10.6 cm
   — **ปัญหาที่แท้จริงของ monocular ไม่ใช่รูปทรงแต่คือ scale ที่แกว่งต่อมุมมอง** (§6)
 - Fit scale ต่อเฟรมด้วยจุด sparse ~200 จุด (proxy ของ VIO) ปิดช่องว่างนั้นเหลือ 6.0 ± 1.7 cm (F@5cm 0.74) — ห่าง oracle 0.6 cm (§5)
+- โมเดล metric ที่ condition ด้วย intrinsics (Depth Pro) ป้อน focal จริงให้และไม่ fine-tune ได้เพียง 155.4 cm (F@5cm 0.00)
+  — การรู้จักกล้องไม่ใช่สิ่งที่ปัญหานี้ต้องการ
 - **fine-tune โมเดล metric บน ARKitScenes แก้แถวที่ไม่ calibrate ได้โดยไม่ต้อง align ตอนใช้งาน**: 14.6 cm เมื่อครูเป็น laser scanner
   และ 16.6 cm เมื่อครูเป็น LiDAR ของ iPad (1.13×) จากเดิม 54.3 cm ตอน pretrained (§5.6)
 - โมเดลเล็กลง 13× (DA-v2 Small) เสียเพิ่มเพียง 1.0 cm แต่เร็วขึ้น 6×; MiDaS small เร็วอีก 3× แต่ error เป็น 2.5× ของ Large — ขนาดโมเดลมีผลน้อยกว่า scale 17 เท่า

@@ -14,10 +14,22 @@ excluded from training, validation and checkpoint selection (`configs/training/s
 | `lidar` (ARKit) | — | 3.04 ± 0.57 cm | 0.93 | 0.018 | 0.997 | iPhone/iPad Pro LiDAR |
 | `mono_oracle` | — | 5.33 ± 1.33 cm | 0.79 | 0.032 | 0.986 | per-frame GT scale (upper bound) |
 | `mono_sparse` | — | 5.96 ± 1.68 cm | 0.74 | 0.036 | 0.985 | ~200 sparse metric points (VIO proxy) |
+| `mono_depth_pro` (Level 0, true focal) | — | 155.40 ± 39.00 cm | 0.00 | 1.043 | 0.219 | **no** |
 | `mono_metric` (pretrained) | — | 54.27 ± 10.59 cm | 0.03 | 0.382 | 0.277 | **no** |
 | `mono_ft_faro` (R1) | Faro, 10 scenes | **14.59 ± 3.96 cm** | **0.31** | 0.136 | 0.780 | **no** |
 | `mono_ft_lidar` (R2) | ARKit LiDAR, 10 scenes | 16.55 ± 4.65 cm | 0.23 | 0.136 | **0.848** | **no** |
 | `mono_ft_lidar_all` (R3) | ARKit LiDAR, 24 scenes | 15.68 ± 4.04 cm | 0.24 | **0.134** | 0.812 | **no** |
+
+## Level 0: an intrinsics-conditioned model is not the answer
+
+Depth Pro, no fine-tuning, handed the camera's real focal length (533 px instead of the 716 px it infers
+from its own 48° FOV estimate), lands at **155.4 cm** — three times worse than the pretrained DA-v2 Metric
+row it was supposed to improve on, and ~10× the fine-tuned rows. Per scene: 88.9–196.4 cm, bad everywhere.
+Its per-frame structure is right and its distances are not, and the gap survives removing scale per frame
+(AbsRel 0.24–0.54 vs DA-v2 Metric's 0.04–0.13). The wrapper was validated on a synthetic room with exact
+GT (AbsRel 0.008 after one scale), so this is the model on VGA close-range indoor frames, not the plumbing
+(`docs/notes/depth_pro_postprocessing.md`). Caveat for the write-up: one model, one implementation, one
+input resolution — the claim is about this row, not about every intrinsics-conditioned model.
 
 ## What it says
 

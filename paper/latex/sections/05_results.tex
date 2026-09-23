@@ -197,7 +197,10 @@ DA-v2 Metric-Indoor checkpoint on ARKitScenes with a frozen DINOv2 backbone (DPT
 varying \emph{only the teacher}: Faro \code{highres\_depth} (R1, 10 scenes), the iPad's own LiDAR \code{lowres\_depth}
 (R2, the same 10 scenes), and LiDAR on 24 scenes (R3, the 10 $+$ 14 scenes with no laser scan at all). Training,
 validation and checkpoint selection used scenes disjoint from the six test scenes at the \code{visit\_id} level; at
-test time every row below is RGB-only with \code{aligner: identity}.
+test time every row below is RGB-only with \code{aligner: identity}. As a Level-0 reference the table also
+carries Depth Pro~\cite{depthpro}, a metric model of the other family (\S\ref{sec:related}): no fine-tuning, and
+\emph{handed the camera's true focal length} (\SI{533}{px}) rather than the one it predicts, which is the strongest
+form of that baseline.
 
 \begin{table}[h]
 \centering\small
@@ -209,6 +212,7 @@ label; none of these rows uses a depth sensor at test time.}
 \toprule
 Model & Teacher & Chamfer & \textbf{F@5} & AbsRel & $\delta_1$ \\
 \midrule
+Depth Pro (intrinsics given) & --- & $\rsDEPTHPROCM \pm \rsDEPTHPROSD$ & \rsDEPTHPROF & \rsDEPTHPROABSREL & \rsDEPTHPRODELTAONE \\
 Metric-Indoor (pretrained) & --- & $\rsMETRICCM \pm \rsMETRICSD$ & \rsMETRICF & \rsMETRICABSREL & 0.277 \\
 $+$ fine-tune (R1) & Faro & $\mathbf{\rsFTFAROCM \pm \rsFTFAROSD}$ & \textbf{\rsFTFAROF} & \rsFTFAROABSREL & \rsFTFARODELTAONE \\
 $+$ fine-tune (R2) & ARKit LiDAR & $\rsFTLIDARCM \pm \rsFTLIDARSD$ & \rsFTLIDARF & \rsFTLIDARABSREL & \textbf{\rsFTLIDARDELTAONE} \\
@@ -227,6 +231,7 @@ $+$ fine-tune (R3) & LiDAR, 24 scenes & $\rsFTLIDARALLCM \pm \rsFTLIDARALLSD$ & 
 \toprule
 Teacher & 4244 & 4733 & 4711 & 4289 & 4742 & 4526 & mean \\
 \midrule
+Depth Pro (no fine-tune) & \rsDEPTHPROa & \rsDEPTHPROb & \rsDEPTHPROc & \rsDEPTHPROd & \rsDEPTHPROe & \rsDEPTHPROf & \rsDEPTHPROCM \\
 none (pretrained) & \rsMETRICa & \rsMETRICb & \rsMETRICc & \rsMETRICd & \rsMETRICe & \rsMETRICf & \rsMETRICCM \\
 Faro (R1) & \rsFTFAROa & \rsFTFAROb & \rsFTFAROc & \rsFTFAROd & \rsFTFAROe & \rsFTFAROf & \rsFTFAROCM \\
 LiDAR (R2) & \rsFTLIDARa & \rsFTLIDARb & \rsFTLIDARc & \rsFTLIDARd & \rsFTLIDARe & \rsFTLIDARf & \rsFTLIDARCM \\
@@ -251,6 +256,16 @@ laser scanner with a consumer depth sensor costs no measurable accuracy, not tha
 \SI{\rsFTLIDARCM}{cm}). R3 was the best of the three on the validation fold (AbsRel 0.133 vs 0.142) and is not the best
 here---three validation scenes are too few to rank checkpoints this close, which we report rather than resolve with the
 test set.
+\item \textbf{Knowing the camera does not rescue metric depth.} Depth Pro, given the true intrinsics, is
+\SI{\rsDEPTHPROCM}{cm} with \fscore{} \rsDEPTHPROF---worse than the pretrained DA-v2 Metric row it was meant to
+improve on, and $\sim$10$\times$ the fine-tuned rows. Its structure is right (the surfaces of a frame land in the
+right places relative to each other) and its distances are not: it predicts a \SI{48}{\degree} field of view where
+the camera has \SI{62}{\degree}, and even after removing all scale per frame its AbsRel is 0.24--0.54 against
+0.04--0.13 for DA-v2 Metric on the same frames. The failure is specific to this input---VGA
+($640\times480$), close indoor range, motion blur---and we verified the wrapper against a synthetic room with exact
+ground truth (\fscore{}-level agreement, AbsRel 0.008 after one scale), so it is the model on this data, not the
+plumbing. The practical reading for a product team: a model that takes intrinsics is not a substitute for depth
+labels from the target device.
 \item \textbf{Alignment still beats fine-tuning.} \code{sparse\_points} (\SI{\rsSPARSECM}{cm}) is
 \SI{\rsFTGAPORACLE}{cm} better than the best fine-tune. The two are complementary, not alternatives: fine-tuning fixes
 the scale a model predicts, alignment fixes the scale of the frame it is looking at.
@@ -281,6 +296,7 @@ mono with 200 sparse points/frame & \SI{\rsSPARSECM}{cm}, \fscore{} \rsSPARSEF{}
 price of ``one scale per scene'' & $4.5\times$ oracle $\rightarrow$ \SI{\rsSCENECM}{cm}, \fscore{} \rsSCENEF \\
 uncalibrated metric model & \SI{\rsMETRICCM}{cm}, \fscore{} \rsMETRICF \\
 fine-tuned on ARKitScenes, RGB-only & \SI{\rsFTFAROCM}{cm} (Faro teacher) vs \SI{\rsFTLIDARCM}{cm} (LiDAR teacher), \fscore{} \rsFTFAROF{} / \rsFTLIDARF \\
+intrinsics-conditioned model (Depth Pro) & \SI{\rsDEPTHPROCM}{cm}, \fscore{} \rsDEPTHPROF{} --- intrinsics do not replace in-domain labels \\
 voxel 2$\rightarrow$4$\rightarrow$\SI{8}{cm} & 1.2 $\rightarrow$ 2.1 $\rightarrow$ \SI{2.8}{cm} \\
 fps needed (LiDAR/GT) & $\geq 0.8$~fps for \fscore{} $\geq 0.9$; 0.4~fps leaves 0.83 \\
 L$\rightarrow$S$\rightarrow$MiDaS & \rsDALARGECM $\rightarrow$ \rsDASMALLCM $\rightarrow$ \SI{\rsMIDASCM}{cm} at 871 $\rightarrow$ 121 $\rightarrow$ 27 ms/frame \\

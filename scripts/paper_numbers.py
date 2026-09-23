@@ -61,7 +61,8 @@ def main() -> None:
                                              ("mono_sparse", "SPARSE"), ("mono_scene", "SCENE"),
                                              ("mono_metric", "METRIC"))),
                       ("exp6_finetune", (("mono_ft_faro", "FTFARO"), ("mono_ft_lidar", "FTLIDAR"),
-                                         ("mono_ft_lidar_all", "FTLIDARALL")))):
+                                         ("mono_ft_lidar_all", "FTLIDARALL"),
+                                         ("mono_depth_pro", "DEPTHPRO")))):
         for run, tag in runs:
             col = per_scene(exp, run)
             for letter, scene in zip("abcdef", order, strict=True):
@@ -91,7 +92,7 @@ def main() -> None:
     e6 = df[df.experiment == "exp6_finetune"].groupby("run_name")
     m6, s6 = e6.mean(numeric_only=True), e6.std(numeric_only=True)
     for run, tag in (("mono_ft_faro", "FTFARO"), ("mono_ft_lidar", "FTLIDAR"),
-                     ("mono_ft_lidar_all", "FTLIDARALL")):
+                     ("mono_ft_lidar_all", "FTLIDARALL"), ("mono_depth_pro", "DEPTHPRO")):
         if run not in m6.index:
             continue
         macro(f"{tag}CM", _fmt(m6.loc[run, "chamfer"] * 100))
