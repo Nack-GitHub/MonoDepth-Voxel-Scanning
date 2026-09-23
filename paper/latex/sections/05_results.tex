@@ -256,6 +256,17 @@ test set.
 the scale a model predicts, alignment fixes the scale of the frame it is looking at.
 \end{enumerate}
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{exp6_finetune_topdown_grid}
+\caption{Exp.~6 top-down error maps (rows $=$ scenes, columns $=$ the three fine-tunes and the pretrained metric
+model, colour $=$ distance to the reference, 0--\SI{10}{cm}). The pretrained column is red almost everywhere---the
+room is built, at the wrong distance. After fine-tuning the walls and floor come back (blue/cyan) and the error
+concentrates at object edges and far walls; where a fine-tune is weaker (45261556 and 47333774 with the LiDAR
+teacher) it shows as a thick red rim around the room rather than a displaced room.}
+\label{fig:exp6}
+\end{figure*}
+
 \subsection{Numbers carried into \S6--7}
 \begin{table}[h]
 \centering\small
