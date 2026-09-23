@@ -66,7 +66,7 @@ sweep-exp6:       ## ADR-013: the three ARKitScenes fine-tunes vs the pretrained
 	$(ROOMSCAN) sweep configs/experiments/exp6_finetune.yaml --skip-existing
 
 figures:          ## scenes x runs top-down error grids for every experiment -> paper/figures/
-	for e in exp1_depth_source exp2_voxel_size exp3_frame_stride_gt exp3_frame_stride_oracle exp3_frame_stride exp4_model_size; do \
+	for e in exp1_depth_source exp2_voxel_size exp3_frame_stride_gt exp3_frame_stride_oracle exp3_frame_stride exp4_model_size exp6_finetune; do \
 	  $(BIN)/python scripts/make_figures.py experiments/results/$$e --out paper/figures; done
 
 paper-figures:    ## analysis figures (scale drift, pipeline diagram) -> paper/figures/
