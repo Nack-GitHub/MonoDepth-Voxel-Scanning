@@ -79,7 +79,7 @@ Where: 🍎 = Mac ทำได้ · 🪟 = ต้องทำบน WSL2/RTX 30
   - ผล: pretrained 54.3 cm → ft_faro 14.6 / ft_lidar 16.6 / ft_lidar_all 15.7 cm (AbsRel 0.382 → 0.134–0.136)
 - [x] รัน exp1 ใหม่หลัง PR #1 (การหมุนภาพ) — 4 ฉาก `Left` ขยับ, 2 ฉาก `Up`/`Down` ไม่ขยับ
 - [x] เปเปอร์: abstract, intro, setup §4.5, results §5.6/Exp6, discussion, business, limitations, conclusion + `numbers.tex` (ทั้งไทยและอังกฤษ)
-- [ ] รัน exp3 (mono) + exp4 ใหม่หลังการหมุนภาพ → อัปเดตตัวเลข §5.3/§5.4 + ตาราง "L→S→MiDaS"
-- [ ] regenerate `paper/analysis/` scale drift + `42444474_failure_analysis.md` (ตัวเลขเดิมคำนวณก่อนแก้การหมุน)
-- [ ] `make figures` ใหม่ + รูป top-down ของ exp6
-- [ ] Level 0 baseline: Depth Pro / UniDepth / Metric3D (inference-only) ตอบคำถามรีวิวเวอร์เรื่องโมเดลที่รับ intrinsics
+- [x] รัน exp3 (mono) + exp4 ใหม่หลังการหมุนภาพ → §5.3/§5.4 + "ขนาดโมเดลมีผลน้อยกว่า scale" 6 เท่า → **17 เท่า**
+- [x] regenerate `paper/analysis/` scale drift (12 ไฟล์) + บันทึกส่วนต่างท้าย `42444474_failure_analysis.md`
+- [x] `make figures` + `make paper-figures` ใหม่ + รูป `exp6_finetune_topdown_grid.png` เข้าเปเปอร์แล้ว
+- [ ] Level 0 baseline: รันแถว `mono_depth_pro` ใน exp6 (โค้ด + config พร้อมแล้ว, รอโหลด checkpoint ~1.9 GB) — ถ้าจะเทียบเพิ่มค่อยต่อด้วย UniDepth / Metric3D

@@ -115,7 +115,7 @@ src/roomscan_web/       Phase 6: FastAPI upload/queue/status + three.js viewer �
 
 ทุก run ทิ้ง `config.yaml` + `metrics.json` ไว้ที่ `experiments/results/<exp>/<scene>_<run>/` — `roomscan report` รวมเป็นตาราง
 
-## 7. Phase → module (สถานะ 2026-09-17: 0–6 ผ่าน gate; Exp1–5 รันครบ 6 ฉาก; ร่างไทย `paper/draft/` + ต้นฉบับอังกฤษ `paper/latex/`)
+## 7. Phase → module (สถานะ 2026-09-23: 0–6 ผ่าน gate; Exp1–6 รันครบ 6 ฉาก — Exp1/3/4 รันใหม่หลังแก้การหมุนภาพ (PR #1) และ Exp6 = fine-tune ตาม ADR-013; ร่างไทย `paper/draft/` + ต้นฉบับอังกฤษ `paper/latex/`)
 
 | Phase | ต้องทำให้ทำงาน | gate |
 |---|---|---|
