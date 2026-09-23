@@ -2,7 +2,7 @@
 Material: per-frame scale analysis on 6 scenes (\code{analyze\_scale\_drift.py}, stride 5, 471 frames), the failure-frame
 study of scene 42444474, and Tables~\ref{tab:exp1}--\ref{tab:exp1scene}.
 
-\subsection{Why per\_scene loses to the oracle by $3.8\times$: the model's scale follows what is in the frame, not time}\label{sec:drift}
+\subsection{Why per\_scene loses to the oracle by $4.5\times$: the model's scale follows what is in the frame, not time}\label{sec:drift}
 An affine-invariant model promises $\text{disparity} \approx a\cdot(1/\text{depth}) + b$ with $(a,b)$ depending on
 the image. If $(a,b)$ were constant over a scan, one calibration (\code{per\_scene}) would equal the oracle. We measured
 how constant it is by refitting $(s,t)$ on every fifth frame (Fig.~\ref{fig:drift}, Table~\ref{tab:drift}).
@@ -23,12 +23,12 @@ $<$\SI{1}{m}). The ratio swings by $2$--$4\times$ within every scan with no mono
  & Range over scenes & Meaning \\
 \midrule
 $s$ p95 / p5 within one scene & \textbf{2.6--4.9$\times$} & the central 90\% of frames need scales 3--5$\times$ apart \\
-$s$ p75 / p25 & 1.45--1.72 & even the middle half swings $\pm25\%$ \\
-corr($s$, time) & $-0.40 \ldots +0.28$ (sign flips) & \textbf{not cumulative drift}: no direction \\
-corr($s$, frame's median depth) & \textbf{$-0.27 \ldots -0.71$ (negative in every scene)} & close-up frames need a different $s$: view-dependent \\
-AbsRel oracle $\rightarrow$ per\_scene & 0.040 $\rightarrow$ 0.241 (\textbf{6$\times$}) & in 2D, before fusion, one scale costs $6\times$ \\
-per\_scene without close-ups ($<$\SI{1}{m}) & 0.154 (still $4\times$ oracle) & close-ups hurt but are not the only cause \\
-scale-only per frame, depth space & 0.298 $\approx$ per\_scene & a disparity shift is needed in every scene \\
+$s$ p75 / p25 & 1.47--1.56 & even the middle half swings $\pm25\%$ \\
+corr($s$, time) & $-0.33 \ldots +0.30$ (sign flips) & \textbf{not cumulative drift}: no direction \\
+corr($s$, frame's median depth) & \textbf{$-0.27 \ldots -0.75$ (negative in every scene)} & close-up frames need a different $s$: view-dependent \\
+AbsRel oracle $\rightarrow$ per\_scene & 0.032 $\rightarrow$ 0.239 (\textbf{7.5$\times$}) & in 2D, before fusion, one scale costs $7\times$ \\
+per\_scene without close-ups ($<$\SI{1}{m}) & 0.152 (still $5\times$ oracle) & close-ups hurt but are not the only cause \\
+scale-only per frame, depth space & 0.289 $\approx$ per\_scene & a disparity shift is needed in every scene \\
 \bottomrule
 \end{tabularx}
 \end{table*}
@@ -41,18 +41,18 @@ how close the camera is to what it sees.}
 \end{figure}
 Three consequences:
 \begin{enumerate}
-\item \textbf{No number of fit frames helps \code{per\_scene}}: the $(S,T)$ fitted on 10 spread frames already sits at the
-median of the oracle values in every scene (e.g.\ 47333774: $S=0.00098$ vs.\ oracle median $\approx 0.0010$). The
-problem is that the median does not apply to most frames, not that it is estimated badly.
-\item \textbf{A $6\times$ per-frame error becomes a $3.8\times$ 3D error} not because TSDF averages it out but because
+\item \textbf{No number of fit frames helps \code{per\_scene}}: the $(S,T)$ fitted on 10 spread frames already lands
+within $\pm13\%$ of the median oracle scale in five of the six scenes (0.87--1.17$\times$; the exception, 47333774,
+is 0.67$\times$). The problem is that the median does not apply to most frames, not that it is estimated badly.
+\item \textbf{A $7.5\times$ per-frame error becomes a $4.5\times$ 3D error} not because TSDF averages it out but because
 the error concentrates in a minority of frames: frames with per\_scene AbsRel $>1$ (placed $\geq2\times$ wrong) are
 downward shots of table-tops or floor at 0.5--\SI{0.8}{m} and frame-filling blank walls or cabinets. These frames carry
 no size cue, so the model guesses disparity at ``room scale''; multiplied by the room's $(S,T)$, a table at \SI{0.5}{m}
 lands at 1.5--\SI{2}{m} as a phantom surface in the middle of the room---the red blob in every per\_scene panel of
 Fig.~\ref{fig:exp1}.
 \item \textbf{The effect is general, not a property of the development scene}: 47429736 (bedroom$+$closets) has
-close-ups in 53/101 frames yet per\_scene AbsRel 0.197, the same as a scene with 3/93 (45261556: 0.169); and the five
-unseen scenes give per\_scene Chamfer 19.9--\SI{26.2}{cm}, bracketing 42444474 (23.9).
+close-ups in 53/101 frames yet per\_scene AbsRel 0.197, the same as a scene with 3/93 (45261556: 0.172); and the five
+unseen scenes give per\_scene Chamfer 19.9--\SI{26.0}{cm}, bracketing 42444474 (24.1).
 \end{enumerate}
 \textbf{System implication.} The assumption ``one scale per scene'' is false for this model family on real room video.
 Two ways remain: (a) \emph{per-frame} metric data---3D feature points from VIO, which ARKit/ARCore deliver with the pose
@@ -70,11 +70,11 @@ DA-v2 Metric-Indoor should output metres directly. Per-frame analysis over the s
 \toprule
  & Range over scenes & Meaning \\
 \midrule
-median(GT / pred) per scene & 0.69--0.96 & the model says 4--31\% too far on average (per-scene bias) \\
-GT / pred within a scene & e.g.\ 0.37--1.22, 0.58--1.80 & frames in one room are wrong from $-60\%$ to $+80\%$ \\
-oracle $t$ in inverse space & $-0.08 \ldots +0.04$ ($\approx 0$) & \textbf{no shift}: the shape is right in the affine sense \\
-AbsRel raw $\rightarrow$ scale-only/frame $\rightarrow$ oracle $(s,t)$ & 0.328 $\rightarrow$ \textbf{0.057} $\rightarrow$ 0.046 & one scalar per frame recovers 96\% of the gap \\
-AbsRel with one scale per scene & 0.174 & like per\_scene for the relative model: the median is not enough \\
+median(GT / pred) per scene & 0.69--0.85 & the model says 15--31\% too far on average (per-scene bias) \\
+GT / pred within a scene & e.g.\ 0.41--0.86, 0.43--1.35 & frames in one room are wrong from $-59\%$ to $+35\%$ \\
+oracle $t$ in inverse space & $-0.11 \ldots -0.02$ ($\approx 0$) & \textbf{no shift}: the shape is right in the affine sense \\
+AbsRel raw $\rightarrow$ scale-only/frame $\rightarrow$ oracle $(s,t)$ & 0.381 $\rightarrow$ \textbf{0.045} $\rightarrow$ 0.035 & one scalar per frame recovers 97\% of the gap \\
+AbsRel with one scale per scene & 0.126 & like per\_scene for the relative model: the median is not enough \\
 \bottomrule
 \end{tabularx}
 \end{table*}
