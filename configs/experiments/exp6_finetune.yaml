@@ -16,3 +16,5 @@ runs:
     overrides: {depth.source: mono, depth.model: depth_anything_v2_ft_lidar, depth.aligner: identity}
   - name: mono_ft_lidar_all         # R3: LiDAR teacher on 24 scenes — what a laser-free dataset buys
     overrides: {depth.source: mono, depth.model: depth_anything_v2_ft_lidar_all, depth.aligner: identity}
+  - name: mono_depth_pro            # Level 0: an intrinsics-conditioned metric model, no fine-tuning at all
+    overrides: {depth.source: mono, depth.model: depth_pro, depth.aligner: identity}

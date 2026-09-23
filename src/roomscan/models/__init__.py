@@ -19,6 +19,8 @@ _REGISTRY: dict[str, tuple[str, dict]] = {
     "depth_anything_v2_ft_lidar_all": ("roomscan.models.depth_anything:DepthAnythingV2Metric",
                                        {"size": "ft_lidar_all",
                                         "hf_id": "NackPanupong/roomscan-dav2-metric-large-ft-lidar-all"}),
+    # Level-0 baseline (ADR-013): a metric model that conditions on / predicts the camera intrinsics
+    "depth_pro": ("roomscan.models.depth_pro:DepthPro", {}),
     "midas_small": ("roomscan.models.midas:MiDaS", {"variant": "MiDaS_small"}),
     "midas_dpt_hybrid": ("roomscan.models.midas:MiDaS", {"variant": "DPT_Hybrid"}),
 }

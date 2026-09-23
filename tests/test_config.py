@@ -23,3 +23,21 @@ def test_every_experiment_file_resolves():
         for run in exp.runs:
             cfg = apply_overrides(base, dict(run.overrides))
             assert cfg.depth.source in {"gt", "mono", "arcore", "lidar"}, f
+
+
+def test_every_experiment_model_is_registered():
+    """A typo in depth.model only shows up minutes into a sweep otherwise (no torch needed here)."""
+    from pathlib import Path
+
+    from omegaconf import OmegaConf
+
+    from roomscan.config import apply_overrides
+    from roomscan.models import _REGISTRY
+
+    for f in Path("configs/experiments").glob("*.yaml"):
+        exp = OmegaConf.load(f)
+        base = load_config(exp.base)
+        for run in exp.runs:
+            cfg = apply_overrides(base, dict(run.overrides))
+            if cfg.depth.source == "mono":
+                assert cfg.depth.model in _REGISTRY, f"{f}: {run.name} -> {cfg.depth.model}"
