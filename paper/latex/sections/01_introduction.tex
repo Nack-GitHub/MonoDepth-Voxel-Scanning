@@ -42,13 +42,17 @@ metric points) is what a deployed system with a VIO tracker can do.
 \begin{itemize}
 \item The pipeline itself loses \SI{2.1 \pm 0.5}{cm} (Chamfer) when fed laser depth; iPad LiDAR loses
 \SI{3.0 \pm 0.6}{cm}---a \SI{1}{cm} gap that is the same in every room type.
-\item Monocular depth with the correct scale on every frame (oracle) loses \SI{6.5 \pm 2.4}{cm}: \SI{3.4}{cm} behind
-LiDAR, i.e.\ ``Android is about \SI{3}{cm} behind iPhone~Pro \emph{if} the scale problem is solved.''
-\item Monocular depth calibrated once per room loses \SI{22.7 \pm 2.6}{cm}, uniformly across rooms; a ``metric'' model
-without calibration loses \SI{49 \pm 15}{cm}. \textbf{The real problem of monocular depth is not shape but a scale that
-swings per view} (\S\ref{sec:discussion}).
+\item Monocular depth with the correct scale on every frame (oracle) loses \SI{\rsORACLECM \pm \rsORACLESD}{cm}:
+\SI{\rsORACLEGAPLIDARCM}{cm} behind LiDAR, i.e.\ ``Android is about \SI{2}{cm} behind iPhone~Pro \emph{if} the scale
+problem is solved.''
+\item Monocular depth calibrated once per room loses \SI{\rsSCENECM \pm \rsSCENESD}{cm}, uniformly across rooms; a
+``metric'' model without calibration loses \SI{\rsMETRICCM \pm \rsMETRICSD}{cm}. \textbf{The real problem of monocular
+depth is not shape but a scale that swings per view} (\S\ref{sec:discussion}).
 \item Fitting scale per frame on $\sim$200 sparse metric points closes that gap to \SI{\rsSPARSECM}{cm}
 (\fscore{} \rsSPARSEF)---within \SI{\rsSPARSEGAP}{cm} of the oracle (\S\ref{sec:results}).
+\item Fine-tuning the metric model on ARKitScenes fixes the uncalibrated row without any alignment at run time:
+\SI{\rsFTFAROCM}{cm} with a laser teacher, \SI{\rsFTLIDARCM}{cm} with a consumer-LiDAR teacher
+($\rsFTTEACHERRATIO\times$), from \SI{\rsMETRICCM}{cm} pretrained (\S\ref{sec:finetune}).
 \item A $13\times$ smaller model (DA-v2 Small) costs \SI{2.8}{cm} but runs $7\times$ faster; MiDaS small is a further
 $4.5\times$ faster with $2.3\times$ the error of Large. Model size matters $6\times$ less than scale.
 \item Frame count governs coverage, not accuracy: $\geq 0.8$~fps is needed to capture the whole room.
@@ -64,10 +68,16 @@ laser-scanner reference (\S\ref{sec:setup}--\ref{sec:results}).
 \item An analysis showing that the oracle$\rightarrow$per-scene gap comes from per-view scale, not temporal drift, that
 $\sim$200 sparse metric points per frame recover the oracle, and what that implies for system design
 (\S\ref{sec:discussion}).
+\item A controlled answer to ``can a phone's own depth sensor replace the laser scanner as the \emph{teacher}?'':
+the same fine-tuning recipe, the same scenes, only the training label changes---Faro \SI{\rsFTFAROCM}{cm} vs.\ ARKit
+LiDAR \SI{\rsFTLIDARCM}{cm} on held-out rooms, with identical AbsRel. Checkpoints and the scene split are released
+(\S\ref{sec:finetune}).
 \item Per-scan cost (time, frames, model size, LiDAR confidence weighting) for business decisions (\S\ref{sec:business}).
 \end{enumerate}
 
 \paragraph{What this paper does \emph{not} claim}
 It does not claim to beat Atlas / NeuralRecon / SimpleRecon---they are not compared, and this pipeline is not designed to
 compete. It does not claim that ``not needing LiDAR'' is a feature---the data say the opposite: without LiDAR some
-per-frame metric information is still required. No model is trained; all are used pretrained.
+per-frame metric information is still required, or the model must be taught the scale beforehand
+(\S\ref{sec:finetune}), which is still \SI{\rsFTGAPORACLE}{cm} short of having metric anchors at run time. Only the
+metric head of one model is fine-tuned (frozen encoder, ARKitScenes); every other model is used pretrained.

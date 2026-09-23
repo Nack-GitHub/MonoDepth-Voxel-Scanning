@@ -50,16 +50,36 @@ def main() -> None:
         for tau, word in (("0.02", "two"), ("0.05", "five"), ("0.1", "ten")):   # no digits in macro names
             macro(f"{tag}F{word}", _fmt(mean.loc[run, f"fscore@{tau}"], 2))
             macro(f"{tag}R{word}", _fmt(mean.loc[run, f"recall@{tau}"], 2))
+    # per-scene Chamfer in the paper's Table 4.1 order -> \rsSPARSEa ... \rsSPARSEf ("---" if not run yet)
+    order = ["42444474", "47333774", "47115299", "42897743", "47429736", "45261556"]
+
+    def per_scene(experiment: str, run: str) -> pd.Series:
+        sub = df[(df.experiment == experiment) & (df.run_name == run)]
+        return sub.set_index(sub.scene.astype(str))["chamfer"]
+
+    for exp, runs in (("exp1_depth_source", (("gt", "GT"), ("lidar", "LIDAR"), ("mono_oracle", "ORACLE"),
+                                             ("mono_sparse", "SPARSE"), ("mono_scene", "SCENE"),
+                                             ("mono_metric", "METRIC"))),
+                      ("exp6_finetune", (("mono_ft_faro", "FTFARO"), ("mono_ft_lidar", "FTLIDAR"),
+                                         ("mono_ft_lidar_all", "FTLIDARALL")))):
+        for run, tag in runs:
+            col = per_scene(exp, run)
+            for letter, scene in zip("abcdef", order, strict=True):
+                macro(f"{tag}{letter}", _fmt(col[scene] * 100) if scene in col.index else "---")
+
+    def gap(run_a: str, run_b: str) -> tuple[float, float]:
+        """mean +- sd of the per-scene difference (cm) — paired, unlike the difference of two means."""
+        d = (per_scene("exp1_depth_source", run_a) - per_scene("exp1_depth_source", run_b)) * 100
+        return float(d.mean()), float(d.std())
+
     if "mono_sparse" in mean.index:
-        # per-scene Chamfer in the paper's Table 4.1 order -> \SPARSEa ... \SPARSEf ("—" if not run yet)
-        order = ["42444474", "47333774", "47115299", "42897743", "47429736", "45261556"]
-        sp = df[(df.experiment == "exp1_depth_source") & (df.run_name == "mono_sparse")]
-        sp = sp.set_index(sp.scene.astype(str))["chamfer"]
-        for letter, scene in zip("abcdef", order, strict=True):
-            macro(f"SPARSE{letter}", _fmt(sp[scene] * 100) if scene in sp.index else "---")
         macro("SPARSEGAP", _fmt(cm("mono_sparse")[0] - cm("mono_oracle")[0]))
         macro("SPARSEGAPLIDAR", _fmt(cm("mono_sparse")[0] - cm("lidar")[0]))
         macro("SPARSEVSSCENE", _fmt(cm("mono_scene")[0] / cm("mono_sparse")[0]))
+    for (a, b), tag in ((("lidar", "gt"), "LIDARGAPGT"), (("mono_oracle", "lidar"), "ORACLEGAPLIDAR")):
+        mu, sd = gap(a, b)
+        macro(f"{tag}CM", _fmt(mu, 2))
+        macro(f"{tag}SD", _fmt(sd, 2))
     for run, tag in (("lidar_conf1", "CONFONE"), ("lidar_conf2", "CONFTWO"),
                      ("lidar_w012", "WZOT"), ("lidar_w124", "WOTF")):
         if run in e5.index:

@@ -15,12 +15,12 @@ $F$ is the F-score at $\tau=$\SI{5}{cm}.
 \toprule
 Depth source & Aligner & Chamfer & Acc. & Compl. & F@2 & \textbf{F@5} & F@10 & AbsRel (2D) & Time/scan (s) \\
 \midrule
-Faro laser (\code{gt}) & identity & $\mathbf{2.06 \pm 0.54}$ & 1.29 & 2.83 & 0.86 & \textbf{0.97} & 0.99 & 0 & 1.6 \\
-ARKit LiDAR (\code{lidar}) & identity & $\mathbf{3.04 \pm 0.57}$ & 2.23 & 3.85 & 0.54 & \textbf{0.93} & 0.98 & 0.018 & 1.6 \\
-DA-v2 L (\code{mono}) & \code{oracle\_frame} & $\mathbf{6.45 \pm 2.42}$ & 7.10 & 5.81 & 0.42 & \textbf{0.74} & 0.86 & 0.040 & 355 \\
-DA-v2 L (\code{mono}) & \code{sparse\_points} & $\mathbf{\rsSPARSECM \pm \rsSPARSESD}$ & \rsSPARSEACC & \rsSPARSECOMP & \rsSPARSEFtwo & \textbf{\rsSPARSEF} & \rsSPARSEFten & \rsSPARSEABSREL & $\sim$350 \\
-DA-v2 L (\code{mono}) & \code{per\_scene} & $\mathbf{22.7 \pm 2.6}$ & 23.8 & 21.7 & 0.08 & \textbf{0.22} & 0.40 & 0.240 & 346 \\
-DA-v2 Metric-Indoor & identity & $\mathbf{49.0 \pm 14.7}$ & 69.0 & 29.0 & 0.02 & \textbf{0.06} & 0.13 & 0.329 & 348 \\
+Faro laser (\code{gt}) & identity & $\mathbf{\rsGTCM \pm \rsGTSD}$ & \rsGTACC & \rsGTCOMP & \rsGTFtwo & \textbf{\rsGTF} & \rsGTFten & 0 & 1.6 \\
+ARKit LiDAR (\code{lidar}) & identity & $\mathbf{\rsLIDARCM \pm \rsLIDARSD}$ & \rsLIDARACC & \rsLIDARCOMP & \rsLIDARFtwo & \textbf{\rsLIDARF} & \rsLIDARFten & \rsLIDARABSREL & 1.7 \\
+DA-v2 L (\code{mono}) & \code{oracle\_frame} & $\mathbf{\rsORACLECM \pm \rsORACLESD}$ & \rsORACLEACC & \rsORACLECOMP & \rsORACLEFtwo & \textbf{\rsORACLEF} & \rsORACLEFten & \rsORACLEABSREL & 366 \\
+DA-v2 L (\code{mono}) & \code{sparse\_points} & $\mathbf{\rsSPARSECM \pm \rsSPARSESD}$ & \rsSPARSEACC & \rsSPARSECOMP & \rsSPARSEFtwo & \textbf{\rsSPARSEF} & \rsSPARSEFten & \rsSPARSEABSREL & 360 \\
+DA-v2 L (\code{mono}) & \code{per\_scene} & $\mathbf{\rsSCENECM \pm \rsSCENESD}$ & \rsSCENEACC & \rsSCENECOMP & \rsSCENEFtwo & \textbf{\rsSCENEF} & \rsSCENEFten & \rsSCENEABSREL & 351 \\
+DA-v2 Metric-Indoor & identity & $\mathbf{\rsMETRICCM \pm \rsMETRICSD}$ & \rsMETRICACC & \rsMETRICCOMP & \rsMETRICFtwo & \textbf{\rsMETRICF} & \rsMETRICFten & \rsMETRICABSREL & 352 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -35,12 +35,12 @@ DA-v2 Metric-Indoor & identity & $\mathbf{49.0 \pm 14.7}$ & 69.0 & 29.0 & 0.02 &
 \toprule
 Run & 42444474 kitchen/glass & 47333774 bedroom & 47115299 living & 42897743 bathroom & 47429736 bedroom$+$closets & 45261556 kitchen & mean \\
 \midrule
-gt & 1.8 & 1.2 & 1.9 & 2.8 & 2.4 & 2.3 & 2.1 \\
-lidar & 2.8 & 2.4 & 2.9 & 4.1 & 3.1 & 3.0 & 3.0 \\
-mono $+$ oracle & 5.4 & 8.1 & 4.8 & 10.7 & 5.2 & 4.6 & 6.5 \\
+gt & \rsGTa & \rsGTb & \rsGTc & \rsGTd & \rsGTe & \rsGTf & \rsGTCM \\
+lidar & \rsLIDARa & \rsLIDARb & \rsLIDARc & \rsLIDARd & \rsLIDARe & \rsLIDARf & \rsLIDARCM \\
+mono $+$ oracle & \rsORACLEa & \rsORACLEb & \rsORACLEc & \rsORACLEd & \rsORACLEe & \rsORACLEf & \rsORACLECM \\
 mono $+$ sparse & \rsSPARSEa & \rsSPARSEb & \rsSPARSEc & \rsSPARSEd & \rsSPARSEe & \rsSPARSEf & \rsSPARSECM \\
-mono $+$ per\_scene & 23.9 & 26.2 & 19.9 & 24.6 & 21.4 & 20.4 & 22.7 \\
-mono metric & 53.2 & 33.4 & 41.5 & 37.9 & 54.1 & 73.8 & 49.0 \\
+mono $+$ per\_scene & \rsSCENEa & \rsSCENEb & \rsSCENEc & \rsSCENEd & \rsSCENEe & \rsSCENEf & \rsSCENECM \\
+mono metric & \rsMETRICa & \rsMETRICb & \rsMETRICc & \rsMETRICd & \rsMETRICe & \rsMETRICf & \rsMETRICCM \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -51,19 +51,22 @@ What the table says directly:
 \item \textbf{The pipeline loses $\sim$\SI{2}{cm}; LiDAR adds $\sim$\SI{1}{cm}.} The gap \code{lidar}$-$\code{gt} is
 \SI{0.98 \pm 0.25}{cm} (0.66--1.33), the same in every room including the bathroom; \fscore{} 0.93 vs 0.97. The rows
 differ clearly only at $\tau=$\SI{2}{cm} (0.54 vs 0.86): iPad LiDAR is wrong at the 2--\SI{4}{cm} level, not \SI{5}{cm}.
-\item \textbf{Monocular depth with the right scale on every frame (oracle) is \SI{3.4 \pm 2.2}{cm} behind LiDAR}
-(1.6--6.6). The bathroom (6.6) and bedroom 47333774 (5.7) are farthest; kitchen 45261556 (1.6) and the living room (1.9)
-closest---more room-dependent than LiDAR's std suggests (\S\ref{sec:rooms}).
+\item \textbf{Monocular depth with the right scale on every frame (oracle) is
+\SI{\rsORACLEGAPLIDARCM \pm \rsORACLEGAPLIDARSD}{cm} behind LiDAR} (0.9--3.8). Bedroom 47333774 (3.8) and the bathroom
+(3.4) are farthest; the development kitchen 42444474 (0.9) and kitchen 45261556 (1.6) closest---more room-dependent
+than LiDAR's std suggests (\S\ref{sec:rooms}).
 \item \textbf{Two hundred sparse metric points per frame recover the oracle.} \code{sparse\_points} lands at
 \SI{\rsSPARSECM}{cm}, \SI{\rsSPARSEGAP}{cm} from the oracle and $\rsSPARSEVSSCENE\times$ better than one-off calibration,
 with the same per-scene ordering as the oracle (Table~\ref{tab:exp1scene}). The remaining gap to LiDAR
 (\SI{\rsSPARSEGAPLIDAR}{cm}) is shape, not scale.
-\item \textbf{One calibration per scene (\code{per\_scene}) is $3.8 \pm 0.8\times$ worse than the oracle} (2.3--4.4$\times$),
-and---importantly---\textbf{the absolute values cluster at 20--\SI{26}{cm} in every room} (std \SI{2.6}{cm}, lower than
+\item \textbf{One calibration per scene (\code{per\_scene}) is $4.5 \pm 1.1\times$ worse than the oracle} (3.1--6.4$\times$),
+and---importantly---\textbf{the absolute values cluster at 20--\SI{26}{cm} in every room} (std \SI{\rsSCENESD}{cm}, lower than
 the oracle's): not one room failing, but a property of affine-invariant models with one scale per scene (\S\ref{sec:drift}).
-\item \textbf{The metric model is worst (\SI{49}{cm}, $F$ 0.06) and most variable} (33--\SI{74}{cm}); accuracy \SI{69}{cm}
-vs completeness \SI{29}{cm}: the surfaces are all there but in the wrong place (\S\ref{sec:metric}). Kitchen 45261556,
-where mono$+$oracle is best (4.6), is where the metric model is worst (73.8)---right shape, wrong scale.
+\item \textbf{The metric model is worst (\SI{\rsMETRICCM}{cm}, $F$ \rsMETRICF) and most variable}
+(42--\SI{71}{cm}); accuracy \SI{\rsMETRICACC}{cm} vs completeness \SI{\rsMETRICCOMP}{cm}: the surfaces are all there but
+in the wrong place (\S\ref{sec:metric}). Kitchen 45261556, where mono$+$oracle is second best (\rsORACLEf), is where the
+metric model is worst (\rsMETRICf)---right shape, wrong scale. Fine-tuning this same model on ARKitScenes removes most
+of that error (\S\ref{sec:finetune}).
 \end{enumerate}
 
 \begin{figure*}[t]
@@ -184,6 +187,72 @@ confidence-2 pixels improves accuracy slightly (2.23$\rightarrow$2.08) but loses
 worst in the closet-heavy bedroom 47429736: 3.1$\rightarrow$5.8). The \SI{1}{cm} LiDAR$-$laser gap is not a
 low-confidence-pixel problem; it is the sensor's resolution and its 2--\SI{4}{cm} noise everywhere.
 
+\subsection{Exp.~6: fine-tuning with a LiDAR teacher}\label{sec:finetune}
+Exp.~1 leaves one question open: the metric row fails not because monocular depth cannot carry scale, but because a
+model trained on synthetic indoor data (Hypersim) has never seen an iPad camera. We therefore fine-tuned the same
+DA-v2 Metric-Indoor checkpoint on ARKitScenes with a frozen DINOv2 backbone (DPT neck $+$ head only, SiLog loss),
+varying \emph{only the teacher}: Faro \code{highres\_depth} (R1, 10 scenes), the iPad's own LiDAR \code{lowres\_depth}
+(R2, the same 10 scenes), and LiDAR on 24 scenes (R3, the 10 $+$ 14 scenes with no laser scan at all). Training,
+validation and checkpoint selection used scenes disjoint from the six test scenes at the \code{visit\_id} level; at
+test time every row below is RGB-only with \code{aligner: identity}.
+
+\begin{table}[h]
+\centering\small
+\caption{Exp.~6: same pipeline, same six scenes, RGB-only, no alignment. Teacher $=$ the depth used as the training
+label; none of these rows uses a depth sensor at test time.}
+\label{tab:exp6}
+\begin{adjustbox}{max width=\columnwidth}
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+Model & Teacher & Chamfer & \textbf{F@5} & AbsRel & $\delta_1$ \\
+\midrule
+Metric-Indoor (pretrained) & --- & $\rsMETRICCM \pm \rsMETRICSD$ & \rsMETRICF & \rsMETRICABSREL & 0.277 \\
+$+$ fine-tune (R1) & Faro & $\mathbf{\rsFTFAROCM \pm \rsFTFAROSD}$ & \textbf{\rsFTFAROF} & \rsFTFAROABSREL & \rsFTFARODELTAONE \\
+$+$ fine-tune (R2) & ARKit LiDAR & $\rsFTLIDARCM \pm \rsFTLIDARSD$ & \rsFTLIDARF & \rsFTLIDARABSREL & \textbf{\rsFTLIDARDELTAONE} \\
+$+$ fine-tune (R3) & LiDAR, 24 scenes & $\rsFTLIDARALLCM \pm \rsFTLIDARALLSD$ & \rsFTLIDARALLF & \textbf{\rsFTLIDARALLABSREL} & \rsFTLIDARALLDELTAONE \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{table}[h]
+\centering\small
+\caption{Exp.~6 Chamfer (cm) per scene; column order as in Table~\ref{tab:exp1scene}.}
+\label{tab:exp6scene}
+\begin{adjustbox}{max width=\columnwidth}
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+Teacher & 4244 & 4733 & 4711 & 4289 & 4742 & 4526 & mean \\
+\midrule
+none (pretrained) & \rsMETRICa & \rsMETRICb & \rsMETRICc & \rsMETRICd & \rsMETRICe & \rsMETRICf & \rsMETRICCM \\
+Faro (R1) & \rsFTFAROa & \rsFTFAROb & \rsFTFAROc & \rsFTFAROd & \rsFTFAROe & \rsFTFAROf & \rsFTFAROCM \\
+LiDAR (R2) & \rsFTLIDARa & \rsFTLIDARb & \rsFTLIDARc & \rsFTLIDARd & \rsFTLIDARe & \rsFTLIDARf & \rsFTLIDARCM \\
+LiDAR $\times$24 (R3) & \rsFTLIDARALLa & \rsFTLIDARALLb & \rsFTLIDARALLc & \rsFTLIDARALLd & \rsFTLIDARALLe & \rsFTLIDARALLf & \rsFTLIDARALLCM \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{enumerate}
+\item \textbf{Fine-tuning turns the worst row into a usable one.} Chamfer drops
+\SI{\rsMETRICCM}{cm}$\rightarrow$\SI{\rsFTLIDARCM}{cm} ($\rsFTGAIN\times$) and AbsRel \rsMETRICABSREL$\rightarrow$
+\rsFTLIDARABSREL, with no alignment and no sensor at test time. \fscore{} rises from \rsMETRICF{} to
+\rsFTFAROF---still far from the aligned rows, i.e.\ the surfaces are now roughly where they belong but not within
+\SI{5}{cm}.
+\item \textbf{The laser teacher is not what makes it work.} R2 (iPad LiDAR as the label) is $\rsFTTEACHERRATIO\times$
+R1 in Chamfer, identical in AbsRel (\rsFTLIDARABSREL{} vs \rsFTFAROABSREL) and \emph{better} in $\delta_1$
+(\rsFTLIDARDELTAONE{} vs \rsFTFARODELTAONE). Per scene (Table~\ref{tab:exp6scene}) R1 wins four and R2 two, with a
+spread larger than the difference between their means: with six test scenes the honest claim is that replacing the
+laser scanner with a consumer depth sensor costs no measurable accuracy, not that the two are equal.
+\item \textbf{Fourteen extra laser-free scenes do not help measurably} (R3: \SI{\rsFTLIDARALLCM}{cm} vs R2's
+\SI{\rsFTLIDARCM}{cm}). R3 was the best of the three on the validation fold (AbsRel 0.133 vs 0.142) and is not the best
+here---three validation scenes are too few to rank checkpoints this close, which we report rather than resolve with the
+test set.
+\item \textbf{Alignment still beats fine-tuning.} \code{sparse\_points} (\SI{\rsSPARSECM}{cm}) is
+\SI{\rsFTGAPORACLE}{cm} better than the best fine-tune. The two are complementary, not alternatives: fine-tuning fixes
+the scale a model predicts, alignment fixes the scale of the frame it is looking at.
+\end{enumerate}
+
 \subsection{Numbers carried into \S6--7}
 \begin{table}[h]
 \centering\small
@@ -193,10 +262,11 @@ Question & Number (6 scenes) \\
 \midrule
 pipeline loss at \SI{4}{cm} & \SI{2.1 \pm 0.5}{cm} \\
 iPad LiDAR vs laser & $+$\SI{1.0 \pm 0.3}{cm}, \fscore{} 0.93 (confidence weighting: no change) \\
-mono ceiling (scale known per frame) & $+$\SI{3.4 \pm 2.2}{cm} from LiDAR, \fscore{} 0.74 \\
+mono ceiling (scale known per frame) & $+$\SI{\rsORACLEGAPLIDARCM \pm \rsORACLEGAPLIDARSD}{cm} from LiDAR, \fscore{} \rsORACLEF \\
 mono with 200 sparse points/frame & \SI{\rsSPARSECM}{cm}, \fscore{} \rsSPARSEF{} (\SI{\rsSPARSEGAP}{cm} from oracle) \\
-price of ``one scale per scene'' & $3.8\times$ oracle $\rightarrow$ \SI{22.7}{cm}, \fscore{} 0.22 \\
-uncalibrated metric model & \SI{49}{cm}, \fscore{} 0.06 \\
+price of ``one scale per scene'' & $4.5\times$ oracle $\rightarrow$ \SI{\rsSCENECM}{cm}, \fscore{} \rsSCENEF \\
+uncalibrated metric model & \SI{\rsMETRICCM}{cm}, \fscore{} \rsMETRICF \\
+fine-tuned on ARKitScenes, RGB-only & \SI{\rsFTFAROCM}{cm} (Faro teacher) vs \SI{\rsFTLIDARCM}{cm} (LiDAR teacher), \fscore{} \rsFTFAROF{} / \rsFTLIDARF \\
 voxel 2$\rightarrow$4$\rightarrow$\SI{8}{cm} & 1.2 $\rightarrow$ 2.1 $\rightarrow$ \SI{2.8}{cm} \\
 fps needed (LiDAR/GT) & $\geq 0.8$~fps for \fscore{} $\geq 0.9$; 0.4~fps leaves 0.83 \\
 L$\rightarrow$S$\rightarrow$MiDaS & 6.5 $\rightarrow$ 9.2 $\rightarrow$ \SI{15.0}{cm} at 871 $\rightarrow$ 121 $\rightarrow$ 27 ms/frame \\
