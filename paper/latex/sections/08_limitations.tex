@@ -19,7 +19,17 @@ would require fusing at higher resolution and accepting a disadvantaged LiDAR ro
 rooms and low light are absent, and 42444474 was used during development, so its numbers are in-sample---per-scene
 tables show whether the other five confirm.
 
-\textbf{(e) Times are Apple Silicon (MPS) with unoptimised PyTorch}, not representative of on-device inference
+\textbf{(e) The fine-tuned rows are selected on three validation scenes.} Exp.~6 keeps the checkpoint with the lowest
+AbsRel on the 3 validation rooms; that ranking (R3 $>$ R2 $>$ R1) does not reproduce on the six test rooms
+(R1 $\geq$ R3 $\geq$ R2 in Chamfer). Three rooms are too few to separate checkpoints that differ by $\sim$0.01 AbsRel,
+so the Exp.~6 ordering between teachers should be read as ``no measurable difference'', and a larger validation set is
+the first thing to add. The six test rooms were never used for training, validation or checkpoint choice.
+
+\textbf{(f) One fine-tuning recipe, one architecture.} Only DA-v2 Metric-Indoor Large with a frozen encoder was
+fine-tuned; whether unfreezing the encoder, a different loss or another architecture would widen or close the
+Faro-vs-LiDAR teacher gap is untested, as is training on more than 24 rooms.
+
+\textbf{(g) Times are Apple Silicon (MPS) with unoptimised PyTorch}, not representative of on-device inference
 (CoreML / NNAPI); use them for \emph{ratios} between models, not absolute values.
 
 \subsection{Limitations of the system}

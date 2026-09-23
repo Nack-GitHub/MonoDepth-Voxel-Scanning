@@ -79,7 +79,25 @@ aligner ทุกตัวที่ไม่ใช่ `identity` fit affine **�
 
 `per_scene` ใช้ GT ในการ fit ด้วย — ดังนั้นมันคือ **ขอบบนของ calibration ครั้งเดียว** ระบบจริงที่ calibrate จากไม้บรรทัดหรือจุด VIO จะได้ไม่ดีกว่านี้
 
-## 4.5 Metrics
+## 4.5 โปรโตคอลการ fine-tune (Exp6, ADR-013)
+
+**ฉาก** — แยกจาก 6 ฉากเทสต์ที่ระดับ `visit_id` สุ่มด้วย seed 0 จากรายการฉากที่คัดไว้: 10 ฉากเทรนที่มี **ทั้ง Faro และ LiDAR**
+(ครูสองแบบจึงเห็นเฟรมชุดเดียวกัน), อีก 14 ฉากเทรนที่มีแต่ LiDAR (ไม่มี laser scan เลย) และ 3 ฉากจาก fold Validation ที่มี Faro ไว้เลือก checkpoint
+รวม: เทสต์ 6 / val 3 / เทรน 24 ฉาก — ไม่มีห้องเดียวกัน (หรือการสแกนอื่นของห้องเดียวกัน) โผล่ในสองชุด
+ไฟล์แบ่งฉาก (`configs/training/splits.yaml`) และจำนวนเฟรมต่อฉากเผยแพร่พร้อมโค้ด
+
+**label** — R1 ใช้ Faro `highres_depth` (3,594 เฟรม, 10 ฉาก); R2 ใช้ `lowres_depth` ของ iPad ที่ ARKit confidence ≥ 1 บน 10 ฉากเดียวกัน
+(8,656 เฟรม — LiDAR มีในเฟรมที่ laser scan ไม่ครอบคลุมด้วย); R3 ใช้ label LiDAR เดียวกันบนทั้ง 24 ฉาก (19,896 เฟรม)
+depth ถูก resample ลงกริด RGB ด้วย nearest เท่านั้น; pixel ที่ไกลเกิน 5 m หรือไม่มี label ถูก mask ทิ้ง
+
+**การเทรน** — freeze DINOv2 encoder (300M พารามิเตอร์, โหมด `eval`) เทรนเฉพาะ DPT neck + metric head ด้วย SiLog loss (β = 0.15),
+AdamW (lr 5e-5, weight decay 0.01, warmup 200 step แล้ว cosine), bf16 autocast, batch 2 + gradient accumulation 4
+บน crop ขนาด 518×518 จากภาพที่ย่อให้ด้านสั้น = 518; R1/R2 เทรน 6,000 step, R3 12,000 step
+validate ทุก 500 step และเก็บ checkpoint ที่ AbsRel ต่ำสุดบน 3 ฉาก val — หนึ่ง run ใช้เวลา ~1 ชม. บน RTX 3070 (VRAM 3.2 GB)
+
+**ตอนเทสต์** — โมเดลที่ fine-tune แล้วเป็นแถว `DepthSource` ธรรมดา: RGB เข้า เมตรออก `aligner: identity` ไม่เห็น depth/pose/intrinsics
+
+## 4.6 Metrics
 
 **3D (ตัวเลขหลักของเปเปอร์)** — โปรโตคอลใน `metrics_3d.py` ใช้ตรงตามนี้ทุกแถว:
 สุ่ม 200,000 จุดสม่ำเสมอบน mesh ที่สร้างและบน reference (seed 0);
@@ -92,7 +110,7 @@ normal consistency = mean |n_pred · n_ref| ของคู่จุดใกล
 
 **เวลา** — `time_total_s` = โหลดข้อมูล + inference + align + fusion + extract บนเครื่องเดียว; รายงานแยก inference ใน §7
 
-## 4.6 การทดลอง
+## 4.7 การทดลอง
 
 | Exp | ตัวแปร | ค่า | ส่วนที่คงที่ |
 |---|---|---|---|
@@ -101,8 +119,9 @@ normal consistency = mean |n_pred · n_ref| ของคู่จุดใกล
 | 3 frame stride | `dataset.frame_stride` | 1 / 5 / 10 / 20 × {gt, mono+oracle, mono+per_scene} | DA-v2 L, voxel 4 cm |
 | 4 model size | `depth.model` | DA-v2 L / DA-v2 S / MiDaS small | oracle_frame, voxel 4 cm |
 | 5 LiDAR confidence | `depth.lidar_min_confidence`, `fusion.confidence_weights` | ทุก pixel / mask ≥1 / mask =2 / weight [0,1,2] / [1,2,4] | lidar, voxel 4 cm |
+| 6 ครูตอน fine-tune | `depth.model` | pretrained / ft-Faro / ft-LiDAR / ft-LiDAR 24 ฉาก | identity, voxel 4 cm |
 
 ทุก run = 1 ไฟล์ `config.yaml` ที่ resolve แล้ว + `metrics.json` ใน `experiments/results/<exp>/<scene>_<run>/` (commit ไว้ทั้งหมด);
 ตารางใน §5 สร้างจาก `roomscan report` โดยไม่แก้มือ ตัวเลขเป็น mean ± std ข้าม 6 ฉาก และมีตารางต่อฉากใน `per_scene.md`
 
-การทดลองทั้งหมดทำซ้ำได้ด้วย `make reference && make sweep-exp1 sweep-exp2 sweep-exp3 sweep-exp4 sweep-exp5 report` หลังโหลดข้อมูลตาม `data/README.md`
+การทดลองทั้งหมดทำซ้ำได้ด้วย `make reference && make sweep-exp1 sweep-exp2 sweep-exp3 sweep-exp4 sweep-exp5 sweep-exp6 report` หลังโหลดข้อมูลตาม `data/README.md`
