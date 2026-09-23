@@ -26,6 +26,7 @@ fusion:
   sdf_trunc: 0.12
   depth_trunc: 5.0
   depth_min: 0.1
+  confidence_weights: null
 postprocess:
   remove_small_clusters: true
   min_cluster_triangles: 1000

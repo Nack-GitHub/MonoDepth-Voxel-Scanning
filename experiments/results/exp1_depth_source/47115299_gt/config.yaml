@@ -10,18 +10,23 @@ dataset:
     fusion_resolution:
     - 256
     - 192
+    sparse_points: 0
+    sparse_min_confidence: 2
+    sparse_noise: 0.0
 depth:
   source: gt
   model: null
   aligner: identity
   aligner_fit_frames: 10
   align_space: inverse
+  sparse_min_points: 20
   lidar_min_confidence: 0
 fusion:
   voxel_size: 0.04
   sdf_trunc: 0.12
   depth_trunc: 5.0
   depth_min: 0.1
+  confidence_weights: null
 postprocess:
   remove_small_clusters: true
   min_cluster_triangles: 1000

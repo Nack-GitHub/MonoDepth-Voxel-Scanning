@@ -1,0 +1,40 @@
+{
+  "run_name": "47429736_mono_ft_lidar_all",
+  "scene": "47429736",
+  "depth_source": "mono:depth_anything_v2_ft_lidar_all",
+  "aligner": "identity",
+  "n_frames": 504,
+  "voxel_size": 0.04,
+  "timing": {
+    "depth": 436.2757944269906,
+    "align": 0.09411096001531405,
+    "fusion": 1.554919410007642,
+    "extract": 0.06770325000070443,
+    "postprocess": 0.11007204199995613,
+    "eval": 0.4952672919989709,
+    "total": 438.5978673810132
+  },
+  "metrics_3d": {
+    "accuracy": 0.12569267418262473,
+    "completeness": 0.12248768506180938,
+    "chamfer": 0.12409017962221705,
+    "precision@0.02": 0.09338,
+    "recall@0.02": 0.11426,
+    "fscore@0.02": 0.10277016759776537,
+    "precision@0.05": 0.258765,
+    "recall@0.05": 0.32383,
+    "fscore@0.05": 0.2876642262635279,
+    "precision@0.1": 0.495455,
+    "recall@0.1": 0.584065,
+    "fscore@0.1": 0.5361233225414999,
+    "normal_consistency": 0.6965712576522533
+  },
+  "metrics_2d": {
+    "rmse": 0.1575882124036913,
+    "abs_rel": 0.14114694473472986,
+    "delta1": 0.8300570309186781,
+    "delta2": 0.9794378754915993,
+    "delta3": 0.9988358984668632,
+    "n_valid": 22075394
+  }
+}

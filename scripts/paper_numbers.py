@@ -67,6 +67,24 @@ def main() -> None:
             macro(f"{tag}F", _fmt(e5.loc[run, "fscore@0.05"], 2))
             macro(f"{tag}ACC", _fmt(e5.loc[run, "accuracy"] * 100, 2))
             macro(f"{tag}COMP", _fmt(e5.loc[run, "completeness"] * 100, 2))
+    # Exp6 (ADR-013): the ARKitScenes fine-tunes, RGB-only, no alignment
+    e6 = df[df.experiment == "exp6_finetune"].groupby("run_name")
+    m6, s6 = e6.mean(numeric_only=True), e6.std(numeric_only=True)
+    for run, tag in (("mono_ft_faro", "FTFARO"), ("mono_ft_lidar", "FTLIDAR"),
+                     ("mono_ft_lidar_all", "FTLIDARALL")):
+        if run not in m6.index:
+            continue
+        macro(f"{tag}CM", _fmt(m6.loc[run, "chamfer"] * 100))
+        macro(f"{tag}SD", _fmt(s6.loc[run, "chamfer"] * 100))
+        macro(f"{tag}F", _fmt(m6.loc[run, "fscore@0.05"], 2))
+        macro(f"{tag}ABSREL", _fmt(m6.loc[run, "abs_rel"], 3))
+        macro(f"{tag}DELTAONE", _fmt(m6.loc[run, "delta1"], 3))
+    if {"mono_ft_faro", "mono_ft_lidar"} <= set(m6.index):
+        # the paper's headline ratio: how much of the laser teacher's benefit a LiDAR teacher keeps
+        macro("FTTEACHERRATIO", _fmt(m6.loc["mono_ft_lidar", "chamfer"] / m6.loc["mono_ft_faro", "chamfer"], 2))
+        macro("FTGAIN", _fmt(mean.loc["mono_metric", "chamfer"] / m6.loc["mono_ft_lidar", "chamfer"], 1))
+        macro("FTGAPORACLE", _fmt((m6.loc["mono_ft_lidar", "chamfer"] - mean.loc["mono_oracle", "chamfer"]) * 100))
+
     Path(args.out).write_text("\n".join(lines) + "\n")
     print(f"wrote {args.out} ({len(lines) - 2} macros)")
 
