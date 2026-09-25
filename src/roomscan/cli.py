@@ -3,6 +3,8 @@
     roomscan run   --config configs/depth/gt.yaml [--set k=v ...]
     roomscan sweep configs/experiments/exp1_depth_source.yaml
     roomscan report experiments/results
+    roomscan eval2d   configs/experiments/exp7_valfold_2d.yaml   # 2D only, no mesh (ADR-014)
+    roomscan reeval2d experiments/results/exp6_finetune/*/       # recompute metrics_2d in place
 """
 
 from __future__ import annotations
@@ -28,11 +30,22 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--scenes", nargs="+", default=None, metavar="SCENE",
                    help="subset of the experiment's scenes to run (default: all)")
 
+    e2 = sub.add_parser("eval2d", help="2D depth metrics only (no fusion / reference mesh), ADR-014")
+    e2.add_argument("experiment_file")
+    e2.add_argument("--set", dest="overrides", nargs="+", action="extend", default=[], metavar="KEY=VALUE")
+    e2.add_argument("--skip-existing", action="store_true")
+    e2.add_argument("--scenes", nargs="+", default=None, metavar="SCENE")
+
+    r2 = sub.add_parser("reeval2d", help="recompute metrics_2d of finished runs with the current protocol")
+    r2.add_argument("run_dirs", nargs="+")
+    r2.add_argument("--force", action="store_true", help="also runs already at the current protocol")
+
     rp = sub.add_parser("report", help="aggregate metrics.json files into tables")
     rp.add_argument("results_root", nargs="?", default="experiments/results")
 
     args = p.parse_args(argv)
-    return {"run": _run, "sweep": _sweep, "report": _report}[args.cmd](args)
+    return {"run": _run, "sweep": _sweep, "report": _report, "eval2d": _eval2d,
+            "reeval2d": _reeval2d}[args.cmd](args)
 
 
 def _run(args) -> int:
@@ -73,6 +86,22 @@ def _sweep(args) -> int:
                 continue
             print(f"=== {exp.experiment} / {scene} / {run.name} ===")
             ReconstructionPipeline(cfg).run()
+    return 0
+
+
+def _eval2d(args) -> int:
+    from roomscan.eval2d import run_2d_experiment
+
+    run_2d_experiment(args.experiment_file, overrides=args.overrides, scenes=args.scenes,
+                      skip_existing=args.skip_existing)
+    return 0
+
+
+def _reeval2d(args) -> int:
+    from roomscan.eval2d import reevaluate_runs
+
+    n = reevaluate_runs(args.run_dirs, force=args.force, log=lambda s: print(s, flush=True))
+    print(f"re-evaluated {n} runs")
     return 0
 
 

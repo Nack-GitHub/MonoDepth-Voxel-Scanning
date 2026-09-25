@@ -35,7 +35,8 @@ def test_stacked_fit_and_per_scene_aligner():
     al.fit(frames, [p for p, _ in pairs])
     out = al.align(pairs[0][0], frames[0])
     m = depth_metrics(out, pairs[0][1])
-    assert m.abs_rel < 0.05 and m.delta1 > 0.9
+    # the 5 % injected outliers are scored under protocol 2 (clipped, not dropped) -> ~0.06
+    assert m.abs_rel < 0.08 and m.delta1 > 0.9
 
 
 def test_oracle_aligner_and_invalid_pixels_stay_zero():
@@ -55,6 +56,23 @@ def test_metrics_2d_identity_and_mean():
     assert off.delta1 == 0.0 and off.delta2 == 1.0
     m = mean_metrics([perfect, off])
     assert m.delta1 == pytest.approx(0.5) and m.n_valid == 32
+    assert m.protocol_2d == 2
+
+
+def test_metrics_2d_clips_out_of_range_predictions_instead_of_dropping_them():
+    # ADR-014: pixels are chosen by the GT; a prediction beyond max_depth is scored (clipped), not hidden
+    gt = np.full((2, 2), 4.0, np.float32)
+    pred = np.array([[4.0, 4.0], [4.0, 12.0]], np.float32)
+    m = depth_metrics(pred, gt, 0.1, 5.0)
+    assert m.n_valid == 4
+    assert m.abs_rel == pytest.approx((5.0 - 4.0) / 4.0 / 4)     # 12 m clipped to 5 m
+    assert m.delta1 == pytest.approx(0.75)
+    # a pixel the source left empty (0 / NaN) is not a prediction and is not scored
+    pred[0, 0], pred[0, 1] = 0.0, np.nan
+    assert depth_metrics(pred, gt, 0.1, 5.0).n_valid == 2
+    # GT outside the range is still excluded
+    gt[1, 0] = 7.0
+    assert depth_metrics(pred, gt, 0.1, 5.0).n_valid == 1
 
 
 def test_inverse_space_recovers_disparity_affine():
