@@ -8,6 +8,9 @@ Writes (PNG + PDF each):
                          close-up frames (median GT depth < 1 m) marked — §6 "per view, not drift"
   scale_vs_depth         the same ratio against the frame's median GT depth, all scenes pooled
   pipeline               block diagram of the pipeline with the two swap points (§3)
+  finetune_absrel        per-scene AbsRel vs the dataset's Faro depth, pretrained DA-v2 Metric (x) against
+                         the LiDAR-teacher fine-tune R3 (y), 6 test rooms (Exp6) + 20 Validation-fold rooms
+                         (Exp7, 2D only); below the diagonal = the fine-tune is better (§5.1, ADR-014)
 """
 
 from __future__ import annotations
@@ -144,6 +147,47 @@ def fig_pipeline(plt, out: Path):
     plt.close(fig)
 
 
+def fig_finetune_absrel(plt, results: Path, out: Path) -> bool:
+    import pandas as pd
+
+    csv = results / "summary.csv"
+    if not csv.is_file():
+        return False
+    df = pd.read_csv(csv)
+    groups = (("exp6_finetune", "6 test rooms (Exp6)", ORANGE, "o", 22),
+              ("exp7_valfold_2d", "Validation-fold rooms (Exp7)", BLUE, "s", 14))
+    fig, ax = plt.subplots(figsize=(3.5, 3.0))
+    hi, n_total = 0.0, 0
+    for exp, label, color, marker, size in groups:
+        sub = df[(df.experiment == exp) & df.run_name.isin(["mono_metric", "mono_ft_lidar_all"])]
+        if sub.empty:
+            continue
+        pv = sub.pivot_table(index="scene", columns="run_name", values="abs_rel").dropna()
+        n_total += len(pv)
+        hi = max(hi, float(pv.values.max()))
+        ax.scatter(pv["mono_metric"], pv["mono_ft_lidar_all"], s=size, marker=marker, color=color,
+                   edgecolor="white", linewidth=0.6, zorder=3, label=f"{label}, n={len(pv)}")
+    if n_total == 0:
+        plt.close(fig)
+        return False
+    lim = (0, hi * 1.08)
+    ax.plot(lim, lim, color=MUTED, lw=0.8, ls=(0, (3, 2)), zorder=1)
+    ax.text(lim[1] * 0.97, lim[1] * 0.90, "no change", rotation=45, ha="right", va="bottom",
+            fontsize=6.5, color=MUTED, rotation_mode="anchor")
+    ax.set_xlim(*lim)
+    ax.set_ylim(*lim)
+    ax.set_aspect("equal")
+    ax.grid(True, color=GRID, lw=0.5)
+    ax.set_xlabel("AbsRel, pretrained DA-v2 Metric-Indoor")
+    ax.set_ylabel("AbsRel, fine-tuned with iPad LiDAR (R3)")
+    ax.legend(loc="upper left", frameon=False, handletextpad=0.3)
+    fig.tight_layout()
+    for ext in ("png", "pdf"):
+        fig.savefig(out / f"finetune_absrel.{ext}", dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    return True
+
+
 def main() -> None:
     import matplotlib
 
@@ -154,6 +198,7 @@ def main() -> None:
     ap.add_argument("--analysis", default="paper/analysis")
     ap.add_argument("--out", default="paper/figures")
     ap.add_argument("--model", default="da_large")
+    ap.add_argument("--results", default="experiments/results")
     args = ap.parse_args()
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -163,7 +208,8 @@ def main() -> None:
         fig_timeline(plt, scenes, out)
         fig_scatter(plt, scenes, out)
     fig_pipeline(plt, out)
-    print(f"wrote {out}/scale_drift_timeline.*, scale_vs_depth.*, pipeline.*")
+    extra = ", finetune_absrel.*" if fig_finetune_absrel(plt, Path(args.results), out) else ""
+    print(f"wrote {out}/scale_drift_timeline.*, scale_vs_depth.*, pipeline.*{extra}")
 
 
 if __name__ == "__main__":

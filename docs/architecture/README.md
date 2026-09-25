@@ -83,7 +83,8 @@ src/roomscan/
 ├── training/           fine-tune DA-v2 metric (ADR-013) ← dataio, evaluation.metrics_2d, types, config (ไม่ใช่ pipeline/geometry/open3d)
 ├── export.py
 ├── pipeline.py         orchestrator (ห้ามมี Open3D/torch call ตรง ๆ)
-└── cli.py              run / sweep / report
+├── eval2d.py           2D-only evaluate / re-evaluate (ADR-014) — ใช้ `pipeline._to_grid` + `RunResult`, ไม่ fuse
+└── cli.py              run / sweep / report / eval2d / reeval2d
 src/roomscan_web/       Phase 6: FastAPI upload/queue/status + three.js viewer — imports roomscan.pipeline, never the reverse
 ```
 
@@ -112,6 +113,7 @@ src/roomscan_web/       Phase 6: FastAPI upload/queue/status + three.js viewer �
 | 4 Model size | L / S / MobileViT | `depth.model` | `exp4_model_size.yaml` |
 | 5 LiDAR confidence | all / mask ≥1 / mask =2 / weight [0,1,2] / [1,2,4] | `depth.lidar_min_confidence`, `fusion.confidence_weights` | `exp5_lidar_confidence.yaml` (ADR-012) — ผล: ไม่ต่างจาก baseline (3.04 → 3.07 cm) |
 | 6 Fine-tune teacher | pretrained / ft_faro / ft_lidar / ft_lidar_all (RGB-only, `aligner=identity`) | `depth.model` | `exp6_finetune.yaml` (ADR-013) — DA-v2 metric ที่ fine-tune บน ARKitScenes ด้วยครู Faro เทียบครู LiDAR; 6 ฉากเทสต์ถูกกันออกจาก train/val ทั้งหมด |
+| 7 Generalisation (2D) | pretrained / ft_lidar_all / lidar บน 20 ห้อง fold Validation | `depth.model` | `exp7_valfold_2d.yaml` (ADR-014) — `roomscan eval2d` เท่านั้น (ไม่มี reference mesh), เทียบ Faro depth ของ dataset |
 
 ทุก run ทิ้ง `config.yaml` + `metrics.json` ไว้ที่ `experiments/results/<exp>/<scene>_<run>/` — `roomscan report` รวมเป็นตาราง
 
@@ -146,6 +148,7 @@ src/roomscan_web/       Phase 6: FastAPI upload/queue/status + three.js viewer �
 | [011](adr-011-sparse-points-proxy.md) | ประเมิน `sparse_points` ด้วยจุด sparse จำลองจาก LiDAR (VIO proxy, 200 จุด/เฟรม) | Accepted |
 | [012](adr-012-confidence-weighted-fusion.md) | น้ำหนักต่อ pixel ใน TSDF จาก confidence (integrate ซ้ำตามระดับ) — แก้ `pipeline.py` 2 บรรทัด | Accepted |
 | [013](adr-013-finetune-with-lidar-teacher.md) | Fine-tune DA-v2 metric ด้วยครู LiDAR/Faro ใน `training/` (freeze encoder), split scene-disjoint ตาม `visit_id` | Accepted |
+| [014](adr-014-2d-protocol-and-valfold-test.md) | 2D metrics protocol 2 (mask ตาม GT, clip pred) + `eval2d`/`reeval2d` + Exp7 เทสต์ 2D 20 ห้องจาก fold Validation | Accepted |
 
 ## 9. สิ่งที่ตั้งใจ *ไม่* ทำตอนนี้
 

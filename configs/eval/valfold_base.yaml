@@ -1,0 +1,8 @@
+# Base for the 2D-only Validation-fold test (ADR-014): scenes from configs/eval/valfold_2d.yaml.
+# They have Faro highres_depth but no reference mesh -> `roomscan eval2d` only, never `sweep`.
+_base_: configs/base.yaml
+dataset:
+  frame_stride: 1            # the download already keeps only every 2nd Faro frame (download_valfold_2d.py
+                             # --faro-every 2, ~2 fps); the 2D rows of Exp1/6 use every Faro frame
+  options:
+    split: Validation

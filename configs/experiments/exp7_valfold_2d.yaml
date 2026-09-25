@@ -1,0 +1,14 @@
+# Experiment 7 — does the fine-tune generalise beyond the six test rooms? (ADR-014)
+# 2D only: per-frame depth vs the dataset's own Faro depth (highres_depth), metrics_2d protocol 2.
+# 20 Validation-fold scenes, visit-disjoint from every fine-tuning set and from the Training fold
+# (configs/eval/valfold_2d.yaml, scripts/select_valfold_2d.py). Run:  roomscan eval2d <this file>
+experiment: exp7_valfold_2d
+base: configs/eval/valfold_base.yaml
+scenes: [42446156, 42446517, 42897647, 42898811, 42899611, 45260920, 45261615, 45663113, 45663149, 47204559, 47331651, 47331661, 47332000, 47333452, 47333923, 47333934, 47334239, 47429992, 48018730, 48018737]
+runs:
+  - name: mono_metric               # pretrained DA-v2 Metric-Indoor Large
+    overrides: {depth.source: mono, depth.model: depth_anything_v2_metric_indoor, depth.aligner: identity}
+  - name: mono_ft_lidar_all         # R3: fine-tuned with the iPad LiDAR teacher on 24 scenes
+    overrides: {depth.source: mono, depth.model: depth_anything_v2_ft_lidar_all, depth.aligner: identity}
+  - name: lidar                     # reference: the iPad's own LiDAR depth (what the teacher saw)
+    overrides: {depth.source: lidar, depth.aligner: identity}

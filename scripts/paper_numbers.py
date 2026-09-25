@@ -18,6 +18,13 @@ def _fmt(x: float, nd: int = 1) -> str:
     return f"{x:.{nd}f}"
 
 
+def _wilcoxon_p(a, b) -> float:
+    """Two-sided exact Wilcoxon signed-rank p over paired per-scene values (scenes are the unit)."""
+    from scipy.stats import wilcoxon
+
+    return float(wilcoxon(a, b, alternative="two-sided", method="exact").pvalue)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="experiments/results")
@@ -45,6 +52,8 @@ def main() -> None:
         macro(f"{tag}SD", _fmt(sd))
         macro(f"{tag}F", _fmt(mean.loc[run, "fscore@0.05"], 2))
         macro(f"{tag}ABSREL", _fmt(mean.loc[run, "abs_rel"], 3))
+        macro(f"{tag}DELTAONE", _fmt(mean.loc[run, "delta1"], 3))
+        macro(f"{tag}RMSE", _fmt(mean.loc[run, "rmse"] * 100, 1))
         macro(f"{tag}ACC", _fmt(mean.loc[run, "accuracy"] * 100))
         macro(f"{tag}COMP", _fmt(mean.loc[run, "completeness"] * 100))
         for tau, word in (("0.02", "two"), ("0.05", "five"), ("0.1", "ten")):   # no digits in macro names
@@ -102,6 +111,56 @@ def main() -> None:
         macro(f"{tag}DELTAONE", _fmt(m6.loc[run, "delta1"], 3))
         for tau, word in (("0.02", "two"), ("0.05", "five"), ("0.1", "ten")):
             macro(f"{tag}R{word}", _fmt(m6.loc[run, f"recall@{tau}"], 2))
+    # the paper's main comparison (ADR-014): R3 (LiDAR teacher, 24 scenes) vs the same checkpoint pretrained
+    if "mono_ft_lidar_all" in m6.index and "mono_metric" in m6.index:
+        pre, ft = per_scene("exp6_finetune", "mono_metric"), per_scene("exp6_finetune", "mono_ft_lidar_all")
+        d = (pre - ft) * 100
+        macro("MAINGAIN", _fmt(m6.loc["mono_metric", "chamfer"] / m6.loc["mono_ft_lidar_all", "chamfer"], 1))
+        macro("MAINDIFFCM", _fmt(d.mean()))
+        macro("MAINDIFFSD", _fmt(d.std()))
+        macro("MAINWINS", str(int((d > 0).sum())))
+        macro("MAINN", str(len(d)))
+        macro("MAINP", _fmt(_wilcoxon_p(pre.values, ft.values), 3))
+        macro("MAINFGAIN", _fmt(m6.loc["mono_ft_lidar_all", "fscore@0.05"] / m6.loc["mono_metric", "fscore@0.05"], 0))
+        macro("METRICSIXABSREL", _fmt(m6.loc["mono_metric", "abs_rel"], 3))
+        macro("METRICSIXDELTAONE", _fmt(m6.loc["mono_metric", "delta1"], 3))
+        macro("METRICSIXRMSE", _fmt(m6.loc["mono_metric", "rmse"] * 100))
+        macro("FTLIDARALLRMSE", _fmt(m6.loc["mono_ft_lidar_all", "rmse"] * 100))
+        gap_sparse = m6.loc["mono_ft_lidar_all", "chamfer"] - mean.loc["mono_sparse", "chamfer"]
+        macro("FTALLGAPSPARSE", _fmt(gap_sparse * 100))
+        macro("FTLIDARALLACC", _fmt(m6.loc["mono_ft_lidar_all", "accuracy"] * 100))
+        macro("FTLIDARALLCOMP", _fmt(m6.loc["mono_ft_lidar_all", "completeness"] * 100))
+        # per-scene AbsRel (Table 4.1 order) for the main per-scene table -> \rsMETRICARa ... \rsFTALLARf
+        for run, tag in (("mono_metric", "METRICAR"), ("mono_ft_lidar_all", "FTALLAR")):
+            sub = df[(df.experiment == "exp6_finetune") & (df.run_name == run)]
+            col = sub.set_index(sub.scene.astype(str))["abs_rel"]
+            for letter, scene in zip("abcdef", order, strict=True):
+                macro(f"{tag}{letter}", _fmt(col[scene], 3) if scene in col.index else "---")
+
+    # Exp7 (ADR-014): 2D only, Validation-fold scenes never used for anything else
+    e7 = df[df.experiment == "exp7_valfold_2d"]
+    if not e7.empty:
+        g7 = e7.groupby("run_name")
+        m7, s7 = g7.mean(numeric_only=True), g7.std(numeric_only=True)
+        for run, tag in (("mono_metric", "VMETRIC"), ("mono_ft_lidar_all", "VFTALL"), ("lidar", "VLIDAR")):
+            if run not in m7.index:
+                continue
+            macro(f"{tag}ABSREL", _fmt(m7.loc[run, "abs_rel"], 3))
+            macro(f"{tag}ABSRELSD", _fmt(s7.loc[run, "abs_rel"], 3))
+            macro(f"{tag}DELTAONE", _fmt(m7.loc[run, "delta1"], 3))
+            macro(f"{tag}DELTAONESD", _fmt(s7.loc[run, "delta1"], 3))
+            macro(f"{tag}RMSE", _fmt(m7.loc[run, "rmse"] * 100))
+        if {"mono_metric", "mono_ft_lidar_all"} <= set(m7.index):
+            by = e7.pivot_table(index=e7.scene.astype(str), columns="run_name", values=["abs_rel", "delta1"])
+            pre, ft = by[("abs_rel", "mono_metric")], by[("abs_rel", "mono_ft_lidar_all")]
+            macro("VN", str(len(by)))
+            macro("VFRAMES", f"{int(e7[e7.run_name == 'mono_ft_lidar_all'].n_frames.sum()):,}".replace(",", "{,}"))
+            macro("VWINS", str(int((ft < pre).sum())))
+            macro("VWINSDELTA", str(int((by[("delta1", "mono_ft_lidar_all")] > by[("delta1", "mono_metric")]).sum())))
+            macro("VP", _fmt(_wilcoxon_p(pre.values, ft.values), 4) if len(by) >= 6 else "---")
+            macro("VGAIN", _fmt(m7.loc["mono_metric", "abs_rel"] / m7.loc["mono_ft_lidar_all", "abs_rel"], 1))
+            macro("VMEDRATIO", _fmt(float((ft / pre).median()), 2))
+
     if {"mono_ft_faro", "mono_ft_lidar"} <= set(m6.index):
         # the paper's headline ratio: how much of the laser teacher's benefit a LiDAR teacher keeps
         macro("FTTEACHERRATIO", _fmt(m6.loc["mono_ft_lidar", "chamfer"] / m6.loc["mono_ft_faro", "chamfer"], 2))

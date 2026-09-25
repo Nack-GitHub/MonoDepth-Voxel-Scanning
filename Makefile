@@ -6,7 +6,7 @@ VENV := .venv
 BIN := $(VENV)/bin
 ROOMSCAN := $(BIN)/roomscan
 
-.PHONY: venv setup setup-gt synthetic smoke figures-smoke figures paper-figures paper capture-zip sanity reference run-gt run-lidar run-mono sweep-exp1 sweep-exp2 sweep-exp3 sweep-exp4 sweep-exp5 sweep-exp6 report web train test lint
+.PHONY: venv setup setup-gt synthetic smoke figures-smoke figures paper-figures paper capture-zip sanity reference run-gt run-lidar run-mono sweep-exp1 sweep-exp2 sweep-exp3 sweep-exp4 sweep-exp5 sweep-exp6 eval-exp7 report web train test lint
 
 venv:
 	test -d $(VENV) || $(PY) -m venv $(VENV)
@@ -64,6 +64,10 @@ sweep-exp5:       ## LiDAR confidence masking / weighting (ADR-012)
 
 sweep-exp6:       ## ADR-013: the three ARKitScenes fine-tunes vs the pretrained metric model, RGB-only
 	$(ROOMSCAN) sweep configs/experiments/exp6_finetune.yaml --skip-existing
+
+eval-exp7:        ## ADR-014: pretrained vs R3 vs LiDAR, 2D only, on 20 Validation-fold rooms (download first)
+	$(BIN)/python scripts/download_valfold_2d.py
+	$(ROOMSCAN) eval2d configs/experiments/exp7_valfold_2d.yaml --skip-existing
 
 figures:          ## scenes x runs top-down error grids for every experiment -> paper/figures/
 	for e in exp1_depth_source exp2_voxel_size exp3_frame_stride_gt exp3_frame_stride_oracle exp3_frame_stride exp4_model_size exp6_finetune; do \
