@@ -35,6 +35,7 @@
     "delta1": 1.0,
     "delta2": 1.0,
     "delta3": 1.0,
-    "n_valid": 2243255
+    "n_valid": 2243255,
+    "protocol_2d": 2
   }
 }

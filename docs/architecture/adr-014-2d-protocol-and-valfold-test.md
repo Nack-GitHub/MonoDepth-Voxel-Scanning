@@ -6,7 +6,7 @@ Accepted (2026-09-25) — แก้นิยามใน `evaluation/metrics_2d.
 
 ## Context
 1. **นิยาม 2D เดิม (protocol 1) ตัด pixel ตามค่า *prediction*** — `depth_metrics` คัด pixel ที่ทั้ง GT **และ pred**
-   อยู่ใน `[depth_min, depth_trunc]` (0.1–5 m) โมเดลที่ทายไกลเกิน (เช่น DA-v2 Metric pretrained ที่ scale ≈ 1.5×)
+   อยู่ใน `[depth_min, depth_trunc]` (0.1–5 m) โมเดลที่ทายไกลเกิน (เช่น DA-v2 Metric pretrained ที่ทายไกลเกิน 1.2–1.45× ต่อห้อง และ Depth Pro)
    จึงถูกตัด pixel ที่ผิดหนักที่สุดทิ้ง และแต่ละแถวถูกวัดบนชุด pixel ไม่เท่ากัน
    นิยามมาตรฐาน (NYU/KITTI, Eigen et al.) คือคัดตาม GT แล้ว **clip** prediction เข้าช่วง
 2. **ข้อสรุปหลักของเปเปอร์ย้ายมาอยู่ที่ "fine-tune ด้วยครู LiDAR ดีกว่า pretrained จริงไหม"** (R3 vs pretrained,
@@ -46,6 +46,10 @@ Accepted (2026-09-25) — แก้นิยามใน `evaluation/metrics_2d.
 
 ## Consequences
 - ✅ ตัวเลข 2D ทุกตารางในเปเปอร์นิยามเดียว (protocol 2); `summary.csv` มีคอลัมน์ `protocol_2d`
+- 📊 ผลจริงของการเปลี่ยน (re-eval 213 run, 2026-09-26): ทุกแถวของ Exp1–6 ขยับ AbsRel < 0.001 (pretrained 0.382 → 0.382, R3 0.134 → 0.134)
+  ยกเว้น **Depth Pro 1.043 → 2.007** (ทายไกลเกิน 5 m บ่อย = กรณีที่ protocol 1 ซ่อน); การวิเคราะห์ scale ต่อเฟรม (§6): scale-only ในสเปซ depth ของ
+  DA-v2 L 0.289 → 0.331; run พัฒนาเก่า (`phase2_mono`, `exp0`) ขยับมากกว่าเพราะถูกคำนวณด้วยโค้ดก่อนแก้การหมุนภาพ — ไม่อยู่ในเปเปอร์
+- 📊 Exp7 (20 ห้อง, 2,090 เฟรม): AbsRel pretrained 0.410 → R3 0.130, ดีขึ้น 19/20 ห้อง (Wilcoxon p = 3.8×10⁻⁶); ห้องที่ไม่ดีขึ้น 48018730 (0.275 → 0.281)
 - ✅ ข้อสรุป "fine-tune ด้วยครู LiDAR ดีกว่า pretrained" มีหลักฐาน 2D บน 26 ห้อง (6 + 20) แทน 6
 - ⚠️ `experiments/training/RESULTS.md` (val ตอนเทรน) ยังเป็น protocol 1 — เป็นตัวเลขเลือก checkpoint ไม่ใช่ผล และ
   ฉาก V ไม่อยู่บน Mac; ไม่ re-run

@@ -1,0 +1,27 @@
+{
+  "run_name": "47333452_lidar",
+  "scene": "47333452",
+  "depth_source": "lidar",
+  "aligner": "identity",
+  "n_frames": 87,
+  "voxel_size": 0.04,
+  "timing": {
+    "depth": 7.012503920122981e-05,
+    "align": 0.004866583025432192,
+    "fusion": 0.0,
+    "extract": 0.0,
+    "postprocess": 0.0,
+    "eval": 0.0,
+    "total": 0.004936708064633422
+  },
+  "metrics_3d": null,
+  "metrics_2d": {
+    "rmse": 0.044182729020768294,
+    "abs_rel": 0.01954719177333461,
+    "delta1": 0.9975151156163605,
+    "delta2": 0.999766071629936,
+    "delta3": 0.9999498543102256,
+    "n_valid": 3928553,
+    "protocol_2d": 2
+  }
+}

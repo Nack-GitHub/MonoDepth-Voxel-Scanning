@@ -1,0 +1,51 @@
+dataset:
+  name: arkitscenes
+  root: data/arkitscenes
+  scene: '45261615'
+  frame_stride: 1
+  max_frames: null
+  options:
+    split: Validation
+    reference: faro_fused
+    fusion_resolution:
+    - 256
+    - 192
+    sparse_points: 0
+    sparse_min_confidence: 2
+    sparse_noise: 0.0
+depth:
+  source: mono
+  model: depth_anything_v2_metric_indoor
+  aligner: identity
+  aligner_fit_frames: 10
+  align_space: inverse
+  sparse_min_points: 20
+  lidar_min_confidence: 0
+fusion:
+  voxel_size: 0.04
+  sdf_trunc: 0.12
+  depth_trunc: 5.0
+  depth_min: 0.1
+  confidence_weights: null
+postprocess:
+  remove_small_clusters: true
+  min_cluster_triangles: 1000
+  simplify_target_triangles: null
+eval:
+  fscore_thresholds:
+  - 0.02
+  - 0.05
+  - 0.1
+  n_sample_points: 200000
+  compute_2d_metrics: true
+  mask_to_gt: true
+output:
+  root: experiments/results
+  experiment: exp7_valfold_2d
+  run_name: 45261615_mono_metric
+  save_mesh: true
+  export_formats:
+  - ply
+runtime:
+  device: auto
+  seed: 0

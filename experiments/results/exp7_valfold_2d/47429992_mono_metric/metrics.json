@@ -1,0 +1,27 @@
+{
+  "run_name": "47429992_mono_metric",
+  "scene": "47429992",
+  "depth_source": "mono:depth_anything_v2_metric_indoor",
+  "aligner": "identity",
+  "n_frames": 97,
+  "voxel_size": 0.04,
+  "timing": {
+    "depth": 84.49932450005144,
+    "align": 0.03811454595415853,
+    "fusion": 0.0,
+    "extract": 0.0,
+    "postprocess": 0.0,
+    "eval": 0.0,
+    "total": 84.5374390460056
+  },
+  "metrics_3d": null,
+  "metrics_2d": {
+    "rmse": 0.628977225069029,
+    "abs_rel": 0.6072860461467213,
+    "delta1": 0.09499789313156357,
+    "delta2": 0.5521074237702359,
+    "delta3": 0.8393836384155896,
+    "n_valid": 4411761,
+    "protocol_2d": 2
+  }
+}

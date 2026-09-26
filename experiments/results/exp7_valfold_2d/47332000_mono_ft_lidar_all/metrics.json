@@ -1,0 +1,27 @@
+{
+  "run_name": "47332000_mono_ft_lidar_all",
+  "scene": "47332000",
+  "depth_source": "mono:depth_anything_v2_ft_lidar_all",
+  "aligner": "identity",
+  "n_frames": 134,
+  "voxel_size": 0.04,
+  "timing": {
+    "depth": 116.67206983697542,
+    "align": 0.06207370808988344,
+    "fusion": 0.0,
+    "extract": 0.0,
+    "postprocess": 0.0,
+    "eval": 0.0,
+    "total": 116.73414354506531
+  },
+  "metrics_3d": null,
+  "metrics_2d": {
+    "rmse": 0.16413430730219314,
+    "abs_rel": 0.13405186440713435,
+    "delta1": 0.8107980245007367,
+    "delta2": 0.9933123030219227,
+    "delta3": 0.9989693033324356,
+    "n_valid": 6212303,
+    "protocol_2d": 2
+  }
+}

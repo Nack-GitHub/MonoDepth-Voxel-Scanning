@@ -18,7 +18,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.024843557610524546,
    "abs_rel_per_scene": 0.21052020391870335,
-   "abs_rel_scale_only": 0.19325859913242557
+   "abs_rel_scale_only": 0.2830130666169227
   },
   {
    "timestamp": 116083.863,
@@ -30,7 +30,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.015596941542177759,
    "abs_rel_per_scene": 0.2926906486983635,
-   "abs_rel_scale_only": 0.22100917502235443
+   "abs_rel_scale_only": 0.33032403954195355
   },
   {
    "timestamp": 116087.662,
@@ -42,7 +42,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.04072469986454318,
    "abs_rel_per_scene": 0.1588445399569283,
-   "abs_rel_scale_only": 0.3641457026197196
+   "abs_rel_scale_only": 0.4422029635390911
   },
   {
    "timestamp": 116088.661,
@@ -54,7 +54,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.0528519191177166,
    "abs_rel_per_scene": 0.19020515077358413,
-   "abs_rel_scale_only": 0.3132597095060873
+   "abs_rel_scale_only": 0.47837139926431227
   },
   {
    "timestamp": 116094.259,
@@ -66,7 +66,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.029325332536089106,
    "abs_rel_per_scene": 0.25535571778207317,
-   "abs_rel_scale_only": 0.3277740998550528
+   "abs_rel_scale_only": 0.3969139401558109
   },
   {
    "timestamp": 116095.059,
@@ -78,7 +78,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.02575516315702976,
    "abs_rel_per_scene": 0.10498424722252338,
-   "abs_rel_scale_only": 0.36857758121790296
+   "abs_rel_scale_only": 0.411992334468484
   },
   {
    "timestamp": 116095.658,
@@ -90,7 +90,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.025460428852560953,
    "abs_rel_per_scene": 0.10088873441919602,
-   "abs_rel_scale_only": 0.3268397486349336
+   "abs_rel_scale_only": 0.36182170745969
   },
   {
    "timestamp": 116096.558,
@@ -102,7 +102,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.05859662240168096,
    "abs_rel_per_scene": 0.10433363798264388,
-   "abs_rel_scale_only": 0.4159047214002757
+   "abs_rel_scale_only": 0.48129610825275754
   },
   {
    "timestamp": 116106.654,
@@ -126,7 +126,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.014881193062785791,
    "abs_rel_per_scene": 0.06781606096021794,
-   "abs_rel_scale_only": 0.3896443123187651
+   "abs_rel_scale_only": 0.4178057769409367
   },
   {
    "timestamp": 116108.553,
@@ -138,7 +138,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.017441168670020653,
    "abs_rel_per_scene": 0.05768284674949502,
-   "abs_rel_scale_only": 0.4005694464417502
+   "abs_rel_scale_only": 0.48628726143156703
   },
   {
    "timestamp": 116110.952,
@@ -150,7 +150,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.04458538518185622,
    "abs_rel_per_scene": 0.10027986497004583,
-   "abs_rel_scale_only": 0.46187324964317356
+   "abs_rel_scale_only": 0.4991127140055006
   },
   {
    "timestamp": 116111.552,
@@ -162,7 +162,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.047891619371658374,
    "abs_rel_per_scene": 0.08303368311418236,
-   "abs_rel_scale_only": 0.49441998072689236
+   "abs_rel_scale_only": 0.5267775762038706
   },
   {
    "timestamp": 116112.052,
@@ -174,7 +174,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.04112608414527367,
    "abs_rel_per_scene": 0.12711118838207733,
-   "abs_rel_scale_only": 0.47983019541526656
+   "abs_rel_scale_only": 0.4883712765041446
   },
   {
    "timestamp": 116112.851,
@@ -186,7 +186,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.029917179691608446,
    "abs_rel_per_scene": 0.11015442600012547,
-   "abs_rel_scale_only": 0.4278930409203979
+   "abs_rel_scale_only": 0.4323893416006327
   },
   {
    "timestamp": 116113.551,
@@ -198,7 +198,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.02697161127918433,
    "abs_rel_per_scene": 0.041953264709041906,
-   "abs_rel_scale_only": 0.3420740708062256
+   "abs_rel_scale_only": 0.3606716197379635
   },
   {
    "timestamp": 116114.551,
@@ -210,7 +210,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.012996042199181351,
    "abs_rel_per_scene": 0.028460425517629926,
-   "abs_rel_scale_only": 0.32279610575891526
+   "abs_rel_scale_only": 0.3293632554208333
   },
   {
    "timestamp": 116115.15,
@@ -222,7 +222,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.015128898906805313,
    "abs_rel_per_scene": 0.018359194052142848,
-   "abs_rel_scale_only": 0.3291846001483349
+   "abs_rel_scale_only": 0.3302924454046753
   },
   {
    "timestamp": 116115.65,
@@ -234,7 +234,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.027819419011053073,
    "abs_rel_per_scene": 0.07831923101739705,
-   "abs_rel_scale_only": 0.36014256346890383
+   "abs_rel_scale_only": 0.3604158317138438
   },
   {
    "timestamp": 116116.25,
@@ -246,7 +246,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.027684896846621572,
    "abs_rel_per_scene": 0.15143461586855636,
-   "abs_rel_scale_only": 0.38654018813804003
+   "abs_rel_scale_only": 0.38728736608449704
   },
   {
    "timestamp": 116117.05,
@@ -258,7 +258,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.018151390142337923,
    "abs_rel_per_scene": 0.1816834122930849,
-   "abs_rel_scale_only": 0.3140089970295511
+   "abs_rel_scale_only": 0.31596854834922244
   },
   {
    "timestamp": 116117.549,
@@ -270,7 +270,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.012567469466536063,
    "abs_rel_per_scene": 0.13201131133108177,
-   "abs_rel_scale_only": 0.26379116774709616
+   "abs_rel_scale_only": 0.26994103366193894
   },
   {
    "timestamp": 116118.049,
@@ -282,7 +282,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.012208067100865234,
    "abs_rel_per_scene": 0.11418795131422986,
-   "abs_rel_scale_only": 0.2571371775059252
+   "abs_rel_scale_only": 0.26241179755875976
   },
   {
    "timestamp": 116119.049,
@@ -306,7 +306,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.0606636295379823,
    "abs_rel_per_scene": 0.18866953537603018,
-   "abs_rel_scale_only": 0.3072219971550601
+   "abs_rel_scale_only": 0.3102363828936487
   },
   {
    "timestamp": 116121.048,
@@ -318,7 +318,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.053837226556971374,
    "abs_rel_per_scene": 0.15211127029018878,
-   "abs_rel_scale_only": 0.2939150570724087
+   "abs_rel_scale_only": 0.30172006855460587
   },
   {
    "timestamp": 116121.548,
@@ -330,7 +330,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.0539828591125478,
    "abs_rel_per_scene": 0.10218898851022294,
-   "abs_rel_scale_only": 0.297863730660922
+   "abs_rel_scale_only": 0.30742915826223444
   },
   {
    "timestamp": 116122.047,
@@ -342,7 +342,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.04759899786044026,
    "abs_rel_per_scene": 0.053442652817678155,
-   "abs_rel_scale_only": 0.29987405388180943
+   "abs_rel_scale_only": 0.3104193634841797
   },
   {
    "timestamp": 116122.747,
@@ -366,7 +366,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.03433053331562577,
    "abs_rel_per_scene": 0.036766173909715434,
-   "abs_rel_scale_only": 0.3670138347756936
+   "abs_rel_scale_only": 0.3777813870701262
   },
   {
    "timestamp": 116124.946,
@@ -390,7 +390,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.02556654279768958,
    "abs_rel_per_scene": 0.029573055401221387,
-   "abs_rel_scale_only": 0.3580264187561065
+   "abs_rel_scale_only": 0.3616288452028209
   },
   {
    "timestamp": 116126.845,
@@ -402,7 +402,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.023116350272546805,
    "abs_rel_per_scene": 0.04063094434329601,
-   "abs_rel_scale_only": 0.3457179139471137
+   "abs_rel_scale_only": 0.3467967223688266
   },
   {
    "timestamp": 116127.345,
@@ -414,7 +414,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.021327385035923876,
    "abs_rel_per_scene": 0.030667045330570707,
-   "abs_rel_scale_only": 0.3093550846252051
+   "abs_rel_scale_only": 0.31004592499068906
   },
   {
    "timestamp": 116127.845,
@@ -426,7 +426,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.03361603348112462,
    "abs_rel_per_scene": 0.03602860765063686,
-   "abs_rel_scale_only": 0.32805868632933044
+   "abs_rel_scale_only": 0.33057713064568933
   },
   {
    "timestamp": 116128.445,
@@ -450,7 +450,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.0337331409662426,
    "abs_rel_per_scene": 0.060428266314077286,
-   "abs_rel_scale_only": 0.3013354955094329
+   "abs_rel_scale_only": 0.3133871775039503
   },
   {
    "timestamp": 116129.644,
@@ -462,7 +462,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.045536236451555634,
    "abs_rel_per_scene": 0.13846539993215212,
-   "abs_rel_scale_only": 0.34144074342123726
+   "abs_rel_scale_only": 0.34669319152585715
   },
   {
    "timestamp": 116130.144,
@@ -486,7 +486,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.3010070625970495,
    "abs_rel_per_scene": 0.29804709267345203,
-   "abs_rel_scale_only": 0.5515239805189227
+   "abs_rel_scale_only": 0.5762306985919291
   },
   {
    "timestamp": 116134.942,
@@ -510,7 +510,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.0063914806697706735,
    "abs_rel_per_scene": 0.07865699082832396,
-   "abs_rel_scale_only": 0.33555851727399033
+   "abs_rel_scale_only": 0.4009849645863025
   },
   {
    "timestamp": 116141.239,
@@ -522,7 +522,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.02017442471109644,
    "abs_rel_per_scene": 0.18522924041182134,
-   "abs_rel_scale_only": 0.2657095419009304
+   "abs_rel_scale_only": 0.35883693312524045
   },
   {
    "timestamp": 116142.039,
@@ -546,7 +546,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.02947398413743395,
    "abs_rel_per_scene": 0.07661498672843069,
-   "abs_rel_scale_only": 0.267554002244505
+   "abs_rel_scale_only": 0.279112392346408
   },
   {
    "timestamp": 116143.039,
@@ -558,7 +558,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.016022850761804687,
    "abs_rel_per_scene": 0.035620835236216286,
-   "abs_rel_scale_only": 0.3295083181365425
+   "abs_rel_scale_only": 0.3620338736230859
   },
   {
    "timestamp": 116143.539,
@@ -570,7 +570,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.030159130915199735,
    "abs_rel_per_scene": 0.04948080117027984,
-   "abs_rel_scale_only": 0.31951337861854967
+   "abs_rel_scale_only": 0.36638143020832564
   },
   {
    "timestamp": 116144.738,
@@ -582,7 +582,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.05286175603937001,
    "abs_rel_per_scene": 0.05316254649307705,
-   "abs_rel_scale_only": 0.30700680227401733
+   "abs_rel_scale_only": 0.3735321959650113
   },
   {
    "timestamp": 116145.238,
@@ -594,7 +594,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.035889498494746715,
    "abs_rel_per_scene": 0.04398437056828737,
-   "abs_rel_scale_only": 0.3283221416315027
+   "abs_rel_scale_only": 0.3895091101478057
   },
   {
    "timestamp": 116145.738,
@@ -606,7 +606,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.030029423949167147,
    "abs_rel_per_scene": 0.03780088683615118,
-   "abs_rel_scale_only": 0.35224997664518387
+   "abs_rel_scale_only": 0.4046455487786496
   },
   {
    "timestamp": 116146.537,
@@ -618,7 +618,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.020593848479877847,
    "abs_rel_per_scene": 0.032793248007215774,
-   "abs_rel_scale_only": 0.37420423940052905
+   "abs_rel_scale_only": 0.4129001925133694
   },
   {
    "timestamp": 116147.337,
@@ -630,7 +630,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.03421548230093695,
    "abs_rel_per_scene": 0.04176460573736747,
-   "abs_rel_scale_only": 0.2998474968620206
+   "abs_rel_scale_only": 0.3205698556216571
   },
   {
    "timestamp": 116149.036,
@@ -642,7 +642,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.03595305726617322,
    "abs_rel_per_scene": 0.06535631699159893,
-   "abs_rel_scale_only": 0.30206212349385825
+   "abs_rel_scale_only": 0.32702481284142676
   },
   {
    "timestamp": 116149.936,
@@ -654,7 +654,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.022179671878317212,
    "abs_rel_per_scene": 0.05661479678783342,
-   "abs_rel_scale_only": 0.40675557600216844
+   "abs_rel_scale_only": 0.4190424991462522
   },
   {
    "timestamp": 116150.436,
@@ -666,7 +666,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.02739107719961253,
    "abs_rel_per_scene": 0.04866898257850658,
-   "abs_rel_scale_only": 0.33120984345483206
+   "abs_rel_scale_only": 0.36569566810615994
   },
   {
    "timestamp": 116151.035,
@@ -678,7 +678,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.03317367936336079,
    "abs_rel_per_scene": 0.0418596427239392,
-   "abs_rel_scale_only": 0.2713444307316743
+   "abs_rel_scale_only": 0.30610975048140254
   },
   {
    "timestamp": 116153.135,
@@ -690,7 +690,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.04121484219786406,
    "abs_rel_per_scene": 0.05384048959966429,
-   "abs_rel_scale_only": 0.3007770146887753
+   "abs_rel_scale_only": 0.3321615662632767
   },
   {
    "timestamp": 116153.934,
@@ -702,7 +702,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.039891580196063946,
    "abs_rel_per_scene": 0.05803844460628272,
-   "abs_rel_scale_only": 0.3255258086739807
+   "abs_rel_scale_only": 0.3647036816267489
   },
   {
    "timestamp": 116155.134,
@@ -714,7 +714,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.042547377872872105,
    "abs_rel_per_scene": 0.14347211665643334,
-   "abs_rel_scale_only": 0.3529311694040511
+   "abs_rel_scale_only": 0.4060682102869096
   },
   {
    "timestamp": 116155.933,
@@ -726,7 +726,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.05300029767864841,
    "abs_rel_per_scene": 0.2372305287858142,
-   "abs_rel_scale_only": 0.41482317614129904
+   "abs_rel_scale_only": 0.47272173482253854
   },
   {
    "timestamp": 116156.633,
@@ -738,7 +738,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.04100256511142214,
    "abs_rel_per_scene": 0.4182034801677399,
-   "abs_rel_scale_only": 0.4510849392970311
+   "abs_rel_scale_only": 0.5085048478562275
   },
   {
    "timestamp": 116157.333,
@@ -750,7 +750,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.030152541934017337,
    "abs_rel_per_scene": 0.5006028273637926,
-   "abs_rel_scale_only": 0.42821483033767166
+   "abs_rel_scale_only": 0.50642426738192
   },
   {
    "timestamp": 116160.132,
@@ -762,7 +762,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.034004622540951136,
    "abs_rel_per_scene": 0.6027625875726625,
-   "abs_rel_scale_only": 0.4037332957691688
+   "abs_rel_scale_only": 0.43432705112877557
   },
   {
    "timestamp": 116160.731,
@@ -774,7 +774,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.04325585590646769,
    "abs_rel_per_scene": 0.5567374834593015,
-   "abs_rel_scale_only": 0.41365662259321695
+   "abs_rel_scale_only": 0.458798775496859
   },
   {
    "timestamp": 116161.531,
@@ -786,7 +786,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.03573391393348014,
    "abs_rel_per_scene": 0.4004123269255267,
-   "abs_rel_scale_only": 0.38877802591992466
+   "abs_rel_scale_only": 0.434931737755064
   },
   {
    "timestamp": 116162.131,
@@ -798,7 +798,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.030639882668857785,
    "abs_rel_per_scene": 0.5173815374339923,
-   "abs_rel_scale_only": 0.44298506516336505
+   "abs_rel_scale_only": 0.5292737070987835
   },
   {
    "timestamp": 116162.631,
@@ -810,7 +810,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.05080246172184223,
    "abs_rel_per_scene": 0.5727216719731723,
-   "abs_rel_scale_only": 0.4104581612477091
+   "abs_rel_scale_only": 0.5197437633037234
   },
   {
    "timestamp": 116163.13,
@@ -822,7 +822,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.04307814219999889,
    "abs_rel_per_scene": 0.49151791824173996,
-   "abs_rel_scale_only": 0.39733918017375486
+   "abs_rel_scale_only": 0.5411624665504757
   },
   {
    "timestamp": 116163.73,
@@ -834,7 +834,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.05881801389575543,
    "abs_rel_per_scene": 0.4229239182408575,
-   "abs_rel_scale_only": 0.35773930139805754
+   "abs_rel_scale_only": 0.43581217812847667
   },
   {
    "timestamp": 116166.529,
@@ -846,7 +846,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.05359837145843756,
    "abs_rel_per_scene": 0.37526966411118656,
-   "abs_rel_scale_only": 0.35184195842110577
+   "abs_rel_scale_only": 0.42821257397597784
   },
   {
    "timestamp": 116167.229,
@@ -858,7 +858,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.05184312079948375,
    "abs_rel_per_scene": 0.3365405190735239,
-   "abs_rel_scale_only": 0.3493838517551095
+   "abs_rel_scale_only": 0.4624993446387761
   },
   {
    "timestamp": 116167.728,
@@ -870,7 +870,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.033253000801674704,
    "abs_rel_per_scene": 0.23619285967513082,
-   "abs_rel_scale_only": 0.4079039801992521
+   "abs_rel_scale_only": 0.5299313386013275
   },
   {
    "timestamp": 116168.228,
@@ -882,7 +882,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.02611798147227211,
    "abs_rel_per_scene": 0.1413044985053589,
-   "abs_rel_scale_only": 0.40157129737275155
+   "abs_rel_scale_only": 0.4932487342980257
   },
   {
    "timestamp": 116168.828,
@@ -894,7 +894,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.024098820553705914,
    "abs_rel_per_scene": 0.09578157028325682,
-   "abs_rel_scale_only": 0.3859613295536541
+   "abs_rel_scale_only": 0.467147362801227
   },
   {
    "timestamp": 116169.728,
@@ -906,7 +906,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.01736071120176573,
    "abs_rel_per_scene": 0.11204473784982125,
-   "abs_rel_scale_only": 0.40022355270308696
+   "abs_rel_scale_only": 0.4535418359524401
   },
   {
    "timestamp": 116171.927,
@@ -918,7 +918,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.03569956310376281,
    "abs_rel_per_scene": 0.2463711589635273,
-   "abs_rel_scale_only": 0.41975616519846537
+   "abs_rel_scale_only": 0.4690261237371658
   },
   {
    "timestamp": 116172.926,
@@ -930,7 +930,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.037944877074260114,
    "abs_rel_per_scene": 0.23999645870978814,
-   "abs_rel_scale_only": 0.4134105784287617
+   "abs_rel_scale_only": 0.4442218005155164
   },
   {
    "timestamp": 116173.526,
@@ -942,7 +942,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.025991457625087724,
    "abs_rel_per_scene": 0.21027842550858233,
-   "abs_rel_scale_only": 0.41613921324014647
+   "abs_rel_scale_only": 0.49074258466865833
   },
   {
    "timestamp": 116174.925,
@@ -954,7 +954,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.021654956001319406,
    "abs_rel_per_scene": 0.08555673449716093,
-   "abs_rel_scale_only": 0.27423409943925786
+   "abs_rel_scale_only": 0.2807738434374174
   },
   {
    "timestamp": 116175.425,
@@ -966,7 +966,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.025806561530117525,
    "abs_rel_per_scene": 0.02546326027469517,
-   "abs_rel_scale_only": 0.2611525324167473
+   "abs_rel_scale_only": 0.2765814586159349
   },
   {
    "timestamp": 116176.125,
@@ -978,7 +978,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.024054217591067326,
    "abs_rel_per_scene": 0.05361122023809766,
-   "abs_rel_scale_only": 0.2625948295370163
+   "abs_rel_scale_only": 0.29334678926132257
   },
   {
    "timestamp": 116180.923,
@@ -990,7 +990,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.0458745379310019,
    "abs_rel_per_scene": 0.17267855525897907,
-   "abs_rel_scale_only": 0.261361874880817
+   "abs_rel_scale_only": 0.3044356795411137
   },
   {
    "timestamp": 116183.822,
@@ -1002,7 +1002,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.0194766012468651,
    "abs_rel_per_scene": 0.38144124299113086,
-   "abs_rel_scale_only": 0.27145726173008694
+   "abs_rel_scale_only": 0.2832890099208574
   },
   {
    "timestamp": 116184.322,
@@ -1014,7 +1014,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.017593219504471572,
    "abs_rel_per_scene": 0.34366260246777763,
-   "abs_rel_scale_only": 0.3017976714130408
+   "abs_rel_scale_only": 0.3376681677673391
   },
   {
    "timestamp": 116184.821,
@@ -1026,7 +1026,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.015312746566632288,
    "abs_rel_per_scene": 0.22087888516018853,
-   "abs_rel_scale_only": 0.3029339511598638
+   "abs_rel_scale_only": 0.32976278855076024
   },
   {
    "timestamp": 116185.321,
@@ -1038,7 +1038,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.012331326055008246,
    "abs_rel_per_scene": 0.0909821726497709,
-   "abs_rel_scale_only": 0.332842750874114
+   "abs_rel_scale_only": 0.35487998369906365
   },
   {
    "timestamp": 116185.821,
@@ -1050,7 +1050,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.012599637192067963,
    "abs_rel_per_scene": 0.03272639408745972,
-   "abs_rel_scale_only": 0.3370772351494023
+   "abs_rel_scale_only": 0.36312145302071264
   },
   {
    "timestamp": 116186.421,
@@ -1062,7 +1062,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.012470136715502197,
    "abs_rel_per_scene": 0.08638657512315097,
-   "abs_rel_scale_only": 0.33594183831578406
+   "abs_rel_scale_only": 0.3635957631756398
   },
   {
    "timestamp": 116186.92,
@@ -1074,7 +1074,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.012503033893357213,
    "abs_rel_per_scene": 0.14466686764599462,
-   "abs_rel_scale_only": 0.35271202220274633
+   "abs_rel_scale_only": 0.38729084479141157
   },
   {
    "timestamp": 116187.92,
@@ -1086,7 +1086,7 @@
    "abs_rel_raw": null,
    "abs_rel_oracle": 0.0124888183782898,
    "abs_rel_per_scene": 0.1886546999755938,
-   "abs_rel_scale_only": 0.3307679850565008
+   "abs_rel_scale_only": 0.35729297902229146
   }
  ]
 }
