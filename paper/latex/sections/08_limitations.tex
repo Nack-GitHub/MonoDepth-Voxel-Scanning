@@ -15,7 +15,9 @@ frames (smoothing vs.\ accumulated error) is not measured; Exp.~3 answers covera
 at $640\times480$) before fusion; DA-v2's sharp-edge advantage does not appear in the 3D numbers. ``Mono at its best''
 would require fusing at higher resolution and accepting a disadvantaged LiDAR row.
 
-\textbf{(d) Six rooms, one dataset, one device.} Every scan is an iPad~Pro in homes Apple selected; offices, empty
+\textbf{(d) Six rooms (3D) / 26 rooms (2D), one dataset, one device.} Every mesh number comes from the six rooms that
+have a reference mesh; Exp.~7 extends the 2D measurement of the main result to 6 $+$ 20 rooms but says nothing about
+mesh quality there, and uses every second Faro frame. Every scan is an iPad~Pro in homes Apple selected; offices, empty
 rooms and low light are absent, and 42444474 was used during development, so its numbers are in-sample---per-scene
 tables show whether the other five confirm.
 
@@ -23,16 +25,23 @@ tables show whether the other five confirm.
 AbsRel on the 3 validation rooms; that ranking (R3 $>$ R2 $>$ R1) does not reproduce on the six test rooms
 (R1 $\geq$ R3 $\geq$ R2 in Chamfer). Three rooms are too few to separate checkpoints that differ by $\sim$0.01 AbsRel,
 so the Exp.~6 ordering between teachers should be read as ``no measurable difference'', and a larger validation set is
-the first thing to add. The six test rooms were never used for training, validation or checkpoint choice.
+the first thing to add. The six test rooms were never used for training, validation or checkpoint choice. Moreover R1
+and R2 do not differ in the label alone: R2 sees $\sim$2.4$\times$ more distinct views (\num{8656} vs.\ \num{3594}
+frames at equal steps, \S\ref{sec:ftsetup}); a controlled teacher comparison needs R2 trained on R1's Faro timestamps,
+which we have not run. This does not affect the main question (R3 vs.\ pretrained), where both rows are scored on the
+same test frames.
 
 \textbf{(f) The Level-0 row is one model, one implementation, one input resolution.} Depth Pro is run through
-its HuggingFace implementation on \SI{640x480}{} frames upsampled to $1536^2$ by its own processor, with the true
+its HuggingFace implementation on $640\times480$ frames upsampled to $1536^2$ by its own processor, with the true
 focal length supplied; we did not test Apple's reference code, higher-resolution input (the dataset's
 $1920\times1440$ frames were not downloaded), or the other intrinsics-conditioned models (UniDepth, Metric3D).
 The claim we make is about this model on this input, not about the family.
 
-\textbf{(g) One fine-tuning recipe, one architecture.} Only DA-v2 Metric-Indoor Large with a frozen encoder was
-fine-tuned; whether unfreezing the encoder, a different loss or another architecture would widen or close the
+\textbf{(g) One fine-tuning recipe, one architecture, one label preparation.} The LiDAR label ($256\times192$) is
+up-sampled with nearest-neighbour to the colour grid ($640\times480$, then $518\times686$) before the loss, rather than
+down-sampling the prediction to LiDAR's own grid, and confidence $\geq 1$ (not $=2$) is used; neither choice has been
+ablated (R2 landing close to R1, whose Faro labels are high-resolution, suggests the effect is small but does not prove
+it). Only DA-v2 Metric-Indoor Large with a frozen encoder was fine-tuned; whether unfreezing the encoder, a different loss or another architecture would widen or close the
 Faro-vs-LiDAR teacher gap is untested, as is training on more than 24 rooms.
 
 \textbf{(h) Times are Apple Silicon (MPS) with unoptimised PyTorch}, not representative of on-device inference
@@ -61,6 +70,12 @@ the same \code{TSDFFusion} interface if higher resolutions are pursued.
 
 \subsection{Future work (ordered by impact on the MVP decision)}
 \begin{enumerate}
+\item \textbf{R3 $+$ per-frame scale (\code{sparse\_points} on the fine-tuned model)}: \S\ref{sec:whyft} shows that
+almost all of R3's remaining error is a per-frame factor (AbsRel 0.134 $\rightarrow$ 0.051 with the right scale); one
+new Exp.~6 row answers how close ``LiDAR teacher $+$ VIO points'' gets to a sensor. Together with a \emph{controlled
+teacher comparison} (R2 on R1's Faro timestamps) and a \emph{larger validation set}.
+\item \textbf{Training data from more phone cameras}: R3 has only seen the iPad camera; it must be re-measured on
+iPhone / Android cameras before claiming it serves devices without LiDAR in general.
 \item \textbf{Real VIO points}: capture rooms with the app (ARKit \code{rawFeaturePoints} / ARCore point cloud) plus a
 reference (tape measurements or a rented laser scanner) and rerun the \code{sparse\_points} row on real, noisy, textured
 points; sweep \code{sparse\_noise} and point count on ARKitScenes meanwhile.

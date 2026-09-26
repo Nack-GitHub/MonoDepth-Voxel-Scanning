@@ -24,8 +24,9 @@ Pro~\cite{depthpro}, which estimates the focal length itself---so a metre predic
 The other adapts a pretrained model to the target domain with depth labels, which is what the metric DA-v2 variants do
 on Hypersim. We take the second route but change where the labels come from: instead of a laser scanner or a synthetic
 renderer, the teacher is the depth sensor already shipping in consumer phones. This puts a price on the teacher---the
-question a product team actually faces---rather than on the architecture, and it is measured in mesh centimetres on
-held-out rooms rather than in per-image AbsRel (\S\ref{sec:finetune}). The two families are complementary: an
+question a product team actually faces---rather than on the architecture, and it is measured against a laser scanner
+both in mesh centimetres on held-out rooms and in per-frame AbsRel on 26 rooms, not on a single-image benchmark
+(\S\ref{sec:main}). The two families are complementary: an
 intrinsics-conditioned model could be fine-tuned with the same LiDAR labels. We measure one of them
 (Depth Pro, handed the camera's true focal length) as the Level-0 row of Exp.~6: on these captures it does
 \emph{not} deliver usable metric depth (\S\ref{sec:finetune}), which is why fine-tuning is the axis we study.

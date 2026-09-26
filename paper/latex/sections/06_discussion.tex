@@ -1,6 +1,47 @@
 \section{Discussion}\label{sec:discussion}
 Material: per-frame scale analysis on 6 scenes (\code{analyze\_scale\_drift.py}, stride 5, 471 frames), the failure-frame
-study of scene 42444474, and Tables~\ref{tab:exp1}--\ref{tab:exp1scene}.
+study of scene 42444474, and Tables~\ref{tab:main}--\ref{tab:exp1scene}. Per-frame AbsRel uses protocol~2.
+
+\subsection{Why the LiDAR-teacher fine-tune works---and why it is not enough}\label{sec:whyft}
+We ran the per-frame analysis of \S\ref{sec:metric} on R3 as well (every fifth frame of the six test rooms, 471
+frames): per frame, the GT/pred ratio (median over the frame) and AbsRel under different amounts of scale help
+(Table~\ref{tab:whyft}).
+\begin{table*}[t]
+\centering\small
+\caption{Per-frame scale of the pretrained metric model vs.\ the LiDAR-teacher fine-tune R3, six test rooms, every fifth
+frame. AbsRel uses protocol~2.}
+\label{tab:whyft}
+\begin{tabularx}{\textwidth}{@{}lllX@{}}
+\toprule
+ & Pretrained & \textbf{R3} & Meaning \\
+\midrule
+median(GT / pred) per room & 0.69--0.85 & \textbf{0.93--1.21} & \textbf{the domain bias is gone}: pretrained is 15--31\,\% too far in every room; R3 is within $\sim$20\,\% and not always in the same direction \\
+per-frame swing within a room (p95/p5 of GT/pred) & 1.33--1.79$\times$ (mean 1.55) & 1.26--1.92$\times$ (mean 1.52) & \textbf{fine-tuning does not reduce the per-frame swing} \\
+AbsRel, raw & 0.381 & \textbf{0.134} & \\
+AbsRel with one $(S,T)$ per room fitted on 10 GT frames & 0.127 & 0.117 & pretrained $+$ per-room GT calibration $\approx$ R3 with no calibration at all \\
+AbsRel with the right scale on every frame (one factor) & 0.045 & 0.051 & the per-frame scale is almost all of R3's remaining error \\
+AbsRel, oracle $(s,t)$ per frame & 0.035 & 0.042 & shape hardly changes (frozen encoder) \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+\begin{enumerate}
+\item \textbf{Fine-tuning works because it learns the domain's multiplier.} R3 with no calibration (AbsRel 0.134) is on
+par with the pretrained model given a per-room scale fitted on ground truth (0.127): what a one-off calibration per room
+provides has been moved into the head's weights, using LiDAR labels from other rooms. With the encoder frozen, shape
+barely changes (oracle 0.035 $\rightarrow$ 0.042); the whole gain is scale.
+\item \textbf{It is not enough because the per-frame swing remains.} Within one room, frames at p5 and p95 still need
+factors $\sim$1.5$\times$ apart, as before fine-tuning, and that swing is nearly all of what is left: with the right
+scale on every frame R3's AbsRel drops from 0.134 to 0.051 (90\,\% of the way to the oracle), whereas one $(S,T)$ per
+room only reaches 0.117. The failing frames are those of \S\ref{sec:drift}--\ref{sec:metric} (blank walls, white
+cabinets, close downward views with no size cue). The missing information is not in a single image and does not come
+from a better teacher (the laser teacher does no better, \S\ref{sec:finetune}); it has to come from metric data at run
+time.
+\item \textbf{Fine-tuning and per-frame metric points are complementary, not alternatives.} Fine-tuning removes the
+domain bias with nothing at run time (\SI{\rsMETRICCM}{cm} $\rightarrow$ \SI{\rsFTLIDARALLCM}{cm}); per-frame sparse
+points remove the per-frame swing (relative model: \SI{\rsSCENECM}{cm} $\rightarrow$ \SI{\rsSPARSECM}{cm},
+\S\ref{sec:exp1}). The 2D bound for combining them is the 0.051 ``right scale on every frame'' row above; measuring
+R3 $+$ \code{sparse\_points} in 3D is the most direct next step (\S\ref{sec:limitations}).
+\end{enumerate}
 
 \subsection{Why per\_scene loses to the oracle by $4.5\times$: the model's scale follows what is in the frame, not time}\label{sec:drift}
 An affine-invariant model promises $\text{disparity} \approx a\cdot(1/\text{depth}) + b$ with $(a,b)$ depending on
@@ -28,7 +69,7 @@ corr($s$, time) & $-0.33 \ldots +0.30$ (sign flips) & \textbf{not cumulative dri
 corr($s$, frame's median depth) & \textbf{$-0.27 \ldots -0.75$ (negative in every scene)} & close-up frames need a different $s$: view-dependent \\
 AbsRel oracle $\rightarrow$ per\_scene & 0.032 $\rightarrow$ 0.239 (\textbf{7.5$\times$}) & in 2D, before fusion, one scale costs $7\times$ \\
 per\_scene without close-ups ($<$\SI{1}{m}) & 0.152 (still $5\times$ oracle) & close-ups hurt but are not the only cause \\
-scale-only per frame, depth space & 0.289 $\approx$ per\_scene & a disparity shift is needed in every scene \\
+scale-only per frame, depth space & 0.331 (worse than per\_scene) & a disparity shift is needed in every scene \\
 \bottomrule
 \end{tabularx}
 \end{table*}
@@ -74,7 +115,7 @@ median(GT / pred) per scene & 0.69--0.85 & the model says 15--31\% too far on av
 GT / pred within a scene & e.g.\ 0.41--0.86, 0.43--1.35 & frames in one room are wrong from $-59\%$ to $+35\%$ \\
 oracle $t$ in inverse space & $-0.11 \ldots -0.02$ ($\approx 0$) & \textbf{no shift}: the shape is right in the affine sense \\
 AbsRel raw $\rightarrow$ scale-only/frame $\rightarrow$ oracle $(s,t)$ & 0.381 $\rightarrow$ \textbf{0.045} $\rightarrow$ 0.035 & one scalar per frame recovers 97\% of the gap \\
-AbsRel with one scale per scene & 0.126 & like per\_scene for the relative model: the median is not enough \\
+AbsRel with one $(S,T)$ per scene & 0.127 & like per\_scene for the relative model: the median is not enough---and what fine-tuning moves into the weights (\S\ref{sec:whyft}) \\
 \bottomrule
 \end{tabularx}
 \end{table*}
@@ -86,9 +127,10 @@ filling the frame (white cabinets, tiles) with nothing distant to compare agains
 surfaces away. \textbf{Implication:} a metric model does not remove calibration; it reduces it from two parameters per
 frame $(s,t)$ to \textbf{one} $(s)$, which is a real advantage: a handful of VIO points suffice to fit one scalar
 stably, whereas $(s,t)$ needs points spread over the depth range. The other way to get that scalar is to put it in
-the weights: fine-tuning the same checkpoint on \num{3594}--\num{19896} real iPad frames moves the row to
-\SI{\rsFTFAROCM}{cm}--\SI{\rsFTLIDARALLCM}{cm} with no run-time fit at all (\S\ref{sec:finetune}), which is the
-deployable answer for a device that has neither LiDAR nor reliable VIO points.
+the weights: fine-tuning the same checkpoint with LiDAR labels from real iPad frames (R3, \num{19896} frames) moves the
+row to \SI{\rsFTLIDARALLCM}{cm} with no run-time fit at all (\S\ref{sec:main}), the deployable answer for a device that
+has neither LiDAR nor reliable VIO points; \S\ref{sec:whyft} shows that what it fixes is the domain bias, while the
+per-frame swing remains.
 
 \subsection{Which rooms are hard, and for whom}\label{sec:rooms}
 Ranking scenes by Chamfer per row (Table~\ref{tab:exp1scene}): Faro/LiDAR go from bedroom 47333774 (easiest) to the
@@ -109,7 +151,8 @@ source}; LiDAR experience does not predict where mono fails.
 
 \subsection{Visible only in 3D: mono disagrees with itself across views}
 Exp.~3 shows what 2D metrics cannot: reducing frames from 391 to 20 (stride 20) \textbf{improves mono$+$oracle accuracy
-from 7.1 to \SI{5.1}{cm}} while 2D AbsRel stays at 0.040 and GT stays at 1.3. Even with every frame perfectly scaled,
+from \rsSTRORACLEONEACC{} to \SI{\rsSTRORACLETWENTYACC}{cm}} while 2D AbsRel stays at
+\rsSTRORACLEONEABSREL--\rsSTRORACLETWENTYABSREL{} and GT accuracy at \rsSTRGTONEACC--\SI{\rsSTRGTTWENTYACC}{cm}. Even with every frame perfectly scaled,
 the shape of the same surface from different views \textbf{disagrees} at the $\sim$\SI{2}{cm} level, and fusing more
 frames thickens the surface rather than sharpening it---the multi-view consistency LiDAR has and a single-image model
 lacks. This is the part of the oracle$\rightarrow$LiDAR gap (\SI{\rsORACLEGAPLIDARCM}{cm}) that scale alignment cannot fix, and the
@@ -126,7 +169,7 @@ Assumed beforehand & What the data say \\
 mono's problem is coarse shape & shape is \SI{\rsORACLEGAPLIDARCM}{cm} behind LiDAR; scale is \SI{18}{cm} behind \\
 one calibration per room suffices & no: \SI{\rsSCENECM}{cm} in every room; scale is view-dependent \\
 a metric model removes the scale problem & no: but it reduces it to one parameter per frame \\
-a metric model cannot be fixed without a laser scanner & fine-tuning on a phone's own LiDAR is as good a teacher (\S\ref{sec:finetune}) \\
+a metric model cannot be fixed without a laser scanner & largely can: a phone-LiDAR teacher takes it from \SI{\rsMETRICCM}{cm} to \SI{\rsFTLIDARALLCM}{cm} in every room (\S\ref{sec:main}); the rest is per-frame scale (\S\ref{sec:whyft}) \\
 a few sparse metric points cannot fix a dense map & they can: 200 points/frame $\rightarrow$ within \SI{\rsSPARSEGAP}{cm} of the oracle \\
 a bigger model means a more accurate room & $+$\SI{1.0}{cm} S$\rightarrow$L vs.\ $+$\SI{17.6}{cm} from scale \\
 more frames mean more accuracy & more frames mean more coverage; mono accuracy improves with fewer frames \\

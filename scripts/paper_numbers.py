@@ -25,6 +25,14 @@ def _wilcoxon_p(a, b) -> float:
     return float(wilcoxon(a, b, alternative="two-sided", method="exact").pvalue)
 
 
+def _fmt_p(p: float) -> str:
+    """LaTeX math: 0.031, or 3.8\\times10^{-6} below 0.001."""
+    if p >= 0.001:
+        return f"{p:.3f}"
+    mant, exp = f"{p:.1e}".split("e")
+    return f"{mant}\\times10^{{{int(exp)}}}"
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="experiments/results")
@@ -120,7 +128,7 @@ def main() -> None:
         macro("MAINDIFFSD", _fmt(d.std()))
         macro("MAINWINS", str(int((d > 0).sum())))
         macro("MAINN", str(len(d)))
-        macro("MAINP", _fmt(_wilcoxon_p(pre.values, ft.values), 3))
+        macro("MAINP", _fmt_p(_wilcoxon_p(pre.values, ft.values)))
         macro("MAINFGAIN", _fmt(m6.loc["mono_ft_lidar_all", "fscore@0.05"] / m6.loc["mono_metric", "fscore@0.05"], 0))
         macro("METRICSIXABSREL", _fmt(m6.loc["mono_metric", "abs_rel"], 3))
         macro("METRICSIXDELTAONE", _fmt(m6.loc["mono_metric", "delta1"], 3))
@@ -157,7 +165,15 @@ def main() -> None:
             macro("VFRAMES", f"{int(e7[e7.run_name == 'mono_ft_lidar_all'].n_frames.sum()):,}".replace(",", "{,}"))
             macro("VWINS", str(int((ft < pre).sum())))
             macro("VWINSDELTA", str(int((by[("delta1", "mono_ft_lidar_all")] > by[("delta1", "mono_metric")]).sum())))
-            macro("VP", _fmt(_wilcoxon_p(pre.values, ft.values), 4) if len(by) >= 6 else "---")
+            macro("VP", _fmt_p(_wilcoxon_p(pre.values, ft.values)))
+            d0, d1 = by[("delta1", "mono_metric")], by[("delta1", "mono_ft_lidar_all")]
+            macro("VPDELTA", _fmt_p(_wilcoxon_p(d0.values, d1.values)))
+            worst = (ft / pre).idxmax()
+            macro("VEXCEPT", str(worst))
+            macro("VEXCEPTPRE", _fmt(pre[worst], 3))
+            macro("VEXCEPTFT", _fmt(ft[worst], 3))
+            macro("VEXCEPTDPRE", _fmt(d0[worst], 2))
+            macro("VEXCEPTDFT", _fmt(d1[worst], 2))
             macro("VGAIN", _fmt(m7.loc["mono_metric", "abs_rel"] / m7.loc["mono_ft_lidar_all", "abs_rel"], 1))
             macro("VMEDRATIO", _fmt(float((ft / pre).median()), 2))
 

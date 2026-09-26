@@ -1,7 +1,11 @@
 # 4. Experimental Setup
 
 > ร่าง 2026-09-16 — โปรโตคอลทั้งหมดอ่านจากโค้ด (`metrics_3d.py`, `metrics_2d.py`, `scale_align.py`, `dataio/arkitscenes.py`) และ `configs/base.yaml`
-> ตาราง 4.1 จาก `scripts/scene_info.py --md` (2026-09-16)
+> ตาราง 4.1 จาก `scripts/scene_info.py --md` (2026-09-16); ปรับ 2026-09-25 ตาม ADR-014 (2D protocol 2, Exp7, คำถามหลัก = R3 vs pretrained)
+
+**คำถามหลักของการทดลอง:** DA-v2 Metric-Indoor ที่ fine-tune ด้วย depth จาก LiDAR ของ iPad (R3) ดีกว่าตัวเดียวกันแบบ pretrained จริงไหม
+เมื่อวัดกับ **Faro laser ซึ่งเป็น ground truth ดิบที่ ARKitScenes ให้มา** (Exp6 บน 6 ห้องเทสต์ ทั้ง 3D และ 2D, Exp7 บน 20 ห้องเพิ่มเติม 2D อย่างเดียว)
+Exp1–5 วัดราคาของแหล่ง depth อื่นใน pipeline เดียวกัน เป็นบริบทว่า error ของ monocular มาจากไหนและ R3 ยืนอยู่ตรงไหนเทียบกับเซนเซอร์
 
 ## 4.1 Dataset: ARKitScenes
 
@@ -19,8 +23,13 @@
 | `lowres_wide.traj` | ~10 Hz | pose (VIO ของ ARKit) — interpolate slerp/lerp มาที่ timestamp ของแต่ละเฟรม |
 | `lowres_wide_intrinsics` | ต่อเฟรม | ใช้ค่า median ทั้ง scan แล้ว scale ตาม resolution |
 
+**Ground truth ในงานนี้ = Faro ของ dataset ตามที่แจกมา** ไม่ได้ปรับแก้ ไม่ได้ interpolate:
+ใน 2D เราเทียบ depth ต่อเฟรมกับ `highres_depth` ตรง ๆ (ย่อลงกริด 256×192 แบบ nearest ⇒ ทุกค่า GT ที่ใช้เป็นค่าที่ Faro วัดได้จริง ไม่มีค่าที่เกิดจากการเฉลี่ย);
+ใน 3D เราเทียบกับ reference mesh ที่ fuse จาก `highres_depth` ชุดเดียวกันทุกเฟรม (§4.2) เพราะ dataset ไม่มี laser mesh ให้ตรง ๆ
+LiDAR ของ iPad (`lowres_depth`) **ไม่เคยถูกใช้เป็น GT** — มันเป็นทั้ง "ครู" ตอนเทรน R2/R3 และแถวเปรียบเทียบ `lidar` เท่านั้น
+
 ข้อจำกัดสองข้อของ dataset กำหนดรูปแบบการทดลอง: (1) Faro depth มีเฉพาะเฟรมที่ Apple กรองไว้ (~3 fps) เราจึงประเมินทุก source
-**บนเฟรมชุดเดียวกันนี้** และ Exp3 (frame stride) กลายเป็นการวัด coverage มากกว่า compute (§5.3); (2) ไม่มี laser mesh ให้ตรง ๆ เราสร้างเอง (§4.2)
+**บนเฟรมชุดเดียวกันนี้** และ Exp3 (frame stride) กลายเป็นการวัด coverage มากกว่า compute (§5.5); (2) ไม่มี laser mesh ให้ตรง ๆ เราสร้างเอง (§4.2)
 
 ### ตาราง 4.1 ฉากที่ใช้ (6 scans)
 
@@ -57,13 +66,13 @@ ARKitScenes ให้ Faro เป็น depth map ต่อเฟรม ไม�
 | ส่วน | ค่า | เหตุผล |
 |---|---|---|
 | fusion resolution | 256×192 | resolution ของ LiDAR — ทุก source ถูก resample ลงมาเท่ากันก่อน integrate |
-| voxel / sdf_trunc | 4 cm / 12 cm | Exp2 แสดงว่า 4 cm คือจุดคุ้มบน Apple Silicon (§5.2) |
+| voxel / sdf_trunc | 4 cm / 12 cm | Exp2 แสดงว่า 4 cm คือจุดคุ้มบน Apple Silicon (§5.4) |
 | depth range | 0.1–5.0 m | ตัด sensor noise ใกล้ และ Faro noise ไกล |
 | post-process | ลบ cluster < 1000 สามเหลี่ยม | ไม่ decimate |
 | frame stride | 1 (ทุกเฟรม Faro) | ยกเว้น Exp3 |
 | device | Apple M-series (MPS) | เวลาที่รายงานคือเวลาบนเครื่องนี้ |
 
-โมเดล monocular ที่ใช้ (pretrained ทั้งหมด, ADR-008): Depth Anything V2 Large (335 M params) / Small (25 M) และ DA-v2 Metric-Indoor (Large, fine-tune Hypersim);
+โมเดล monocular ที่ใช้ (pretrained ยกเว้นแถว fine-tune ของ Exp6–7 ใน §4.5): Depth Anything V2 Large (335 M params) / Small (25 M) และ DA-v2 Metric-Indoor (Large, fine-tune Hypersim);
 MiDaS v2.1 small (21 M) สำหรับ Exp4 ทุกโมเดลรับภาพที่หมุนตั้งตรงแล้ว output ถูกแปลงเป็น depth-like (`1/disparity`) ก่อนเข้า aligner
 
 ## 4.4 Scale alignment protocol
@@ -82,12 +91,14 @@ aligner ทุกตัวที่ไม่ใช่ `identity` fit affine **�
 ## 4.5 โปรโตคอลการ fine-tune (Exp6, ADR-013)
 
 **ฉาก** — แยกจาก 6 ฉากเทสต์ที่ระดับ `visit_id` สุ่มด้วย seed 0 จากรายการฉากที่คัดไว้: 10 ฉากเทรนที่มี **ทั้ง Faro และ LiDAR**
-(ครูสองแบบจึงเห็นเฟรมชุดเดียวกัน), อีก 14 ฉากเทรนที่มีแต่ LiDAR (ไม่มี laser scan เลย) และ 3 ฉากจาก fold Validation ที่มี Faro ไว้เลือก checkpoint
+(R1 และ R2 จึงเทรนบน *ห้องชุดเดียวกัน*), อีก 14 ฉากเทรนที่มีแต่ LiDAR (ไม่มี laser scan เลย) และ 3 ฉากจาก fold Validation ที่มี Faro ไว้เลือก checkpoint
 รวม: เทสต์ 6 / val 3 / เทรน 24 ฉาก — ไม่มีห้องเดียวกัน (หรือการสแกนอื่นของห้องเดียวกัน) โผล่ในสองชุด
 ไฟล์แบ่งฉาก (`configs/training/splits.yaml`) และจำนวนเฟรมต่อฉากเผยแพร่พร้อมโค้ด
 
 **label** — R1 ใช้ Faro `highres_depth` (3,594 เฟรม, 10 ฉาก); R2 ใช้ `lowres_depth` ของ iPad ที่ ARKit confidence ≥ 1 บน 10 ฉากเดียวกัน
-(8,656 เฟรม — LiDAR มีในเฟรมที่ laser scan ไม่ครอบคลุมด้วย); R3 ใช้ label LiDAR เดียวกันบนทั้ง 24 ฉาก (19,896 เฟรม)
+(8,656 เฟรม); **R3 — โมเดลหลักของเปเปอร์** — ใช้ label LiDAR เดียวกันบนทั้ง 24 ฉาก (19,896 เฟรม)
+เฟรมของ R1 กับ R2 **ไม่ใช่ชุดเดียวกัน**: R1 วนตาม timestamp ของ Faro (~4 fps) ส่วน R2/R3 วนตามภาพสี `vga_wide` ทุก 3 เฟรม (~10 fps)
+เพราะ LiDAR มีคู่กับภาพทุกเฟรม ⇒ ที่ 6,000 step เท่ากัน R2 เห็นมุมกล้องหลากหลายกว่า R1 ~2.4 เท่า (§5.2 อ่านผล R1 vs R2 ด้วยข้อนี้)
 depth ถูก resample ลงกริด RGB ด้วย nearest เท่านั้น; pixel ที่ไกลเกิน 5 m หรือไม่มี label ถูก mask ทิ้ง
 
 **การเทรน** — freeze DINOv2 encoder (300M พารามิเตอร์, โหมด `eval`) เทรนเฉพาะ DPT neck + metric head ด้วย SiLog loss (β = 0.15),
@@ -96,6 +107,8 @@ AdamW (lr 5e-5, weight decay 0.01, warmup 200 step แล้ว cosine), bf16 au
 validate ทุก 500 step และเก็บ checkpoint ที่ AbsRel ต่ำสุดบน 3 ฉาก val — หนึ่ง run ใช้เวลา ~1 ชม. บน RTX 3070 (VRAM 3.2 GB)
 
 **ตอนเทสต์** — โมเดลที่ fine-tune แล้วเป็นแถว `DepthSource` ธรรมดา: RGB เข้า เมตรออก `aligner: identity` ไม่เห็น depth/pose/intrinsics
+การเตรียมภาพตอนเทสต์เหมือนกันทุกประการระหว่าง pretrained กับ fine-tune (หมุนตั้งตรง, ย่อด้านสั้น = 518 ด้านยาวปัดเป็นพหุคูณของ 14 ⇒ 518 × 686,
+normalize ด้วยค่า ImageNet) และตรงกับขนาดที่ใช้ตอนเทรน ⇒ ความต่างระหว่างสองแถวมาจากน้ำหนักของ head เท่านั้น
 
 ## 4.6 Metrics
 
@@ -105,8 +118,12 @@ accuracy = ระยะเฉลี่ย pred→ref (สร้างสิ่�
 precision/recall/F-score ที่ τ = 2 / 5 / 10 cm — **F@5cm คือตัวเลขหลัก** (5 cm ≈ ความคลาดเคลื่อนที่ยอมรับได้ในการวางเฟอร์นิเจอร์);
 normal consistency = mean |n_pred · n_ref| ของคู่จุดใกล้สุด
 
-**2D (วินิจฉัย)** — ต่อเฟรม เทียบ depth *หลัง align* กับ Faro depth บน pixel ที่ทั้งคู่อยู่ใน 0.1–5 m: RMSE, AbsRel, δ₁ (สัดส่วน pixel ที่ max(p/g, g/p) < 1.25)
-เฉลี่ยทุกเฟรม ใช้แยกว่า error เกิดที่ depth (ก่อน fusion) หรือที่ fusion
+**2D** — ต่อเฟรม เทียบ depth *หลัง align* กับ Faro `highres_depth` บนกริด 256×192: RMSE, AbsRel, δ₁ (สัดส่วน pixel ที่ max(p/g, g/p) < 1.25)
+**protocol 2** (ADR-014, นิยามมาตรฐานของ NYU/KITTI): เลือก pixel ด้วย GT อย่างเดียว (0.1 ≤ GT ≤ 5 m) และ pixel ที่ source ให้ค่า (pred > 0 — pixel ที่ LiDAR
+ถูก mask ด้วย confidence ไม่ถือเป็นคำทำนาย) แล้ว **clip** prediction เข้าช่วง 0.1–5 m แทนการตัดทิ้ง
+(ร่างก่อนหน้าตัด pixel ที่ *prediction* อยู่นอกช่วงทิ้งด้วย ซึ่งซ่อน error ที่ใหญ่ที่สุดของโมเดลที่ทายไกลเกิน — ทุกตัวเลข 2D ในเปเปอร์นี้คำนวณใหม่ด้วย protocol 2:
+ทุกแถวของ Exp1–6 ขยับไม่เกิน 0.001 ยกเว้น Depth Pro ที่ AbsRel เพิ่มจาก 1.04 เป็น 2.007 เพราะมันทายไกลเกิน 5 m บ่อย — ตรงกับกรณีที่นิยามเดิมซ่อนไว้) เฉลี่ยแบบถ่วงจำนวน pixel ภายในห้อง แล้วเฉลี่ยข้ามห้อง
+ใน Exp1–5 2D ใช้แยกว่า error เกิดที่ depth (ก่อน fusion) หรือที่ fusion; ใน Exp6–7 มันคือการวัดตรงที่สุดว่าโมเดลทายระยะถูกแค่ไหนเทียบกับ laser
 
 **เวลา** — `time_total_s` = โหลดข้อมูล + inference + align + fusion + extract บนเครื่องเดียว; รายงานแยก inference ใน §7
 
@@ -119,9 +136,17 @@ normal consistency = mean |n_pred · n_ref| ของคู่จุดใกล
 | 3 frame stride | `dataset.frame_stride` | 1 / 5 / 10 / 20 × {gt, mono+oracle, mono+per_scene} | DA-v2 L, voxel 4 cm |
 | 4 model size | `depth.model` | DA-v2 L / DA-v2 S / MiDaS small | oracle_frame, voxel 4 cm |
 | 5 LiDAR confidence | `depth.lidar_min_confidence`, `fusion.confidence_weights` | ทุก pixel / mask ≥1 / mask =2 / weight [0,1,2] / [1,2,4] | lidar, voxel 4 cm |
-| 6 ครูตอน fine-tune | `depth.model` | pretrained / ft-Faro / ft-LiDAR / ft-LiDAR 24 ฉาก | identity, voxel 4 cm |
+| **6 fine-tune (ผลหลัก)** | `depth.model` | **pretrained / ft-LiDAR 24 ฉาก (R3)**; ablation: ft-Faro (R1) / ft-LiDAR 10 ฉาก (R2) / Depth Pro | identity, voxel 4 cm |
+| **7 ห้องเพิ่ม (2D)** | ห้อง | pretrained / R3 / LiDAR บน 20 ห้องจาก fold Validation | identity, 2D อย่างเดียว, Faro ทุก 2 เฟรม |
+
+**Exp7 (ADR-014)** — 6 ห้องเทสต์ของ Exp6 เป็นห้องเดียวที่เรามี reference mesh แต่การวัด 2D ต้องการแค่ Faro depth ของ dataset
+เราจึงเพิ่ม 20 ห้องจาก fold Validation ของ ARKitScenes (`configs/eval/valfold_2d.yaml`, `scripts/select_valfold_2d.py`, seed 0) ที่ scan ยาว 30–150 s
+และมี `highres_depth` ≥ 40 MB หนึ่ง video ต่อ `visit_id` และ **ตัด visit ใดก็ตามที่อยู่ในชุด train / val / test ของการ fine-tune หรือโผล่ใน fold Training ออก**
+ห้องเหล่านี้ไม่ถูกใช้ตัดสินใจอะไรเลย (checkpoint ถูกเลือกไปแล้วบน val 3 ห้อง) ประเมินด้วย `roomscan eval2d` ซึ่งใช้เฟรม กริด mask และ `depth_metrics`
+ชุดเดียวกับ pipeline แต่ไม่ fuse (ทดสอบแล้วว่าได้ตัวเลขเท่ากับ pipeline เต็ม, `tests/test_eval2d.py`) บน Faro ทุก 2 เฟรม (~2 fps)
 
 ทุก run = 1 ไฟล์ `config.yaml` ที่ resolve แล้ว + `metrics.json` ใน `experiments/results/<exp>/<scene>_<run>/` (commit ไว้ทั้งหมด);
 ตารางใน §5 สร้างจาก `roomscan report` โดยไม่แก้มือ ตัวเลขเป็น mean ± std ข้าม 6 ฉาก และมีตารางต่อฉากใน `per_scene.md`
 
 การทดลองทั้งหมดทำซ้ำได้ด้วย `make reference && make sweep-exp1 sweep-exp2 sweep-exp3 sweep-exp4 sweep-exp5 sweep-exp6 report` หลังโหลดข้อมูลตาม `data/README.md`
+และ Exp7 ด้วย `python scripts/download_valfold_2d.py && roomscan eval2d configs/experiments/exp7_valfold_2d.yaml`

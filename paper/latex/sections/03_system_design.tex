@@ -107,13 +107,15 @@ for seeing beyond the Faro coverage. An optional per-pixel integer weight from t
 accuracy $=$ mean pred$\rightarrow$ref distance, completeness $=$ ref$\rightarrow$pred, Chamfer $=$ their mean;
 precision/recall/F-score at \SI{2}{}/\SI{5}{}/\SI{10}{cm} (\textbf{\fscore{} is the headline}); normal consistency
 $=$ mean $|n_{pred}\cdot n_{ref}|$.
-\item \textbf{2D metrics} per frame (RMSE, AbsRel, $\delta_{1\text{--}3}$) compare depth \emph{after} alignment with GT
-depth, to tell whether error arises before or after fusion.
+\item \textbf{2D metrics} per frame (RMSE, AbsRel, $\delta_{1\text{--}3}$) compare depth \emph{after} alignment with the
+dataset's Faro depth, to tell whether error arises before or after fusion, and are Exp.~7's measure; pixels are chosen
+by the ground truth and predictions clipped (protocol~2, \S\ref{sec:metrics}). \code{roomscan eval2d} runs this part
+alone (no fusion) for rooms that have no reference mesh.
 \end{itemize}
 
 \subsection{Config, registry and experiments}
 \path{configs/base.yaml} defines every value; \path{configs/experiments/expN.yaml} $=$ base $+$ a list of runs, each a
-handful of dotted-key overrides. \code{roomscan sweep} runs every run $\times$ every scene and writes a resolved
+handful of dotted-key overrides. \code{roomscan sweep} (or \code{eval2d}, 2D only) runs every run $\times$ every scene and writes a resolved
 \code{config.yaml} plus \code{metrics.json} per run; \code{roomscan report} aggregates them into \code{summary.csv}
 and one \code{table.md} per experiment. The tables in \S\ref{sec:results} are copied from those files.
 

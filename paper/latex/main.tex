@@ -1,5 +1,6 @@
 % roomscan — English manuscript (IEEE conference format).
-% Translated from paper/draft/00–09 (Thai) on 2026-09-17; numbers from experiments/results/*/table.md.
+% Translated from paper/draft/00–09 (Thai) on 2026-09-17; re-framed around R3 vs pretrained (ADR-014) on 2026-09-25.
+% Numbers from experiments/results/*/table.md via scripts/paper_numbers.py -> numbers.tex.
 % Build:  make paper   (tectonic)   or   pdflatex main && bibtex main && pdflatex main && pdflatex main
 \documentclass[conference]{IEEEtran}
 \IEEEoverridecommandlockouts
@@ -27,8 +28,8 @@
 
 \begin{document}
 
-\title{How Many Centimetres Does the Depth Source Cost?\\
-A Single-Variable Pipeline for Comparing Laser, Mobile LiDAR, and Monocular Depth in Room Reconstruction}
+\title{Teaching Monocular Depth the Metre with the Phone's Own LiDAR:\\
+Fine-Tuned vs.\ Pretrained Depth Anything~V2 for Room Reconstruction, Measured Against a Laser Scanner}
 
 % TODO: fill in author name(s) and affiliation before submission
 \author{\IEEEauthorblockN{Author Name}
@@ -41,7 +42,7 @@ email@example.com}}
 \input{sections/00_abstract}
 
 \begin{IEEEkeywords}
-monocular depth estimation, TSDF fusion, 3D room reconstruction, LiDAR, scale alignment, ARKitScenes
+monocular depth estimation, transfer learning, metric depth, LiDAR supervision, TSDF fusion, 3D room reconstruction, ARKitScenes
 \end{IEEEkeywords}
 
 \input{sections/01_introduction}

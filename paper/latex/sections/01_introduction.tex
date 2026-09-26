@@ -14,11 +14,29 @@ per-image metrics (AbsRel, $\delta_1$) on benchmarks, which do not translate int
 End-to-end reconstruction systems (Atlas, NeuralRecon, SimpleRecon) design their whole pipeline around their own model,
 so the \emph{depth source} cannot be compared in isolation.
 
+Some recent models claim to output \emph{metres} directly, without calibration (DA-v2 Metric-Indoor, ZoeDepth, Depth
+Pro)---if that held, the question above would reduce to choosing a model. These models, however, are trained on data
+that are not a phone's camera (DA-v2 Metric-Indoor on rendered Hypersim images), and inside a real room-reconstruction
+pipeline the room comes out \SI{\rsMETRICCM}{cm} wrong (\S\ref{sec:exp1}). The direct remedy is \emph{transfer
+learning}: keep training the model on depth from the target domain. The question is where those labels come from---the
+\$20k laser scanner used to build research datasets, or the \emph{LiDAR already inside Pro phones}, which an app maker
+can collect at scale. If the latter works, the minority of devices with LiDAR can be the teacher of the majority
+without it.
+
+\subsection{Research question}
+\textbf{Main question:} is DA-v2 Metric-Indoor fine-tuned with depth from the iPad's LiDAR (no laser scanner at
+training time) \emph{better than the same model pretrained}, when measured against the Faro laser scanner---the raw
+ground truth ARKitScenes ships---both as a room mesh (centimetres on the wall) and as per-frame depth, on rooms never
+used for training?
+\textbf{Supporting questions:} (a) how much better is a laser teacher than a phone-LiDAR teacher; (b) where does the
+fine-tuned model stand relative to using a sensor at run time (LiDAR, sparse points per frame); (c) where does the
+remaining error come from?
+
 \subsection{Approach}
 This is a \emph{system-development} study. We build a classical room-reconstruction pipeline (per-frame depth
 $\rightarrow$ scale alignment $\rightarrow$ TSDF voxel fusion $\rightarrow$ mesh) in which \textbf{the depth source is
-the single swappable variable}, and measure the mesh geometry against a laser-scanner reference on real rooms
-(ARKitScenes) with three sources through one and the same pipeline:
+the single swappable variable}, so ``pretrained'' and ``fine-tuned'' are two rows that differ only in a checkpoint
+name, and every other depth source can be priced through the same pipeline as context:
 
 \begin{table*}[t]
 \centering\small
@@ -26,61 +44,66 @@ the single swappable variable}, and measure the mesh geometry against a laser-sc
 \toprule
 Depth source & Stands for \\
 \midrule
+\textbf{DA-v2 Metric-Indoor pretrained / fine-tuned with a LiDAR teacher (R3)} & \textbf{main question: a device with no sensor and no calibration} \\
 Faro laser (\code{highres\_depth}) & upper bound of the pipeline: its own loss with perfect depth \\
-ARKit LiDAR (\code{lowres\_depth}, $256\times192$) & what iPhone~Pro does today \\
-Monocular (Depth Anything V2, MiDaS) $\times$ scale strategy & what a device without LiDAR can do \\
+ARKit LiDAR (\code{lowres\_depth}, $256\times192$) & what iPhone~Pro does today (and R3's teacher) \\
+Monocular (Depth Anything V2, MiDaS) $\times$ scale strategy & ceiling and cost of supplying scale at run time instead of training \\
 \bottomrule
 \end{tabularx}
 \end{table*}
 
-Isolating \emph{ScaleAligner} as a separate stage lets us separate ``wrong shape'' from ``wrong scale'' in the
-monocular rows: \code{oracle\_frame} (fit per frame against GT) is the model's ceiling; \code{per\_scene}
-(one calibration) is what a one-off calibration achieves; \code{sparse\_points} (fit per frame on a few hundred
-metric points) is what a deployed system with a VIO tracker can do.
+Fine-tuning uses ARKitScenes rooms disjoint from the test rooms at the \code{visit\_id} level and trains only the DPT
+neck and metric head. Evaluation uses Faro twice: a reference mesh fused from Faro depth on six test rooms (3D), and Faro
+depth per frame directly on those rooms and on \rsVN{} more from the Validation fold (2D). Isolating \emph{ScaleAligner}
+as a separate stage further lets us separate ``wrong shape'' from ``wrong scale'': \code{oracle\_frame} (fit per frame
+against GT) is a model's ceiling, \code{per\_scene} is a one-off calibration, and \code{sparse\_points} (fit per frame
+on a few hundred metric points) is what a system with a VIO tracker can do.
 
-\subsection{Main results (6 scenes, \SI{4}{cm} voxels)}
+\subsection{Main results}
 \begin{itemize}
-\item The pipeline itself loses \SI{2.1 \pm 0.5}{cm} (Chamfer) when fed laser depth; iPad LiDAR loses
-\SI{3.0 \pm 0.6}{cm}---a \SI{1}{cm} gap that is the same in every room type.
-\item Monocular depth with the correct scale on every frame (oracle) loses \SI{\rsORACLECM \pm \rsORACLESD}{cm}:
-\SI{\rsORACLEGAPLIDARCM}{cm} behind LiDAR, i.e.\ ``Android is about \SI{2}{cm} behind iPhone~Pro \emph{if} the scale
-problem is solved.''
-\item Monocular depth calibrated once per room loses \SI{\rsSCENECM \pm \rsSCENESD}{cm}, uniformly across rooms; a
-``metric'' model without calibration loses \SI{\rsMETRICCM \pm \rsMETRICSD}{cm}. \textbf{The real problem of monocular
-depth is not shape but a scale that swings per view} (\S\ref{sec:discussion}).
-\item Fitting scale per frame on $\sim$200 sparse metric points closes that gap to \SI{\rsSPARSECM}{cm}
-(\fscore{} \rsSPARSEF)---within \SI{\rsSPARSEGAP}{cm} of the oracle (\S\ref{sec:results}).
-\item An intrinsics-conditioned metric model (Depth Pro), given the camera's real focal length and no
-fine-tuning, reaches only \SI{\rsDEPTHPROCM}{cm} (\fscore{} \rsDEPTHPROF)---knowing the camera is not what the
-problem needs.
-\item Fine-tuning the metric model on ARKitScenes fixes the uncalibrated row without any alignment at run time:
-\SI{\rsFTFAROCM}{cm} with a laser teacher, \SI{\rsFTLIDARCM}{cm} with a consumer-LiDAR teacher
-($\rsFTTEACHERRATIO\times$), from \SI{\rsMETRICCM}{cm} pretrained (\S\ref{sec:finetune}).
-\item A $13\times$ smaller model (DA-v2 Small) costs \SI{1.0}{cm} but runs $6\times$ faster; MiDaS small is a further
-$3\times$ faster with $2.5\times$ the error of Large. Model size matters $17\times$ less than scale.
-\item Frame count governs coverage, not accuracy: $\geq 0.8$~fps is needed to capture the whole room.
+\item \textbf{The LiDAR-teacher fine-tune (R3) beats the pretrained model in every test room:} Chamfer
+\SI{\rsMETRICCM}{cm}$\rightarrow$\SI{\rsFTLIDARALLCM}{cm} ($\rsMAINGAIN\times$, \rsMAINWINS/\rsMAINN{} rooms), \fscore{}
+\rsMETRICF$\rightarrow$\rsFTLIDARALLF, per-frame AbsRel against Faro \rsMETRICSIXABSREL$\rightarrow$\rsFTLIDARALLABSREL{}
+---with no calibration and no sensor at run time (\S\ref{sec:main}).
+\item \textbf{The same holds on \rsVN{} rooms that took part in nothing:} AbsRel \rsVMETRICABSREL$\rightarrow$\rsVFTALLABSREL,
+better in \rsVWINS/\rsVN{} rooms (exact Wilcoxon $p=\rsVP$) (\S\ref{sec:main}).
+\item \textbf{A laser teacher is not measurably better than a phone-LiDAR teacher:} \SI{\rsFTFAROCM}{cm} (Faro) /
+\SI{\rsFTLIDARCM}{cm} (LiDAR, 10 rooms) / \SI{\rsFTLIDARALLCM}{cm} (LiDAR, 24 rooms), within the across-room std
+(\S\ref{sec:finetune}).
+\item An intrinsics-conditioned metric model (Depth Pro), given the real focal length and no fine-tuning, reaches only
+\SI{\rsDEPTHPROCM}{cm}---knowing the camera does not replace in-domain labels (\S\ref{sec:finetune}).
+\item \textbf{R3 does not reach a sensor:} the pipeline itself loses \SI{\rsGTCM \pm \rsGTSD}{cm}, iPad LiDAR
+\SI{\rsLIDARCM \pm \rsLIDARSD}{cm}, monocular depth with the correct scale on every frame
+\SI{\rsORACLECM \pm \rsORACLESD}{cm}, and a per-frame fit on $\sim$200 sparse points (VIO proxy) \SI{\rsSPARSECM}{cm}
+(\S\ref{sec:exp1}).
+\item \textbf{The remaining error is scale that swings per view, not shape:} one calibration per room gives
+\SI{\rsSCENECM \pm \rsSCENESD}{cm} uniformly; the model's scale varies several-fold within one scan with the content of
+the frame, not with time (\S\ref{sec:discussion}). Fine-tuning removes the domain bias; the per-frame factor still has
+to come from metric data at run time.
+\item A $13\times$ smaller model (DA-v2 Small) costs \SI{1.0}{cm} for a $6\times$ speed-up, and frame count governs
+coverage, not accuracy ($\geq 0.8$~fps is needed).
 \end{itemize}
 
 \subsection{Contributions}
 \begin{enumerate}
+\item \textbf{A measured answer to ``does fine-tuning on a phone's own LiDAR really help a metric monocular model?''},
+against a laser scanner on held-out rooms in 3D (6 rooms) and 2D (6 $+$ \rsVN{} rooms), with the checkpoints, the room
+split and the room-selection scripts released (\S\ref{sec:ftsetup}, \S\ref{sec:main}).
+\item A teacher ablation (Faro vs.\ LiDAR, 10 vs.\ 24 rooms) and an intrinsics-conditioned baseline under one training
+recipe (\S\ref{sec:finetune}).
 \item An open-source pipeline in which \code{DepthSource} and \code{ScaleAligner} are interfaces switched from config
-without touching the orchestrator, so every experiment table is ``one loop, one variable'' and the same code serves
-as a product backend (\S\ref{sec:design}).
-\item ``Centimetres on the wall'' for Faro / LiDAR / monocular depth through one pipeline on six real rooms with a
-laser-scanner reference (\S\ref{sec:setup}--\ref{sec:results}).
-\item An analysis showing that the oracle$\rightarrow$per-scene gap comes from per-view scale, not temporal drift, that
-$\sim$200 sparse metric points per frame recover the oracle, and what that implies for system design
-(\S\ref{sec:discussion}).
-\item A controlled answer to ``can a phone's own depth sensor replace the laser scanner as the \emph{teacher}?'':
-the same fine-tuning recipe, the same scenes, only the training label changes---Faro \SI{\rsFTFAROCM}{cm} vs.\ ARKit
-LiDAR \SI{\rsFTLIDARCM}{cm} on held-out rooms, with identical AbsRel. Checkpoints and the scene split are released
-(\S\ref{sec:finetune}).
+without touching the orchestrator, so every table is ``one loop, one variable'' and a newly trained checkpoint becomes
+a new row immediately (\S\ref{sec:design}).
+\item ``Centimetres on the wall'' for Faro / LiDAR / monocular $\times$ scale strategy through one pipeline, and an
+analysis showing that monocular error comes from per-view scale, not temporal drift---which explains both why
+fine-tuning helps and why it is not enough (\S\ref{sec:exp1}, \S\ref{sec:discussion}).
 \item Per-scan cost (time, frames, model size, LiDAR confidence weighting) for business decisions (\S\ref{sec:business}).
 \end{enumerate}
 
 \paragraph{What this paper does \emph{not} claim}
 It does not claim to beat Atlas / NeuralRecon / SimpleRecon---they are not compared, and this pipeline is not designed to
-compete. It does not claim that ``not needing LiDAR'' is a feature---the data say the opposite: without LiDAR some
-per-frame metric information is still required, or the model must be taught the scale beforehand
-(\S\ref{sec:finetune}), which is still \SI{\rsFTGAPORACLE}{cm} short of having metric anchors at run time. Only the
-metric head of one model is fine-tuned (frozen encoder, ARKitScenes); every other model is used pretrained.
+compete. It does not claim that fine-tuning makes LiDAR unnecessary: R3 (\SI{\rsFTLIDARALLCM}{cm}) remains far from
+LiDAR (\SI{\rsLIDARCM}{cm}) and from having metric points at run time (\SI{\rsSPARSECM}{cm}). It does not claim that a
+LiDAR teacher equals or beats a laser teacher---R1 and R2 differ in both label and number of training views
+(\S\ref{sec:ftsetup}) and by less than the across-room std. Only the head of one model is fine-tuned (frozen encoder,
+ARKitScenes, iPad camera); every other model is used pretrained, and other phone cameras are not measured.

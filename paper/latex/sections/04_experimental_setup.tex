@@ -1,4 +1,8 @@
 \section{Experimental Setup}\label{sec:setup}
+\textbf{Main question.} Is DA-v2 Metric-Indoor fine-tuned with the iPad's own LiDAR (R3) better than the same model
+pretrained, when measured against the \emph{Faro laser scanner, the raw ground truth ARKitScenes ships}? Exp.~6 answers
+it on six test rooms in 3D and 2D, Exp.~7 on 20 further rooms in 2D. Exp.~1--5 price the other depth sources through the
+same pipeline as context for where monocular error comes from and where R3 stands relative to a sensor.
 
 \subsection{Dataset: ARKitScenes}
 We use ARKitScenes~\cite{arkitscenes} because it is the only dataset that provides \textbf{all three} things the
@@ -21,6 +25,12 @@ Asset & Resolution / rate & Role \\
 \bottomrule
 \end{tabularx}
 \end{table*}
+
+\textbf{Ground truth in this paper is the dataset's Faro data as distributed}, not corrected or interpolated: in 2D we
+compare per-frame depth with \code{highres\_depth} directly (nearest-neighbour down-sampling to the $256\times192$ grid,
+so every GT value used is a value Faro measured, never an average); in 3D we compare with a reference mesh fused from
+that same \code{highres\_depth} (\S\ref{sec:reference}), because the dataset ships no laser mesh. The iPad LiDAR
+(\code{lowres\_depth}) is \emph{never} used as ground truth---only as the teacher of R2/R3 and as the \code{lidar} row.
 
 Two dataset constraints shape the experiments: (1) Faro depth exists only for the frames Apple kept ($\sim$3~fps), so
 every source is evaluated \textbf{on this same frame set} and Exp.~3 (frame stride) measures coverage more than
@@ -79,7 +89,7 @@ device & Apple M-series (MPS) & reported times are on this machine \\
 \bottomrule
 \end{tabularx}
 \end{table*}
-Monocular models (all pretrained): Depth Anything~V2 Large (335M parameters) / Small (25M) and DA-v2 Metric-Indoor
+Monocular models (pretrained, except the fine-tuned rows of Exp.~6--7, \S\ref{sec:ftsetup}): Depth Anything~V2 Large (335M parameters) / Small (25M) and DA-v2 Metric-Indoor
 (Large, fine-tuned on Hypersim); MiDaS v2.1 small (21M) for Exp.~4. Every model receives the upright image; its output
 is converted to depth-like ($1/\text{disparity}$) before the aligner.
 
@@ -104,14 +114,17 @@ calibrates from a ruler or a few VIO points will do no better.
 
 \subsection{Fine-tuning protocol (Exp.~6)}\label{sec:ftsetup}
 \paragraph{Scenes} Disjoint at the \code{visit\_id} level from the six test scenes, drawn with seed 0 from the
-ARKitScenes screening list: 10 \emph{training} scenes that have both a Faro scan and LiDAR (so the two teachers see
-exactly the same frames), 14 further training scenes with LiDAR only (no laser scan exists for them), and 3 scenes from
+ARKitScenes screening list: 10 \emph{training} scenes that have both a Faro scan and LiDAR (so R1 and R2 train on the same
+\emph{rooms}), 14 further training scenes with LiDAR only (no laser scan exists for them), and 3 scenes from
 the official Validation fold, with Faro, used for checkpoint selection. Six test scenes, 3 validation, 24 training;
 no room, and no other capture of the same room, appears in two of those sets. The split file
 (\path{configs/training/splits.yaml}) and the per-scene frame counts are released with the code.
 \paragraph{Labels} R1 uses Faro \code{highres\_depth} (\num{3594} frames over 10 scenes); R2 uses the iPad's
-\code{lowres\_depth} with ARKit confidence $\geq 1$ on the same 10 scenes (\num{8656} frames---LiDAR exists for frames
-the laser scan does not cover); R3 uses the same LiDAR labels over all 24 scenes (\num{19896} frames). Depth is
+\code{lowres\_depth} with ARKit confidence $\geq 1$ on the same 10 scenes (\num{8656} frames); \textbf{R3, the paper's
+main model}, uses the same LiDAR labels over all 24 scenes (\num{19896} frames). R1's and R2's frames are \emph{not} the
+same set: R1 iterates the Faro timestamps ($\sim$4~fps) while R2/R3 iterate every third \code{vga\_wide} frame
+($\sim$10~fps), because LiDAR accompanies every colour frame; at equal steps R2 therefore sees $\sim$2.4$\times$ more
+distinct views than R1 (read \S\ref{sec:finetune} with this in mind). Depth is
 resampled to the RGB grid with nearest-neighbour only; pixels beyond \SI{5}{m} or without a label are masked out.
 \paragraph{Optimisation} The DINOv2 encoder is frozen (\num{300}M parameters in \code{eval} mode); only the DPT neck
 and the metric head train, with SiLog loss ($\beta = 0.15$), AdamW (lr \num{5e-5}, weight decay 0.01, 200 warm-up steps
@@ -119,17 +132,28 @@ then cosine), bf16 autocast, batch 2 with gradient accumulation 4, on $518\times
 short side is 518. R1 and R2 run \num{6000} steps, R3 \num{12000}; validation every 500 steps keeps the checkpoint with
 the lowest AbsRel on the 3 validation scenes. One run takes about an hour on an RTX~3070 (\SI{3.2}{GB} of VRAM).
 \paragraph{At test time} the fine-tuned models are plain \code{DepthSource} rows like any other: RGB in, metres out,
-\code{aligner: identity}, no access to depth, poses or intrinsics.
+\code{aligner: identity}, no access to depth, poses or intrinsics. Input preparation is identical for the pretrained and
+fine-tuned rows (upright rotation, short side 518 and long side rounded to a multiple of 14, i.e.\ $518\times686$,
+ImageNet normalisation) and matches the training resolution, so the difference between the two rows is the head's
+weights alone.
 
-\subsection{Metrics}
+\subsection{Metrics}\label{sec:metrics}
 \paragraph{3D (headline)} Following \code{metrics\_3d.py} exactly for every row: 200{,}000 points sampled uniformly on
 the produced mesh and on the reference (seed 0); accuracy $=$ mean pred$\rightarrow$ref distance (did we build
 something that is not there?), completeness $=$ ref$\rightarrow$pred (did we miss something?), \textbf{Chamfer $=$
 their mean}; precision/recall/F-score at $\tau = $ \SI{2}{}/\SI{5}{}/\SI{10}{cm}---\textbf{\fscore{} is the headline}
 (\SI{5}{cm} $\approx$ the tolerance for furniture placement); normal consistency $=$ mean $|n_{pred}\cdot n_{ref}|$ over
 nearest pairs.
-\paragraph{2D (diagnostic)} Per frame, depth \emph{after} alignment vs.\ Faro depth on pixels where both lie in
-\SIrange{0.1}{5}{m}: RMSE, AbsRel, $\delta_1$ (fraction with $\max(p/g, g/p) < 1.25$), averaged over frames.
+\paragraph{2D} Per frame, depth \emph{after} alignment vs.\ Faro \code{highres\_depth} on the $256\times192$ grid:
+RMSE, AbsRel, $\delta_1$ (fraction with $\max(p/g, g/p) < 1.25$). \emph{Protocol~2} (the standard NYU/KITTI
+definition): pixels are selected by the ground truth alone (\SI{0.1}{m} $\leq$ GT $\leq$ \SI{5}{m}) and by whether the
+source produced a value (a LiDAR pixel masked by confidence is not a prediction); the prediction is then
+\emph{clipped} to \SIrange{0.1}{5}{m} rather than dropped. An earlier draft also dropped pixels whose \emph{prediction}
+left the range, which hides the largest errors of a model that over-estimates distance; every 2D number here was
+recomputed with protocol~2. Every Exp.~1--6 row moved by less than 0.001 except Depth Pro, whose AbsRel rose from
+1.04 to \rsDEPTHPROABSREL{} because it often predicts beyond \SI{5}{m}---exactly the case the old definition hid. Pixel-weighted within a room, then averaged over rooms. In Exp.~1--5 the 2D metrics
+separate depth error from fusion error; in Exp.~6--7 they are the most direct measure of how right a model's distances
+are against the laser.
 \paragraph{Time} \code{time\_total\_s} $=$ data loading $+$ inference $+$ alignment $+$ fusion $+$ extraction on one
 machine; inference is reported separately in \S\ref{sec:business}.
 
@@ -145,12 +169,22 @@ Exp. & Variable & Values & Fixed \\
 3 frame stride & \code{dataset.frame\_stride} & 1 / 5 / 10 / 20 $\times$ \{gt, mono$+$oracle, mono$+$per\_scene\} & DA-v2 L, \SI{4}{cm} \\
 4 model size & \code{depth.model} & DA-v2 L / DA-v2 S / MiDaS small & oracle\_frame, \SI{4}{cm} \\
 5 LiDAR confidence & \code{lidar\_min\_confidence}, \code{confidence\_weights} & all / mask$\geq$1 / mask$=$2 / weights [0,1,2] / [1,2,4] & lidar, \SI{4}{cm} \\
-6 fine-tune teacher & \code{depth.model} & pretrained / ft-Faro / ft-LiDAR / ft-LiDAR (24 scenes) & identity, \SI{4}{cm} \\
+\textbf{6 fine-tune (main)} & \code{depth.model} & \textbf{pretrained / ft-LiDAR 24 rooms (R3)}; ablation: ft-Faro (R1) / ft-LiDAR 10 rooms (R2) / Depth Pro & identity, \SI{4}{cm} \\
+\textbf{7 more rooms (2D)} & rooms & pretrained / R3 / LiDAR on 20 Validation-fold rooms & identity, 2D only \\
 \bottomrule
 \end{tabularx}
 \end{table*}
+\paragraph{Exp.~7} The six test rooms are the only ones with a reference mesh, but 2D evaluation needs only the
+dataset's Faro depth. We therefore add 20 rooms from the ARKitScenes Validation fold
+(\path{configs/eval/valfold_2d.yaml}, \path{scripts/select_valfold_2d.py}, seed 0): scans of 30--\SI{150}{s} with
+$\geq$\SI{40}{MB} of \code{highres\_depth}, one video per \code{visit\_id}, excluding every visit that belongs to the
+fine-tuning train, validation or test sets or that also appears in the Training fold. These rooms decide nothing
+(checkpoints were already chosen on the three validation rooms). They are evaluated with \code{roomscan eval2d}, which
+uses the same frames, grid, mask and \code{depth\_metrics} call as the pipeline without fusing (tested to reproduce the
+full pipeline's numbers), on every second Faro frame ($\sim$2~fps).
+
 Every run is one resolved \code{config.yaml} plus \code{metrics.json} under
 \path{experiments/results/<exp>/<scene>_<run>/} (all committed). Tables in \S\ref{sec:results} are generated by
 \code{roomscan report} without manual editing; numbers are mean $\pm$ std over the six scenes, with per-scene tables in
-\code{per\_scene.md}. Everything reproduces with \code{make reference}, \code{make sweep-exp1} \ldots{} \code{sweep-exp6}, \code{make report}
-after downloading the data.
+\code{per\_scene.md}. Everything reproduces with \code{make reference}, \code{make sweep-exp1} \ldots{} \code{sweep-exp6},
+\code{make eval-exp7}, \code{make report} after downloading the data.

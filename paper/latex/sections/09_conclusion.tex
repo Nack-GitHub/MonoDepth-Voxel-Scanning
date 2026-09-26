@@ -1,36 +1,32 @@
 \section{Conclusion}
-We built a classical room-reconstruction pipeline (per-frame depth $\rightarrow$ scale alignment $\rightarrow$ TSDF
-$\rightarrow$ mesh) in which \textbf{the depth source is the single variable switched from config}, and used it to
-measure how many centimetres Faro laser, iPad LiDAR and monocular models deviate \textbf{under identical conditions} on
-six real rooms with a laser-scanner reference. The numbers say:
+We asked whether transfer learning with depth from a phone's own LiDAR really makes a metric monocular model better than
+its pretrained self, measured against the laser scanner that ARKitScenes provides as ground truth, and answered it
+through a room-reconstruction pipeline (per-frame depth $\rightarrow$ scale alignment $\rightarrow$ TSDF $\rightarrow$
+mesh) in which \textbf{the depth source is the single variable switched from config}. The numbers say:
 \begin{enumerate}
-\item \textbf{The pipeline loses \SI{2.1 \pm 0.5}{cm} at \SI{4}{cm} voxels and iPad LiDAR adds only
-\SI{1.0 \pm 0.3}{cm}} (Chamfer \SI{3.0}{cm}, \fscore{} 0.93), uniformly across room types; LiDAR's confidence map does not
-change this. A LiDAR device today serves \SI{5}{cm}-level use cases but not \SI{2}{cm}-level ones.
-\item \textbf{Monocular depth with the right scale on every frame is
-\SI{\rsORACLEGAPLIDARCM \pm \rsORACLEGAPLIDARSD}{cm} behind LiDAR} (\SI{\rsORACLECM}{cm}, \fscore{} \rsORACLEF)---the
-size of the ``Android vs.\ iPhone~Pro'' gap \emph{if} scale is solved.
-\item \textbf{Monocular depth's problem is not shape but a scale that swings per view}: one calibration per scene gives
-\SI{\rsSCENECM \pm \rsSCENESD}{cm} ($4.5\times$ the oracle) in every room, and an uncalibrated ``metric'' model
-\SI{\rsMETRICCM}{cm}; per-frame
-analysis shows the model's scale varies severalfold within one scan, uncorrelated with time but correlated with what is
-in the frame.
-\item \textbf{Two hundred sparse metric points per frame---what a phone's tracker provides---recover the oracle}:
-\SI{\rsSPARSECM}{cm}, \fscore{} \rsSPARSEF, within \SI{\rsSPARSEGAP}{cm} of the ceiling, as a LiDAR-proxy upper bound. The
-remedy is per-frame metric data, not a better model or a finer calibration.
-\item \textbf{The scale can also be put into the weights}: fine-tuning the metric model's head on ARKitScenes brings
-the uncalibrated row from \SI{\rsMETRICCM}{cm} to \SI{\rsFTFAROCM}{cm}, and \textbf{a teacher costs the same whether it
-is a laser scanner or the LiDAR in a phone} (\SI{\rsFTLIDARCM}{cm}, $\rsFTTEACHERRATIO\times$; identical AbsRel)---so
-the training data for the devices without a depth sensor can be collected by the devices that have one.
-\item \textbf{Model size matters $17\times$ less than scale}: DA-v2 Small costs \SI{1.0}{cm} for a $6\times$
-speed-up (\SI{121}{ms}/frame); MiDaS small is $3\times$ faster again with $2.5\times$ Large's error.
-\item \textbf{On ARKitScenes, frame count governs coverage, not accuracy}: GT accuracy is constant at 1.2--\SI{1.3}{cm}
-at every stride; $\geq 0.8$~fps is needed for a complete room (\fscore{} $\geq 0.9$).
+\item \textbf{Yes, in every room we can measure.} Fine-tuning only the head of DA-v2 Metric-Indoor with iPad LiDAR
+labels on 24 rooms (R3) lowers Chamfer from \SI{\rsMETRICCM}{cm} to \SI{\rsFTLIDARALLCM}{cm} on all six held-out rooms
+(\fscore{} \rsMETRICF{} $\rightarrow$ \rsFTLIDARALLF; AbsRel against Faro \rsMETRICSIXABSREL{} $\rightarrow$
+\rsFTLIDARALLABSREL), and per-frame AbsRel from \rsVMETRICABSREL{} to \rsVFTALLABSREL{} on \rsVN{} further
+Validation-fold rooms (better in \rsVWINS/\rsVN)---with no calibration and no sensor at run time.
+\item \textbf{The teacher does not need to be a laser scanner.} Faro, LiDAR on the same rooms and LiDAR on more rooms
+give \SI{\rsFTFAROCM}{cm} / \SI{\rsFTLIDARCM}{cm} / \SI{\rsFTLIDARALLCM}{cm}, within the across-room spread, so the
+training data for devices without a depth sensor can be collected by devices that have one. Knowing the camera is no
+substitute: Depth Pro with the true focal length reaches \SI{\rsDEPTHPROCM}{cm}.
+\item \textbf{It is not yet a sensor.} Through the same pipeline iPad LiDAR costs \SI{\rsLIDARCM}{cm}, monocular depth
+with the correct scale per frame \SI{\rsORACLECM}{cm}, and a per-frame fit on 200 sparse metric points---what a phone's
+tracker provides---\SI{\rsSPARSECM}{cm}. R3 reaches the ``rough overview'' tier, not furniture placement.
+\item \textbf{The remaining error is a scale that swings per view, not shape}: one calibration per scene gives
+\SI{\rsSCENECM \pm \rsSCENESD}{cm} in every room; the model's per-frame scale varies severalfold within a scan,
+uncorrelated with time but correlated with what is in the frame. Fine-tuning removes the domain bias of that scale;
+the per-frame factor still needs metric data at run time.
+\item \textbf{Secondary costs are small}: the pipeline itself loses \SI{2.1 \pm 0.5}{cm} at \SI{4}{cm} voxels; DA-v2
+Small costs \SI{1.0}{cm} for a $6\times$ speed-up; $\geq 0.8$~fps suffices for a complete room; LiDAR confidence
+weighting changes nothing.
 \end{enumerate}
-The systems result: separating \code{DepthSource} and \code{ScaleAligner} into interfaces made all six experiments
-(33 runs $\times$ 6 scenes) pure YAML, with the orchestrator edited once in the whole project (two lines for confidence
-weights, recorded as a decision). Finding~3 exists because the aligner was measurable in isolation---had scale been
-hidden inside the model, one would see only ``mono is bad'' without knowing why; finding~4 was a single new row in the
-same table. The same code, behind a small upload/queue/view service and a loader for the app's capture folder, is the
-product's backend; the next step is to replace the LiDAR-sampled proxy with real ARKit/ARCore feature points on rooms we
-capture ourselves.
+The systems result: separating \code{DepthSource} and \code{ScaleAligner} into interfaces made all experiments pure YAML
+and made each fine-tuned checkpoint a new row in an existing table; the orchestrator was edited once in the whole project
+(two lines for confidence weights). The same code, behind a small upload/queue/view service and a loader for the app's
+capture folder, is the product's backend. Next steps: a controlled teacher comparison on identical frames, a larger
+validation set, fine-tuning data from more phone cameras, and combining the fine-tuned model with real ARKit/ARCore
+feature points to fix the per-frame scale it leaves.

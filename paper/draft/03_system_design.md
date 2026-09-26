@@ -76,12 +76,13 @@ class DepthSource(ABC):
 - **Reference:** ARKitScenes ไม่มี laser mesh ให้ตรง ๆ เราสร้าง `reference_mesh.ply` โดย fuse Faro `highres_depth` ทุกเฟรมที่ voxel 1 cm ครั้งเดียวต่อฉาก (ADR-009) — แถว `gt` ที่ voxel 4 cm จึงวัด "pipeline loss" ไม่ใช่ศูนย์
 - **Metrics 3D** (โปรโตคอลตายตัวใน `metrics_3d.py`): สุ่ม 200k จุดบนทั้งสอง mesh (seed คงที่); accuracy = mean dist pred→ref, completeness = ref→pred, Chamfer = ค่าเฉลี่ยของสอง;
   precision/recall/F-score ที่ 2 / 5 / 10 cm (**F@5cm คือตัวเลขหลัก**); normal consistency = mean |n_pred·n_ref|
-- **Metrics 2D** ต่อเฟรม (RMSE, AbsRel, δ₁₋₃) วัด depth *หลัง align* กับ GT depth — ใช้แยกว่า error เกิดก่อนหรือหลัง fusion
+- **Metrics 2D** ต่อเฟรม (RMSE, AbsRel, δ₁₋₃) วัด depth *หลัง align* กับ Faro depth ของ dataset โดยตรง — ใช้แยกว่า error เกิดก่อนหรือหลัง fusion
+  และเป็นการวัดหลักของ Exp7; คัด pixel ตาม GT แล้ว clip prediction (protocol 2, §4.6); `roomscan eval2d` รันเฉพาะส่วนนี้ (ไม่ fuse) สำหรับห้องที่ไม่มี reference mesh
 
 ## 3.6 Config, registry, และการทดลอง
 
 `configs/base.yaml` กำหนดทุกค่า; `configs/experiments/expN.yaml` = `base` + รายการ `runs` ที่แต่ละ run เป็น dotlist override ไม่กี่ key
-`roomscan sweep` รันทุก run × ทุกฉาก, เขียน `config.yaml` (ที่ resolve แล้ว) + `metrics.json` ต่อ run; `roomscan report` รวมเป็น `summary.csv` + `table.md` ต่อการทดลอง
+`roomscan sweep` รันทุก run × ทุกฉาก (`roomscan eval2d` = เหมือนกันแต่ 2D อย่างเดียว), เขียน `config.yaml` (ที่ resolve แล้ว) + `metrics.json` ต่อ run; `roomscan report` รวมเป็น `summary.csv` + `table.md` ต่อการทดลอง
 ตารางในบทที่ 5 คัดลอกจาก `table.md` เหล่านี้โดยตรง
 
 การเพิ่มความสามารถทุกชนิด = ไฟล์ใหม่ 1 ไฟล์ + registry 1 บรรทัด:

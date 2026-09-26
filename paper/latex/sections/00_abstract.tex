@@ -1,26 +1,23 @@
 \begin{abstract}
-Reconstructing a room in 3D from a phone currently depends on a LiDAR sensor that only a minority of devices carry.
-Monocular depth models have improved dramatically on single images, but there is no published number for how many
-centimetres a room drifts when such a model replaces LiDAR inside an otherwise unchanged reconstruction pipeline.
-This system-development paper builds a classical pipeline---per-frame depth $\rightarrow$ scale alignment
-$\rightarrow$ TSDF fusion $\rightarrow$ mesh---in which \emph{the depth source and the scale-recovery strategy are
-interfaces switched from a config file}, and measures mesh geometry against a laser-scanner reference on six real
-rooms from ARKitScenes (2{,}352 frames) under identical conditions.
-Results: the pipeline itself loses \SI{\rsGTCM \pm \rsGTSD}{cm} (Chamfer, \SI{4}{cm} voxels); iPad~Pro LiDAR adds only
-\SI{\rsLIDARGAPGTCM \pm \rsLIDARGAPGTSD}{cm} (\fscore{} \rsLIDARF); Depth Anything~V2 with the correct scale on every
-frame loses \SI{\rsORACLECM \pm \rsORACLESD}{cm} (\fscore{} \rsORACLEF), \SI{\rsORACLEGAPLIDARCM}{cm} behind LiDAR.
-With scale calibrated only once per room the error jumps to \SI{\rsSCENECM \pm \rsSCENESD}{cm} (\fscore{} \rsSCENEF),
-and an uncalibrated ``metric'' model gives \SI{\rsMETRICCM}{cm}. Per-frame analysis shows the cause: the model's scale
-swings by several times with the content of each view, not with time.
-Fitting scale per frame on only $\sim$200 sparse metric points---the kind a phone's visual-inertial tracker
-provides for free---recovers \SI{\rsSPARSECM}{cm} (\fscore{} \rsSPARSEF), essentially the oracle.
-The alternative is to give the model the missing scale by training: fine-tuning the same metric checkpoint on
-ARKitScenes (frozen encoder, DPT head only) brings the uncalibrated row to \SI{\rsFTFAROCM}{cm} when the training
-labels come from the laser scanner and \SI{\rsFTLIDARCM}{cm} when they come from an iPad's own LiDAR instead
-(AbsRel \rsFTFAROABSREL{} vs \rsFTLIDARABSREL)---so the supervision a \$20k scanner provides can be collected with a
-consumer depth sensor, and devices without one inherit it.
-Model size (Large$\rightarrow$Small) costs just \SI{1.0}{cm} for a $6\times$ speed-up, and frame rate governs
-coverage rather than accuracy ($\geq 0.8$~fps is needed).
-The product conclusion is that the gap between devices with and without LiDAR is a per-frame scale problem, solvable
-with metric data from VIO rather than with a larger model. Code, every experiment config, and every run's metrics are released.
+Devices without LiDAR can reconstruct a room from monocular depth, but an off-the-shelf ``metric'' model such as Depth
+Anything~V2 Metric-Indoor, trained on synthetic images, misplaces a real room by \SI{\rsMETRICCM}{cm} inside a
+reconstruction pipeline. We ask whether \emph{transfer learning with depth from the phone's own LiDAR}---no laser scanner
+involved---really makes this model better than its pretrained self \emph{when measured against a laser scanner}, the
+Faro ground truth that ARKitScenes ships. We fine-tune only the DPT head (frozen encoder) on 24 ARKitScenes rooms with
+labels from the iPad's LiDAR (R3) and compare it with the pretrained checkpoint through one depth $\rightarrow$ TSDF
+$\rightarrow$ mesh pipeline in which the depth source is the single variable switched from a config file, on rooms never
+used for training or checkpoint selection: six rooms with a Faro reference mesh (3D and 2D) and \rsVN{} further rooms
+from the Validation fold (per-frame 2D against Faro depth, \rsVFRAMES{} frames).
+R3 lowers Chamfer from \SI{\rsMETRICCM}{cm} to \SI{\rsFTLIDARALLCM}{cm} ($\rsMAINGAIN\times$, better in every room),
+raises \fscore{} from \rsMETRICF{} to \rsFTLIDARALLF{} and lowers per-frame AbsRel from \rsMETRICSIXABSREL{} to
+\rsFTLIDARALLABSREL; on the \rsVN{} unseen rooms AbsRel falls from \rsVMETRICABSREL{} to \rsVFTALLABSREL{} (better in
+\rsVWINS/\rsVN)---all without calibration or any sensor at run time. A laser teacher (\SI{\rsFTFAROCM}{cm}) is not
+measurably better than the LiDAR teacher, and Depth Pro given the camera's true focal length, without fine-tuning,
+reaches \SI{\rsDEPTHPROCM}{cm}. The same pipeline gives the context: it loses \SI{\rsGTCM}{cm} on its own, iPad LiDAR
+\SI{\rsLIDARCM}{cm}, a monocular model with the correct scale per frame \SI{\rsORACLECM}{cm}, and a per-frame fit on
+$\sim$200 sparse metric points \SI{\rsSPARSECM}{cm}. Per-frame analysis shows R3's remaining error is a scale that
+swings with the content of each view, which fine-tuning de-biases but does not remove. Supervision that used to need a
+laser scanner can thus be collected with a consumer depth sensor and transferred to devices that have none, yielding
+overview-grade rooms ($\sim$\SI{16}{cm}) but not yet the per-frame metric accuracy furniture placement needs. Code,
+every experiment config, every run's metrics, checkpoints and the room split are released.
 \end{abstract}
