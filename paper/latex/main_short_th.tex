@@ -1,4 +1,5 @@
-% roomscan — SHORT version, Thai (บทคัดย่อ) — the Thai companion of main_short.tex (English).
+% roomscan — SHORT version, Thai — the Thai companion of main_short.tex (English); chapters are added as
+% they are translated (so far: บทคัดย่อ, บทนำ).
 % Same macros (shortmacros.tex), numbers (numbers.tex) and references (refs.bib) as the English version,
 % so the two stay in sync when numbers change.
 % Build:  cd paper/latex && tectonic main_short_th.tex   (needs XeTeX: Thai font + Thai line breaking)
@@ -55,6 +56,8 @@ email@example.com}}
 ความลึกแบบเมตริก (metric depth), การใช้ LiDAR เป็นข้อมูลสอน (LiDAR supervision), การรวมความลึกแบบ TSDF
 (TSDF fusion), การสร้างแบบจำลองสามมิติของห้อง (3D room reconstruction), ARKitScenes
 \end{IEEEkeywords}
+
+\input{sections_short/01_introduction_th}
 
 \bibliographystyle{IEEEtran}
 \bibliography{refs}

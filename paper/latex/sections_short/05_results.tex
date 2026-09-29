@@ -13,7 +13,7 @@ input with no alignment of any kind, and no room here was used for training or c
 \begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}llrrrrrrrr@{}}
 \toprule
-Model & Teacher & Chamfer & Acc. & Compl. & \textbf{F@5} & R@10 & \textbf{AbsRel} & $\delta_1$ & RMSE \\
+Model & Teacher & Chamfer & Acc. & Compl. & \textbf{F@5} & R@10 & \textbf{AbsRel} & \wone{} & RMSE \\
 \midrule
 DA-v2 Metric-Indoor, pretrained & --- (Hypersim) & $\rsMETRICCM \pm \rsMETRICSD$ & \rsMETRICACC & \rsMETRICCOMP & \rsMETRICF & \rsMETRICRten & \rsMETRICSIXABSREL & \rsMETRICSIXDELTAONE & \rsMETRICSIXRMSE \\
 $+$ fine-tune \textbf{\ftmain{}} & iPad LiDAR, 24 rooms & $\mathbf{\rsFTLIDARALLCM \pm \rsFTLIDARALLSD}$ & \textbf{\rsFTLIDARALLACC} & \textbf{\rsFTLIDARALLCOMP} & \textbf{\rsFTLIDARALLF} & \textbf{\rsFTLIDARALLRten} & \textbf{\rsFTLIDARALLABSREL} & \textbf{\rsFTLIDARALLDELTAONE} & \textbf{\rsFTLIDARALLRMSE} \\
@@ -55,7 +55,7 @@ $\pm$ std over rooms.}
 \begin{adjustbox}{max width=\columnwidth}
 \begin{tabular}{@{}lrrr@{}}
 \toprule
-Row & AbsRel & $\delta_1$ & RMSE (cm) \\
+Row & AbsRel & \wone{} & RMSE (cm) \\
 \midrule
 DA-v2 Metric-Indoor, pretrained & $\rsVMETRICABSREL \pm \rsVMETRICABSRELSD$ & $\rsVMETRICDELTAONE \pm \rsVMETRICDELTAONESD$ & \rsVMETRICRMSE \\
 $+$ fine-tune \textbf{\ftmain{}} & $\mathbf{\rsVFTALLABSREL \pm \rsVFTALLABSRELSD}$ & $\mathbf{\rsVFTALLDELTAONE \pm \rsVFTALLDELTAONESD}$ & \textbf{\rsVFTALLRMSE} \\
@@ -78,16 +78,16 @@ Below the diagonal $=$ the fine-tune is better.}
 \SI{\rsFTLIDARALLCM}{cm} ($\rsMAINGAIN\times$; \SI{\rsMAINDIFFCM \pm \rsMAINDIFFSD}{cm} better per room,
 \rsMAINWINS/\rsMAINN{} rooms, exact Wilcoxon $p=\rsMAINP$, the smallest attainable at $n=6$) and \fscore{}
 \rsMETRICF$\rightarrow$\rsFTLIDARALLF{} (Tables~\ref{tab:main}, \ref{tab:mainscene}). Accuracy falls more than
-completeness: the pretrained model builds the room too far away (15--31\,\% over-estimation, \S\ref{sec:metric}); \ftmain{}
+completeness: the pretrained model builds the room too far away (15--31\,\% over-estimation, Section~\ref{sec:metric}); \ftmain{}
 brings surfaces back near where they belong.
 \item \textbf{The same holds on rooms that took part in nothing.} On the \rsVN{} Validation-fold rooms AbsRel drops
 \rsVMETRICABSREL$\rightarrow$\rsVFTALLABSREL{} ($\rsVGAIN\times$; better in \rsVWINS/\rsVN{} rooms, exact Wilcoxon
-$p=\rsVP$) and $\delta_1$ rises \rsVMETRICDELTAONE$\rightarrow$\rsVFTALLDELTAONE{} (Table~\ref{tab:exp7},
+$p=\rsVP$) and the \wone{} share rises \rsVMETRICDELTAONE$\rightarrow$\rsVFTALLDELTAONE{} (Table~\ref{tab:exp7},
 Fig.~\ref{fig:finetuneabsrel}). The one exception, \rsVEXCEPT{} (AbsRel \rsVEXCEPTPRE$\rightarrow$\rsVEXCEPTFT), is one
 of the pretrained model's best rooms; in the other 19, \ftmain{}'s AbsRel is 21--64\,\% of the pretrained one.
 \item \textbf{It does not reach a sensor.} \ftmain{} is $\sim$\SI{13}{cm} behind iPad LiDAR in Chamfer and
 \SI{\rsFTALLGAPSPARSE}{cm} behind a per-frame fit on 200 sparse points; fine-tuning fixes the scale of the
-\emph{domain}, not of \emph{the frame being looked at} (\S\ref{sec:whyft}).
+\emph{domain}, not of \emph{the frame being looked at} (Section~\ref{sec:whyft}).
 \end{enumerate}
 
 \subsection{Teacher ablation and a no-fine-tuning baseline}\label{sec:finetune}
@@ -141,7 +141,7 @@ DA-v2 Metric & identity & $\rsMETRICCM \pm \rsMETRICSD$ & \rsMETRICFtwo & \rsMET
 \rsORACLEGAPLIDARSD}{cm} behind LiDAR}, and \textbf{200 sparse metric points per frame recover it} (\SI{\rsSPARSEGAP}{cm}
 from the oracle, $\rsSPARSEVSSCENE\times$ better than one-off calibration).
 \item \textbf{One calibration per scene is $4.5\times$ worse than the oracle, uniformly} (\rsSCENEc--\SI{\rsSCENEb}{cm}
-in every room): a property of the model family, not of a failing room (\S\ref{sec:drift}).
+in every room): a property of the model family, not of a failing room (Section~\ref{sec:drift}).
 \item \textbf{The pretrained metric model is worst} (\SI{\rsMETRICCM}{cm}): the surfaces are all there, in the wrong
 place. Kitchen 45261556 is among its best shapes under the oracle (\rsORACLEf) and its worst metric room (\rsMETRICf):
 right shape, wrong scale. This is the baseline \ftmain{} improves on.

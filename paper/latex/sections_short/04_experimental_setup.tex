@@ -49,7 +49,7 @@ pretrained model.
 \subsection{Metrics and experiments}\label{sec:metrics}
 \textbf{3D:} 200k points sampled on both meshes; accuracy $=$ mean pred$\rightarrow$ref distance, completeness $=$
 ref$\rightarrow$pred, Chamfer $=$ their mean; precision/recall/F-score at $\tau=2/5/10$~cm, with \fscore{} as
-headline (\SI{5}{cm} $\approx$ furniture-placement tolerance). \textbf{2D:} per-frame AbsRel, $\delta_1$ and RMSE
+headline (\SI{5}{cm} $\approx$ furniture-placement tolerance). \textbf{2D:} per-frame AbsRel, \wone{} and RMSE
 against Faro depth; pixels are selected by the ground truth (\SIrange{0.1}{5}{m}) and predictions clipped to that
 range, averaged per room then over rooms. Table~\ref{tab:exps} lists the experiments; numbers are mean $\pm$ std over
 the six scenes. \textbf{Exp.~7} adds \rsVN{} Validation-fold rooms (seed~0, one video per visit, excluding every visit

@@ -1,43 +1,59 @@
-\section{Introduction and Business Motivation}
+\section{Introduction}\label{sec:intro}
+% Thai version: 01_introduction_th.tex (main_short_th.tex); keep the two in step.
 
-Scanning a room into a 3D model is already a consumer feature on iPhone~Pro and iPad~Pro (Apple RoomPlan, Polycam),
-all relying on the \emph{LiDAR sensor} for metric depth. Devices with LiDAR are, however, a minority: non-Pro iPhones
-and almost every Android phone have none. Their alternative is \emph{monocular depth estimation}, which advanced
-rapidly between 2020 and 2024 (MiDaS, Depth Anything). A product team must know \textbf{by how many centimetres the
-room is wrong if LiDAR is replaced by a monocular model, and which use cases that still serves}---a question per-image
-benchmark metrics (AbsRel, $\delta_1$) do not answer, and end-to-end reconstruction systems (Atlas, NeuralRecon,
-SimpleRecon) cannot answer because they design the whole pipeline around their own model.
+Scanning a room into a 3D model is already a consumer feature on iPhone~Pro and iPad~Pro (e.g., Apple
+RoomPlan~\cite{roomplan}), and it relies on the \emph{LiDAR sensor} for depth in metres. Devices with LiDAR are,
+however, a minority: non-Pro iPhones and almost every Android phone have none. Their alternative is \emph{monocular
+depth estimation}---depth predicted from a single colour image---which has advanced rapidly from MiDaS~\cite{midas} to
+Depth Anything~\cite{da1,da2}. A product team must therefore know \textbf{by how many centimetres the room is wrong if
+LiDAR is replaced by a monocular model, and which use cases that still serves}. Standard per-image
+benchmarks~\cite{eigen14}, which average the depth error over the pixels of single images, do not answer this, and
+end-to-end reconstruction systems~\cite{atlas,neuralrecon,simplerecon} cannot, because they design the whole pipeline
+around their own model.
 
-Some recent models claim to output metres directly (DA-v2 Metric-Indoor, ZoeDepth, Depth Pro), but they are trained
-on data that is not a phone's camera---DA-v2 Metric-Indoor on rendered Hypersim images---and inside a real
-reconstruction pipeline the room comes out \SI{\rsMETRICCM}{cm} wrong (\S\ref{sec:exp1}). The direct remedy is
-\emph{transfer learning} on target-domain depth. The question is where the labels come from: a \$20k laser scanner,
-or the \emph{LiDAR already inside Pro phones}, which an app maker can collect at scale. If the latter works, devices
-with LiDAR can teach those without it.
+Some recent models output metres directly~\cite{da2,zoedepth,depthpro}, but they are trained on images that do not
+come from a phone camera---DA-v2 Metric-Indoor on rendered rooms of the Hypersim dataset~\cite{hypersim}---and in our
+experiments a room reconstructed with DA-v2 Metric-Indoor is \SI{\rsMETRICCM}{cm} wrong on average. The direct remedy
+is to \emph{fine-tune} the model on depth from the target device, which raises the question of where these labels come
+from: a survey-grade laser scanner~\cite{faro}, which few app makers own, or the \emph{LiDAR already inside Pro
+devices}, whose depth an app can collect during normal use. If the latter works, devices with LiDAR can teach those
+without it.
 
-\textbf{Research question.} Is DA-v2 Metric-Indoor fine-tuned with iPad LiDAR depth (no laser scanner at training
-time) better than the same model pretrained, measured against the Faro laser scanner---as a room mesh and as per-frame
-depth---on rooms never used for training? \textbf{Supporting questions:} (a) is a laser teacher better than a
-phone-LiDAR teacher; (b) where does the fine-tuned model stand relative to a sensor at run time; (c) where does the
-remaining error come from?
+We therefore ask whether DA-v2 Metric-Indoor fine-tuned with iPad LiDAR depth, with no laser scanner at training time,
+is more accurate than the same model pretrained, when both are measured against the Faro laser scanner that provides
+the ground truth of ARKitScenes~\cite{arkitscenes} on rooms never used for training. The study has four objectives:
+(1)~to fine-tune the model on iPad LiDAR depth from 24 rooms, giving \ftmain{}, and compare it with the pretrained
+model on held-out rooms, counting it as better if its mean error is lower and the per-room difference is significant
+at the 5\,\% level under an exact Wilcoxon signed-rank test~\cite{wilcoxon}; (2)~to measure whether the source of the
+labels matters, by comparing Faro with LiDAR labels on the same 10 rooms (\ftfaro{} and \ftlidar{}), 10 with 24 rooms
+of LiDAR labels, and a model that uses the camera's focal length instead of in-domain labels (Depth
+Pro~\cite{depthpro}); (3)~to place \ftmain{} among the depth sources available at run time, namely iPad LiDAR and a
+relative model scaled per frame on sparse points or once per room; and (4)~to find the error that fine-tuning leaves,
+by fitting a depth scale to every frame and testing whether it follows time, which would indicate drift, or what the
+view shows.
 
-\textbf{Approach.} We build a classical pipeline (per-frame depth $\rightarrow$ scale alignment $\rightarrow$ TSDF
-fusion $\rightarrow$ mesh) in which \textbf{the depth source is the single swappable variable}, so ``pretrained'' and
-``fine-tuned'' are two rows differing only in a checkpoint, and every other depth source (Faro laser, ARKit LiDAR,
-relative monocular models with different scale strategies) is priced through the same pipeline as context.
+Every comparison is scored in two ways. As a room mesh, it is scored by the Chamfer distance~\cite{chamfer}, the mean
+distance from each surface to the nearest point of the other, and by the F-score at \SI{5}{cm} (\fscore{})~\cite{tanks},
+which combines the share of the reconstruction lying within \SI{5}{cm} of the reference with the share of the
+reference reconstructed within \SI{5}{cm}. Per frame, it is scored by AbsRel~\cite{eigen14}, the mean relative depth
+error, and by the share of pixels whose predicted depth is within a factor of 1.25 of the true depth, which we call
+\wone{}~\cite{eigen14}. For objective~(3), the share of the reference reconstructed within 2, 5 and \SI{10}{cm} stands for the
+accuracy needed for renovation measurement, furniture placement and a room overview, respectively, and a use case
+counts as served when that share reaches 90\,\%.
 
-\textbf{Contributions.}
-\begin{enumerate}
-\item A measured answer to whether fine-tuning a metric monocular model on a phone's own LiDAR helps, against a laser
-scanner on held-out rooms in 3D (6 rooms) and 2D (6 $+$ \rsVN{} rooms), with checkpoints and room split released.
-\item A teacher ablation (Faro vs.\ LiDAR, 10 vs.\ 24 rooms) and an intrinsics-conditioned baseline (Depth Pro).
-\item An open-source pipeline in which \code{DepthSource} and \code{ScaleAligner} are interfaces switched from config,
-so every table is ``one loop, one variable.''
-\item ``Centimetres on the wall'' for laser / LiDAR / monocular $\times$ scale strategy, and an analysis showing that
-monocular error comes from per-view scale, not temporal drift---explaining why fine-tuning helps and why it is not
-enough.
-\end{enumerate}
+The scope is as follows. The data are home rooms of ARKitScenes captured with one iPad~Pro model (colour images of
+$640\times480$ pixels, LiDAR depth of $256\times192$); the ground truth is the Faro depth distributed with the dataset,
+and iPad LiDAR is never used as ground truth. Only the DPT head~\cite{dpt}, the depth decoder of DA-v2 Metric-Indoor
+Large, is fine-tuned, with one training recipe, while its image encoder stays frozen. Six test rooms are evaluated as
+meshes and per frame, and \rsVN{} further rooms per frame only, all disjoint from the rooms used for training and
+checkpoint selection. Every depth source passes through the same offline pipeline---per-frame depth, scale alignment,
+fusion into a truncated signed distance function (TSDF) volume~\cite{curless96}, meshing---so the depth source is the
+only variable, and because every source and the reference share the camera poses recorded by ARKit, pose error is
+excluded. Learned reconstruction systems~\cite{atlas,neuralrecon,simplerecon}, other phone cameras including Android,
+real-time inference on the device and pose estimation are outside the scope.
 
-\textbf{Not claimed.} We do not compare against Atlas / NeuralRecon / SimpleRecon; we do not claim fine-tuning makes
-LiDAR unnecessary (\ftmain{} at \SI{\rsFTLIDARALLCM}{cm} remains far from LiDAR at \SI{\rsLIDARCM}{cm}); and since training and
-testing use the same iPad camera, transfer to other phone cameras is not measured.
+Each objective has a matching expected benefit. The first tells an app maker whether data it can already collect from
+Pro-device users improves room scans on devices without LiDAR, with no calibration or extra sensor at run time; the
+second, whether labelling needs a laser scanner at all; the third, which product features a device without LiDAR can
+offer, together with a pipeline in which a new depth source is evaluated by changing one configuration entry; and the
+fourth, where to invest next---per-frame scale, training data or model size.
