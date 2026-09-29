@@ -179,7 +179,7 @@ def fig_finetune_absrel(plt, results: Path, out: Path) -> bool:
     ax.set_aspect("equal")
     ax.grid(True, color=GRID, lw=0.5)
     ax.set_xlabel("AbsRel, pretrained DA-v2 Metric-Indoor")
-    ax.set_ylabel("AbsRel, fine-tuned with iPad LiDAR (R3)")
+    ax.set_ylabel("AbsRel, fine-tuned with iPad LiDAR, 24 rooms")
     ax.legend(loc="upper left", frameon=False, handletextpad=0.3)
     fig.tight_layout()
     for ext in ("png", "pdf"):

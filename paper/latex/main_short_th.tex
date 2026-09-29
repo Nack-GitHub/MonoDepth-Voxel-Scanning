@@ -1,0 +1,62 @@
+% roomscan — SHORT version, Thai (บทคัดย่อ) — the Thai companion of main_short.tex (English).
+% Same macros (shortmacros.tex), numbers (numbers.tex) and references (refs.bib) as the English version,
+% so the two stay in sync when numbers change.
+% Build:  cd paper/latex && tectonic main_short_th.tex   (needs XeTeX: Thai font + Thai line breaking)
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{fontspec}
+% Thai main font: the first one installed wins (Windows / macOS / Linux). Latin text uses its Latin glyphs.
+\IfFontExistsTF{TH Sarabun New}{\setmainfont{TH Sarabun New}[Script=Thai,Scale=1.35]}{%
+\IfFontExistsTF{Sarabun}{\setmainfont{Sarabun}[Script=Thai]}{%
+\IfFontExistsTF{Leelawadee UI}{\setmainfont{Leelawadee UI}[Script=Thai]}{%
+\IfFontExistsTF{Thonburi}{\setmainfont{Thonburi}[Script=Thai]}{%
+\IfFontExistsTF{Tahoma}{\setmainfont{Tahoma}[Script=Thai]}{%
+\setmainfont{Noto Serif Thai}[Script=Thai]}}}}}
+\setmonofont{texgyrecursor}[Extension=.otf,UprightFont=*-regular,BoldFont=*-bold,
+  ItalicFont=*-italic,BoldItalicFont=*-bolditalic]
+% Thai has no spaces between words: break by dictionary, with only a little stretch at those breaks so
+% justification widens real spaces rather than opening gaps inside words.
+\XeTeXlinebreaklocale "th"
+\XeTeXlinebreakskip=0pt plus 0.1pt
+
+\usepackage{amsmath,amssymb}
+\usepackage{url}
+\urlstyle{tt}
+\usepackage{siunitx}
+\usepackage[hidelinks]{hyperref}
+\usepackage{cite}
+
+\input{shortmacros}
+\renewcommand{\abstractname}{บทคัดย่อ}
+\renewcommand{\IEEEkeywordsname}{คำสำคัญ}
+\renewcommand{\refname}{เอกสารอ้างอิง}
+% IEEEtran sets the abstract and keywords in bold; a bold Thai paragraph is hard to read, so use regular.
+\newenvironment{thaiabstract}{\begin{abstract}\mdseries}{\end{abstract}}
+
+\begin{document}
+
+\title{สอนหน่วยเมตรให้โมเดลความลึกจากภาพเดี่ยวด้วย LiDAR ของโทรศัพท์เอง:\\
+เปรียบเทียบ Depth Anything~V2 แบบ fine-tune กับแบบ pretrained สำหรับการสร้างแบบจำลองห้อง
+โดยวัดเทียบกับ laser scanner}
+
+% TODO: fill in author name(s) and affiliation before submission
+\author{\IEEEauthorblockN{Author Name}
+\IEEEauthorblockA{Affiliation\\
+email@example.com}}
+
+\maketitle
+
+\input{numbers}
+\input{sections_short/00_abstract_th}
+
+\begin{IEEEkeywords}\mdseries
+การประมาณความลึกจากภาพเดี่ยว (monocular depth estimation), การเรียนรู้แบบถ่ายโอน (transfer learning),
+ความลึกแบบเมตริก (metric depth), การใช้ LiDAR เป็นข้อมูลสอน (LiDAR supervision), การรวมความลึกแบบ TSDF
+(TSDF fusion), การสร้างแบบจำลองสามมิติของห้อง (3D room reconstruction), ARKitScenes
+\end{IEEEkeywords}
+
+\bibliographystyle{IEEEtran}
+\bibliography{refs}
+
+\end{document}

@@ -5,12 +5,12 @@ We analysed every fifth frame of the six test rooms (471 frames): per frame, the
 increasing amounts of scale help (Table~\ref{tab:whyft}).
 \begin{table}[t]
 \centering\small
-\caption{Per-frame scale of the pretrained metric model vs.\ R3 (six test rooms, every fifth frame).}
+\caption{Per-frame scale of the pretrained metric model vs.\ \ftmain{} (six test rooms, every fifth frame).}
 \label{tab:whyft}
 \begin{adjustbox}{max width=\columnwidth}
 \begin{tabular}{@{}lrr@{}}
 \toprule
- & Pretrained & \textbf{R3} \\
+ & Pretrained & \textbf{\ftmain{}} \\
 \midrule
 median(GT/pred) per room & 0.69--0.85 & \textbf{0.93--1.21} \\
 per-frame swing within a room (p95/p5) & 1.55$\times$ & 1.52$\times$ \\
@@ -22,12 +22,12 @@ AbsRel, oracle $(s,t)$ per frame & 0.035 & 0.042 \\
 \end{tabular}
 \end{adjustbox}
 \end{table}
-\textbf{Fine-tuning learns the domain's multiplier.} The pretrained model is 15--31\,\% too far in every room; R3 is
-within $\sim$20\,\% in both directions. R3 without calibration (0.134) is on par with the pretrained model given a
+\textbf{Fine-tuning learns the domain's multiplier.} The pretrained model is 15--31\,\% too far in every room; \ftmain{} is
+within $\sim$20\,\% in both directions. \ftmain{} without calibration (0.134) is on par with the pretrained model given a
 per-room scale fitted on ground truth (0.127): what a one-off calibration provides has moved into the head's weights,
 learned from LiDAR in other rooms. With the encoder frozen, shape barely changes (oracle 0.035 vs.\ 0.042).
 \textbf{The per-frame swing remains.} Within one room, frames at p5 and p95 still need factors $\sim$1.5$\times$ apart,
-as before fine-tuning; with the right scale on every frame R3's AbsRel would drop to 0.051. That information is not in
+as before fine-tuning; with the right scale on every frame \ftmain{}'s AbsRel would drop to 0.051. That information is not in
 a single image and does not come from a better teacher; it must come from metric data at run time. Fine-tuning and
 per-frame metric points are therefore complementary.
 
@@ -62,7 +62,7 @@ blank walls gives the model no cue. The mirrored bathroom is hard for every sour
 \begin{adjustbox}{max width=\columnwidth}
 \begin{tabular}{@{}lrrrrr@{}}
 \toprule
-Use case ($\tau$) & LiDAR & sparse & per\_scene & \textbf{R3} & metric \\
+Use case ($\tau$) & LiDAR & sparse & per\_scene & \textbf{\ftmain{}} & metric \\
 \midrule
 overview (\SI{10}{cm}) & \checkmark\ \rsLIDARRten & \checkmark\ \rsSPARSERten & $\times$ \rsSCENERten & $\times$ \textbf{\rsFTLIDARALLRten} & $\times$ \rsMETRICRten \\
 furniture (\SI{5}{cm}) & \checkmark\ \rsLIDARRfive & $\sim$ \rsSPARSERfive & $\times$ \rsSCENERfive & $\times$ \textbf{\rsFTLIDARALLRfive} & $\times$ \rsMETRICRfive \\
@@ -73,7 +73,7 @@ renovation (\SI{2}{cm}) & $\times$ \rsLIDARRtwo & $\times$ \rsSPARSERtwo & $\tim
 \end{table}
 Table~\ref{tab:usecase} translates the results into product tiers. iPad LiDAR suffices for furniture placement but not
 for renovation measurement. On a device without LiDAR, neither one-off calibration nor a raw metric model serves any
-tier; R3 raises recall@\SI{10}{cm} from \rsMETRICRten{} to \rsFTLIDARALLRten{} with nothing at run time, a large step
+tier; \ftmain{} raises recall@\SI{10}{cm} from \rsMETRICRten{} to \rsFTLIDARALLRten{} with nothing at run time, a large step
 that is still short of the overview tier. With per-frame sparse points the same device reaches \SI{\rsSPARSECM}{cm},
 close to furniture placement. The order of investment the data suggest is therefore: \textbf{(1) per-frame scale from
 VIO points, (2) a fine-tuned model to remove the domain bias, (3) model size last}---investing in the model first

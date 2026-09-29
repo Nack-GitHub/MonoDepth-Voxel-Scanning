@@ -36,12 +36,12 @@ during development, so its numbers are not held-out; per-scene results show the 
 \subsection{Fine-tuning protocol}\label{sec:ftsetup}
 Scenes disjoint from the test set at the \code{visit\_id} level were drawn with seed~0: 10 training scenes with both
 Faro and LiDAR, 14 more with LiDAR only, and 3 Validation-fold scenes for checkpoint selection. Three fine-tunes share
-one recipe: \textbf{R1} uses Faro labels on the 10 scenes (\num{3594} frames), \textbf{R2} iPad LiDAR (confidence
-$\geq 1$) on the same 10 scenes (\num{8656} frames), and \textbf{R3, the main model}, LiDAR on all 24 scenes
-(\num{19896} frames). R1 and R2 do not share frames: Faro exists at $\sim$4~fps, LiDAR with every colour frame (we take
-every third, $\sim$10~fps), so R2 sees $\sim$2.4$\times$ more distinct views than R1. The DINOv2 encoder is frozen;
+one recipe: \textbf{\ftfaro{}} uses Faro labels on the 10 scenes (\num{3594} frames), \textbf{\ftlidar{}} iPad LiDAR (confidence
+$\geq 1$) on the same 10 scenes (\num{8656} frames), and \textbf{\ftmain{}, the main model}, LiDAR on all 24 scenes
+(\num{19896} frames). \ftfaro{} and \ftlidar{} do not share frames: Faro exists at $\sim$4~fps, LiDAR with every colour frame (we take
+every third, $\sim$10~fps), so \ftlidar{} sees $\sim$2.4$\times$ more distinct views than \ftfaro{}. The DINOv2 encoder is frozen;
 only the DPT neck and metric head train, with SiLog loss, AdamW (lr \num{5e-5}, cosine schedule), batch 8 (2 $\times$
-4 accumulation) on $518\times518$ crops, for \num{6000} steps (R1, R2) or \num{12000} (R3), keeping the checkpoint with
+4 accumulation) on $518\times518$ crops, for \num{6000} steps (\ftfaro{}, \ftlidar{}) or \num{12000} (\ftmain{}), keeping the checkpoint with
 the lowest validation AbsRel. A \num{6000}-step run takes about an hour on an RTX~3070. At test time the fine-tuned
 models are plain \code{DepthSource} rows: RGB in, metres out, \code{identity} aligner, same input preparation as the
 pretrained model.
@@ -63,8 +63,8 @@ of the training, validation and test sets) evaluated in 2D only on every second 
 \toprule
 Exp. & Variable (everything else fixed) \\
 \midrule
-\textbf{6} & \textbf{pretrained vs.\ R3}; ablation R1 / R2 / Depth Pro (6 scenes, 3D $+$ 2D) \\
-\textbf{7} & pretrained / R3 / LiDAR on \rsVN{} further rooms (2D) \\
+\textbf{6} & \textbf{pretrained vs.\ \ftmain{}}; ablation \ftfaro{} / \ftlidar{} / Depth Pro (6 scenes, 3D $+$ 2D) \\
+\textbf{7} & pretrained / \ftmain{} / LiDAR on \rsVN{} further rooms (2D) \\
 1 & depth source $\times$ aligner: gt / lidar / DA-v2 L $+$ \{oracle, sparse, per\_scene\} / metric \\
 2--5 & voxel size; frame stride; model size; LiDAR confidence \\
 \bottomrule

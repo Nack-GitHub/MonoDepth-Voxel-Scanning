@@ -2,11 +2,11 @@
 We asked whether fine-tuning a metric monocular depth model with a phone's own LiDAR makes it better than its
 pretrained self, measured against a laser scanner, through a room-reconstruction pipeline in which the depth source is
 the single variable. \textbf{It does, in every room we can measure:} fine-tuning only the head of DA-v2 Metric-Indoor
-on 24 rooms (R3) lowers Chamfer from \SI{\rsMETRICCM}{cm} to \SI{\rsFTLIDARALLCM}{cm} on all six held-out rooms and
+on 24 rooms (\ftmain{}) lowers Chamfer from \SI{\rsMETRICCM}{cm} to \SI{\rsFTLIDARALLCM}{cm} on all six held-out rooms and
 per-frame AbsRel from \rsVMETRICABSREL{} to \rsVFTALLABSREL{} on \rsVN{} further rooms, with no calibration or sensor
 at run time. \textbf{The teacher need not be a laser scanner:} Faro and LiDAR teachers are not measurably different,
 and knowing the camera's intrinsics is no substitute for in-domain labels. \textbf{It is not yet a sensor:} iPad LiDAR
-gives \SI{\rsLIDARCM}{cm} and a monocular model scaled per frame on 200 sparse points \SI{\rsSPARSECM}{cm}; R3's
+gives \SI{\rsLIDARCM}{cm} and a monocular model scaled per frame on 200 sparse points \SI{\rsSPARSECM}{cm}; \ftmain{}'s
 remaining error is a scale that swings with what each frame shows, which fine-tuning de-biases but cannot remove. The
 path to a usable product on devices without LiDAR is therefore a fine-tuned model combined with per-frame metric points
 from the device's tracker.

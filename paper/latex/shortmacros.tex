@@ -1,0 +1,10 @@
+% Macros shared by main_short.tex (English) and main_short_th.tex (Thai). Load after siunitx.
+\sisetup{detect-all,range-phrase=--,range-units=single,separate-uncertainty=true,multi-part-units=single}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\fscore}{F@\SI{5}{cm}}
+% The three fine-tunes, named teacher + number of training rooms (runs mono_ft_faro / mono_ft_lidar /
+% mono_ft_lidar_all; ADR-014 calls them R1 / R2 / R3). \ftmain is the paper's main model.
+\newcommand{\ftfaro}{\mbox{FT-Faro-10}}
+\newcommand{\ftlidar}{\mbox{FT-LiDAR-10}}
+\newcommand{\ftmain}{\mbox{FT-LiDAR-24}}
+\hyphenation{LiDAR}   % never "Li-DAR"

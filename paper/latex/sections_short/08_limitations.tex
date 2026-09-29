@@ -3,14 +3,14 @@
 drift is excluded and a real phone system incurs additional error; completeness means complete relative to what Faro
 saw. \textbf{Scale of the evaluation.} Mesh numbers come from six rooms (one used in development) and 2D numbers from
 26, all captured with one iPad model in homes; offices, empty rooms, low light and other phone cameras are absent.
-\textbf{Fine-tuning.} Checkpoints were selected on only three validation rooms, whose ranking (R3 $>$ R2 $>$ R1) does
-not reproduce on the test rooms; R1 and R2 differ in the number of views as well as the label; and only the head of one
+\textbf{Fine-tuning.} Checkpoints were selected on only three validation rooms, whose ranking (\ftmain{} $>$ \ftlidar{} $>$ \ftfaro{}) does
+not reproduce on the test rooms; \ftfaro{} and \ftlidar{} differ in the number of views as well as the label; and only the head of one
 model was trained with one recipe. \textbf{Proxies and bounds.} \code{per\_scene} calibrates on ground truth and
 \code{sparse\_points} uses clean LiDAR samples instead of triangulated VIO features, so both are upper bounds.
 Depth Pro was run through one implementation on $640\times480$ input. Times are unoptimised PyTorch on Apple Silicon
 and are meaningful only as ratios.
 
-\textbf{Future work}, in order of impact: (1) combine R3 with per-frame sparse points, which the 2D analysis bounds at
+\textbf{Future work}, in order of impact: (1) combine \ftmain{} with per-frame sparse points, which the 2D analysis bounds at
 AbsRel 0.051; (2) a controlled teacher comparison on identical frames and a larger validation set; (3) training data
 and evaluation on more phone cameras, including Android; (4) evaluation with real ARKit/ARCore feature points and a
 reference captured by our own app.

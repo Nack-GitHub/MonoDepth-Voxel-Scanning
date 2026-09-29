@@ -1,7 +1,8 @@
 % roomscan — SHORT version (<=10 pages) for the course report. Full version: main.tex + sections/.
 % Translated from paper/draft/00–09 (Thai) on 2026-09-17; re-framed around R3 vs pretrained (ADR-014) on 2026-09-25.
 % Numbers from experiments/results/*/table.md via scripts/paper_numbers.py -> numbers.tex.
-% Build:  make paper   (tectonic)   or   pdflatex main && bibtex main && pdflatex main && pdflatex main
+% Build:  cd paper/latex && tectonic main_short.tex   or   pdflatex main_short && bibtex main_short && pdflatex x2
+% Thai version (บทคัดย่อ): main_short_th.tex -> main_short_th.pdf (needs XeTeX/tectonic).
 \documentclass[conference]{IEEEtran}
 \IEEEoverridecommandlockouts
 
@@ -21,10 +22,8 @@
 \usepackage{cite}
 
 \graphicspath{{../figures/}}
-\sisetup{detect-all,range-phrase=--,range-units=single,separate-uncertainty=true,multi-part-units=single}
-\newcommand{\code}[1]{\texttt{#1}}
+\input{shortmacros}
 \sloppy   % long code identifiers in prose: prefer loose lines over overfull boxes
-\newcommand{\fscore}{F@\SI{5}{cm}}
 
 \begin{document}
 
