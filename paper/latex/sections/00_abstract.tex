@@ -17,7 +17,8 @@ reaches \SI{\rsDEPTHPROCM}{cm}. The same pipeline gives the context: it loses \S
 \SI{\rsLIDARCM}{cm}, a monocular model with the correct scale per frame \SI{\rsORACLECM}{cm}, and a per-frame fit on
 $\sim$200 sparse metric points \SI{\rsSPARSECM}{cm}. Per-frame analysis shows R3's remaining error is a scale that
 swings with the content of each view, which fine-tuning de-biases but does not remove. Supervision that used to need a
-laser scanner can thus be collected with a consumer depth sensor and transferred to devices that have none, yielding
-overview-grade rooms ($\sim$\SI{16}{cm}) but not yet the per-frame metric accuracy furniture placement needs. Code,
+laser scanner can thus be collected with a consumer depth sensor and used to train a model that needs no sensor at run
+time (measured here on the same iPad camera); the resulting rooms ($\sim$\SI{16}{cm}) are a large step toward, but not
+yet at, the accuracy a rough overview needs, let alone furniture placement. Code,
 every experiment config, every run's metrics, checkpoints and the room split are released.
 \end{abstract}

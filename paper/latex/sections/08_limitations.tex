@@ -7,7 +7,7 @@ own discretisation, (ii) VIO pose drift is removed from every number---a real ph
 error this paper does not measure, and (iii) areas Faro did not see are masked from every source equally, so
 ``completeness'' means ``complete relative to what Faro saw,'' not the whole room.
 
-\textbf{(b) Evaluated at $\sim$3~fps only.} Faro depth exists only for the frames Apple kept, so every source is
+\textbf{(b) Evaluated at $\sim$4~fps only.} Faro depth exists only for the frames Apple kept, so every source is
 evaluated on that set although LiDAR runs at 60~fps and RGB at 30~fps. What a real pipeline gains or loses from denser
 frames (smoothing vs.\ accumulated error) is not measured; Exp.~3 answers coverage, and compute-vs-accuracy only partly.
 
@@ -31,7 +31,7 @@ frames at equal steps, \S\ref{sec:ftsetup}); a controlled teacher comparison nee
 which we have not run. This does not affect the main question (R3 vs.\ pretrained), where both rows are scored on the
 same test frames.
 
-\textbf{(f) The Level-0 row is one model, one implementation, one input resolution.} Depth Pro is run through
+\textbf{(f) The no-fine-tuning baseline is one model, one implementation, one input resolution.} Depth Pro is run through
 its HuggingFace implementation on $640\times480$ frames upsampled to $1536^2$ by its own processor, with the true
 focal length supplied; we did not test Apple's reference code, higher-resolution input (the dataset's
 $1920\times1440$ frames were not downloaded), or the other intrinsics-conditioned models (UniDepth, Metric3D).
@@ -82,7 +82,7 @@ points; sweep \code{sparse\_noise} and point count on ARKitScenes meanwhile.
 \item \textbf{Metric model $+$ scale-only per frame}: \S\ref{sec:metric} suggests one parameter per frame suffices;
 test whether one VIO point per frame is enough.
 \item \textbf{Frame selection / weighting} for mono: drop or down-weight frames with median depth $<$\SI{1}{m} or low
-disparity variance before fusion, using the weight channel of ADR-012.
+disparity variance before fusion, using the per-pixel weight channel already used in Exp.~5.
 \item \textbf{Android capture (ARCore depth source)}: \code{depth\_sources/arcore.py} has its registry slot; data must be
 collected with a reference.
 \item \textbf{Compressed models}: Exp.~4 provides the L / S / MiDaS baseline; a distilled or quantised model plugs in as

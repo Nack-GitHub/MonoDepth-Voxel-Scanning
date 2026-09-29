@@ -1,0 +1,43 @@
+\section{Introduction and Business Motivation}
+
+Scanning a room into a 3D model is already a consumer feature on iPhone~Pro and iPad~Pro (Apple RoomPlan, Polycam),
+all relying on the \emph{LiDAR sensor} for metric depth. Devices with LiDAR are, however, a minority: non-Pro iPhones
+and almost every Android phone have none. Their alternative is \emph{monocular depth estimation}, which advanced
+rapidly between 2020 and 2024 (MiDaS, Depth Anything). A product team must know \textbf{by how many centimetres the
+room is wrong if LiDAR is replaced by a monocular model, and which use cases that still serves}---a question per-image
+benchmark metrics (AbsRel, $\delta_1$) do not answer, and end-to-end reconstruction systems (Atlas, NeuralRecon,
+SimpleRecon) cannot answer because they design the whole pipeline around their own model.
+
+Some recent models claim to output metres directly (DA-v2 Metric-Indoor, ZoeDepth, Depth Pro), but they are trained
+on data that is not a phone's camera---DA-v2 Metric-Indoor on rendered Hypersim images---and inside a real
+reconstruction pipeline the room comes out \SI{\rsMETRICCM}{cm} wrong (\S\ref{sec:exp1}). The direct remedy is
+\emph{transfer learning} on target-domain depth. The question is where the labels come from: a \$20k laser scanner,
+or the \emph{LiDAR already inside Pro phones}, which an app maker can collect at scale. If the latter works, devices
+with LiDAR can teach those without it.
+
+\textbf{Research question.} Is DA-v2 Metric-Indoor fine-tuned with iPad LiDAR depth (no laser scanner at training
+time) better than the same model pretrained, measured against the Faro laser scanner---as a room mesh and as per-frame
+depth---on rooms never used for training? \textbf{Supporting questions:} (a) is a laser teacher better than a
+phone-LiDAR teacher; (b) where does the fine-tuned model stand relative to a sensor at run time; (c) where does the
+remaining error come from?
+
+\textbf{Approach.} We build a classical pipeline (per-frame depth $\rightarrow$ scale alignment $\rightarrow$ TSDF
+fusion $\rightarrow$ mesh) in which \textbf{the depth source is the single swappable variable}, so ``pretrained'' and
+``fine-tuned'' are two rows differing only in a checkpoint, and every other depth source (Faro laser, ARKit LiDAR,
+relative monocular models with different scale strategies) is priced through the same pipeline as context.
+
+\textbf{Contributions.}
+\begin{enumerate}
+\item A measured answer to whether fine-tuning a metric monocular model on a phone's own LiDAR helps, against a laser
+scanner on held-out rooms in 3D (6 rooms) and 2D (6 $+$ \rsVN{} rooms), with checkpoints and room split released.
+\item A teacher ablation (Faro vs.\ LiDAR, 10 vs.\ 24 rooms) and an intrinsics-conditioned baseline (Depth Pro).
+\item An open-source pipeline in which \code{DepthSource} and \code{ScaleAligner} are interfaces switched from config,
+so every table is ``one loop, one variable.''
+\item ``Centimetres on the wall'' for laser / LiDAR / monocular $\times$ scale strategy, and an analysis showing that
+monocular error comes from per-view scale, not temporal drift---explaining why fine-tuning helps and why it is not
+enough.
+\end{enumerate}
+
+\textbf{Not claimed.} We do not compare against Atlas / NeuralRecon / SimpleRecon; we do not claim fine-tuning makes
+LiDAR unnecessary (R3 at \SI{\rsFTLIDARALLCM}{cm} remains far from LiDAR at \SI{\rsLIDARCM}{cm}); and since training and
+testing use the same iPad camera, transfer to other phone cameras is not measured.

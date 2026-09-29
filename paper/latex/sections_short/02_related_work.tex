@@ -1,0 +1,25 @@
+\section{Related Work}\label{sec:related}
+
+\textbf{Relative monocular depth.} MiDaS~\cite{midas} trains across datasets with a scale- and shift-invariant loss,
+so its output is disparity up to an affine transform: two constants $(s,t)$ per image are needed for metres. Depth
+Anything~\cite{da1} and V2~\cite{da2} scale this idea with large unlabelled corpora. We treat $(s,t)$ as an
+experimental variable (the \code{ScaleAligner}) rather than hiding it in the model.
+
+\textbf{Metric monocular depth.} ZoeDepth~\cite{zoedepth} and the metric DA-v2 variants (fine-tuned on Hypersim /
+Virtual KITTI) output metres directly. Metric3D~\cite{metric3d}, UniDepth~\cite{unidepth} and Depth Pro~\cite{depthpro}
+instead condition on, or estimate, camera intrinsics. These works report per-image metrics on NYUv2/KITTI; we show
+that on real room video the per-frame scale of a metric model still swings widely within one scan---invisible to
+per-image metrics, obvious once frames are fused. The closest work in data is Prompt Depth Anything~\cite{promptda},
+which feeds iPhone LiDAR to the network \emph{at run time} on ARKitScenes; we instead use LiDAR only as a
+\emph{training} teacher, so the deployed model needs no depth sensor.
+
+\textbf{Depth fusion and learned reconstruction.} TSDF fusion~\cite{curless96,kinectfusion} neither knows nor cares
+where metric, posed depth comes from, making it a fair fixed stage for every source; we use Open3D~\cite{open3d}.
+Atlas~\cite{atlas}, NeuralRecon~\cite{neuralrecon} and SimpleRecon~\cite{simplerecon} learn depth or TSDF from
+multiple images and are strong ScanNet baselines, but do not answer what room a per-image model plus the device's VIO
+pose yields, so we do not compare against them. Scale recovery from sparse tracked points follows
+CNN-SLAM~\cite{cnnslam} and MonoSDF~\cite{monosdf}; our \code{sparse\_points} aligner belongs to this line.
+
+\textbf{Mobile LiDAR and products.} ARKitScenes~\cite{arkitscenes} is the first dataset releasing both iPad LiDAR
+depth and Faro laser depth for the same rooms. RoomPlan~\cite{roomplan} and similar apps require LiDAR, and no public
+report states how many centimetres they deviate from a laser scanner.

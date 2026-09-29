@@ -134,14 +134,15 @@ per-frame swing remains.
 
 \subsection{Which rooms are hard, and for whom}\label{sec:rooms}
 Ranking scenes by Chamfer per row (Table~\ref{tab:exp1scene}): Faro/LiDAR go from bedroom 47333774 (easiest) to the
-bathroom (1.2--2.8 / 2.4--4.1); mono$+$oracle from kitchen 45261556 to the bathroom (4.6--10.7); mono$+$per\_scene from
-living room 47115299 to bedroom 47333774 (19.9--26.2).
+bathroom (\rsGTb--\rsGTd{} / \rsLIDARb--\rsLIDARd); mono$+$oracle from the development kitchen 42444474 and kitchen
+45261556 to the bathroom (\rsORACLEa--\rsORACLEd); mono$+$per\_scene from living room 47115299 to bedroom 47333774
+(\rsSCENEc--\rsSCENEb).
 \begin{itemize}
-\item \textbf{The bathroom is hard for every source} (LiDAR $+1.3$, oracle $+6.6$ from LiDAR): the mirror yields
+\item \textbf{The bathroom is hard for every source} (LiDAR $+1.3$ from Faro, oracle $+3.4$ from LiDAR): the mirror yields
 phantom depth for LiDAR and model alike, glossy tiles reflect; it is the only scene where the oracle fit produced
 $s \leq 0$ on some frames (a frame-filling mirror). If the target market is bathroom renovation, this paper's averages
 are optimistic.
-\item \textbf{Standard bedroom 47333774 is easiest for LiDAR but second-hardest for mono} (oracle 8.1): a small room
+\item \textbf{Standard bedroom 47333774 is easiest for LiDAR but second-hardest for mono} (oracle \rsORACLEb): a small room
 scanned close to walls and bed leaves most frames at 1--\SI{2}{m} of blank wall with no cue. Rooms with ``lots of
 stuff'' (kitchen 45261556: 10 cabinets; living room: 4 tables, 2 sofas) are easy for mono---the model likes objects of
 known size.
@@ -156,7 +157,7 @@ from \rsSTRORACLEONEACC{} to \SI{\rsSTRORACLETWENTYACC}{cm}} while 2D AbsRel sta
 the shape of the same surface from different views \textbf{disagrees} at the $\sim$\SI{2}{cm} level, and fusing more
 frames thickens the surface rather than sharpening it---the multi-view consistency LiDAR has and a single-image model
 lacks. This is the part of the oracle$\rightarrow$LiDAR gap (\SI{\rsORACLEGAPLIDARCM}{cm}) that scale alignment cannot fix, and the
-reason systems like SimpleRecon use multi-image cost volumes (\S2.2). The sparse row inherits it: its remaining gap to
+reason systems like SimpleRecon use multi-image cost volumes (\S\ref{sec:related-mv}). The sparse row inherits it: its remaining gap to
 LiDAR (\SI{\rsSPARSEGAPLIDAR}{cm}) is this shape term.
 
 \subsection{Conclusions for system design}

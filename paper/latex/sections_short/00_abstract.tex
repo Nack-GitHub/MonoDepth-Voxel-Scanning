@@ -1,0 +1,16 @@
+\begin{abstract}
+Devices without LiDAR can reconstruct a room from monocular depth, but an off-the-shelf ``metric'' model such as Depth
+Anything~V2 Metric-Indoor, trained on synthetic images, misplaces a real room by \SI{\rsMETRICCM}{cm} inside a
+reconstruction pipeline. We ask whether fine-tuning it with depth from the phone's own LiDAR---no laser scanner
+involved---makes it better than its pretrained self when measured against the Faro laser scanner that ARKitScenes ships.
+We fine-tune only the DPT head on 24 ARKitScenes rooms with iPad LiDAR labels (R3) and compare it with the pretrained
+checkpoint through one depth $\rightarrow$ TSDF $\rightarrow$ mesh pipeline in which the depth source is the single
+variable, on rooms never used for training: six rooms with a Faro reference mesh (3D and 2D) and \rsVN{} further rooms
+(2D, \rsVFRAMES{} frames). R3 lowers Chamfer from \SI{\rsMETRICCM}{cm} to \SI{\rsFTLIDARALLCM}{cm} ($\rsMAINGAIN\times$,
+better in every room) and per-frame AbsRel from \rsVMETRICABSREL{} to \rsVFTALLABSREL{} on the \rsVN{} unseen rooms
+(better in \rsVWINS/\rsVN), with no calibration or sensor at run time. A laser teacher (\SI{\rsFTFAROCM}{cm}) is not
+measurably better. For context, the same pipeline gives \SI{\rsLIDARCM}{cm} with iPad LiDAR and \SI{\rsSPARSECM}{cm} with
+a monocular model scaled per frame on $\sim$200 sparse metric points. Per-frame analysis shows that R3's remaining error
+is a scale that swings with the content of each view, which fine-tuning de-biases but does not remove: the rooms are a
+large step toward, but not yet at, overview accuracy. Code, configs, per-run metrics and checkpoints are released.
+\end{abstract}

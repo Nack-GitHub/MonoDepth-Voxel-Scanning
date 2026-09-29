@@ -1,0 +1,72 @@
+\section{Experimental Setup}\label{sec:setup}
+
+\subsection{Dataset and reference}
+ARKitScenes~\cite{arkitscenes} is the only dataset that provides, for the same room, RGB video from a real device
+(iPad~Pro, $640\times480$), that device's LiDAR depth ($256\times192$) and Faro laser depth registered to the camera
+poses ($1920\times1440$, $\sim$4~fps). \textbf{Ground truth is the Faro data as distributed.} In 2D we compare per-frame
+depth with Faro depth directly (nearest-neighbour down-sampling, so every GT value is a measured one). In 3D, since no
+laser mesh is shipped, we fuse Faro depth from every frame at \SI{1}{cm} voxels once per scene into a reference mesh.
+The \code{gt} row at \SI{4}{cm} therefore has non-zero error---the pipeline's own discretisation loss---and because
+the reference uses the same poses as every row, pose drift is excluded and all differences are due to the depth source.
+iPad LiDAR is never used as ground truth.
+
+\begin{table}[t]
+\centering\small
+\caption{Test scenes (3D and 2D). Frames $=$ Faro frames every row is evaluated on.}
+\label{tab:scenes}
+\begin{adjustbox}{max width=\columnwidth}
+\begin{tabular}{@{}llrr@{}}
+\toprule
+video\_id & Room & Extent (m) & Frames \\
+\midrule
+42444474 & kitchen/dining, glass (dev.\ scene) & $9.9\times5.1\times4.2$ & 236 \\
+47333774 & standard bedroom & $5.1\times4.9\times3.3$ & 375 \\
+47115299 & large living room & $8.1\times6.1\times2.5$ & 324 \\
+42897743 & bathroom (mirror, tiles) & $8.0\times3.4\times3.6$ & 448 \\
+47429736 & bedroom $+$ closets & $6.6\times6.4\times2.7$ & 504 \\
+45261556 & kitchen (glossy cabinets) & $7.1\times6.1\times2.4$ & 465 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+The six test scenes (Table~\ref{tab:scenes}) span standard, large and glossy/mirror rooms. Scene 42444474 was used
+during development, so its numbers are not held-out; per-scene results show the conclusions hold on the other five.
+
+\subsection{Fine-tuning protocol}\label{sec:ftsetup}
+Scenes disjoint from the test set at the \code{visit\_id} level were drawn with seed~0: 10 training scenes with both
+Faro and LiDAR, 14 more with LiDAR only, and 3 Validation-fold scenes for checkpoint selection. Three fine-tunes share
+one recipe: \textbf{R1} uses Faro labels on the 10 scenes (\num{3594} frames), \textbf{R2} iPad LiDAR (confidence
+$\geq 1$) on the same 10 scenes (\num{8656} frames), and \textbf{R3, the main model}, LiDAR on all 24 scenes
+(\num{19896} frames). R1 and R2 do not share frames: Faro exists at $\sim$4~fps, LiDAR with every colour frame (we take
+every third, $\sim$10~fps), so R2 sees $\sim$2.4$\times$ more distinct views than R1. The DINOv2 encoder is frozen;
+only the DPT neck and metric head train, with SiLog loss, AdamW (lr \num{5e-5}, cosine schedule), batch 8 (2 $\times$
+4 accumulation) on $518\times518$ crops, for \num{6000} steps (R1, R2) or \num{12000} (R3), keeping the checkpoint with
+the lowest validation AbsRel. A \num{6000}-step run takes about an hour on an RTX~3070. At test time the fine-tuned
+models are plain \code{DepthSource} rows: RGB in, metres out, \code{identity} aligner, same input preparation as the
+pretrained model.
+
+\subsection{Metrics and experiments}\label{sec:metrics}
+\textbf{3D:} 200k points sampled on both meshes; accuracy $=$ mean pred$\rightarrow$ref distance, completeness $=$
+ref$\rightarrow$pred, Chamfer $=$ their mean; precision/recall/F-score at $\tau=2/5/10$~cm, with \fscore{} as
+headline (\SI{5}{cm} $\approx$ furniture-placement tolerance). \textbf{2D:} per-frame AbsRel, $\delta_1$ and RMSE
+against Faro depth; pixels are selected by the ground truth (\SIrange{0.1}{5}{m}) and predictions clipped to that
+range, averaged per room then over rooms. Table~\ref{tab:exps} lists the experiments; numbers are mean $\pm$ std over
+the six scenes. \textbf{Exp.~7} adds \rsVN{} Validation-fold rooms (seed~0, one video per visit, excluding every visit
+of the training, validation and test sets) evaluated in 2D only on every second Faro frame; these rooms decided nothing.
+
+\begin{table}[t]
+\centering\small
+\caption{Experiments. Exp.~6--7 answer the main question; Exp.~1--5 give context.}
+\label{tab:exps}
+\begin{tabularx}{\columnwidth}{@{}lX@{}}
+\toprule
+Exp. & Variable (everything else fixed) \\
+\midrule
+\textbf{6} & \textbf{pretrained vs.\ R3}; ablation R1 / R2 / Depth Pro (6 scenes, 3D $+$ 2D) \\
+\textbf{7} & pretrained / R3 / LiDAR on \rsVN{} further rooms (2D) \\
+1 & depth source $\times$ aligner: gt / lidar / DA-v2 L $+$ \{oracle, sparse, per\_scene\} / metric \\
+2--5 & voxel size; frame stride; model size; LiDAR confidence \\
+\bottomrule
+\end{tabularx}
+\end{table}

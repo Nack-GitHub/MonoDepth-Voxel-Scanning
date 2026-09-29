@@ -19,7 +19,7 @@ Asset & Resolution / rate & Role \\
 \midrule
 \code{vga\_wide} RGB & $640\times480$, 30 fps & input to monocular models (rotated upright) \\
 \code{lowres\_depth} $+$ \code{confidence} & $256\times192$, 60 fps & depth source \code{lidar}; sparse-point proxy; Exp.~5 weights \\
-\code{highres\_depth} (Faro) & $1920\times1440$, \textbf{$\sim$2.7--4 fps} & depth source \code{gt} and \textbf{reference mesh} \\
+\code{highres\_depth} (Faro) & $1920\times1440$, \textbf{$\sim$4 fps} (2.7--5.1 per scan) & depth source \code{gt} and \textbf{reference mesh} \\
 \code{lowres\_wide.traj} & $\sim$10 Hz & pose (ARKit VIO), slerp/lerp-interpolated to each frame \\
 \code{lowres\_wide\_intrinsics} & per frame & scan median, scaled to resolution \\
 \bottomrule
@@ -32,7 +32,7 @@ so every GT value used is a value Faro measured, never an average); in 3D we com
 that same \code{highres\_depth} (\S\ref{sec:reference}), because the dataset ships no laser mesh. The iPad LiDAR
 (\code{lowres\_depth}) is \emph{never} used as ground truth---only as the teacher of R2/R3 and as the \code{lidar} row.
 
-Two dataset constraints shape the experiments: (1) Faro depth exists only for the frames Apple kept ($\sim$3~fps), so
+Two dataset constraints shape the experiments: (1) Faro depth exists only for the frames Apple kept ($\sim$4~fps), so
 every source is evaluated \textbf{on this same frame set} and Exp.~3 (frame stride) measures coverage more than
 compute (\S\ref{sec:stride}); (2) no laser mesh is provided, so we build one (\S\ref{sec:reference}).
 
@@ -130,7 +130,7 @@ resampled to the RGB grid with nearest-neighbour only; pixels beyond \SI{5}{m} o
 and the metric head train, with SiLog loss ($\beta = 0.15$), AdamW (lr \num{5e-5}, weight decay 0.01, 200 warm-up steps
 then cosine), bf16 autocast, batch 2 with gradient accumulation 4, on $518\times518$ crops of images resized so the
 short side is 518. R1 and R2 run \num{6000} steps, R3 \num{12000}; validation every 500 steps keeps the checkpoint with
-the lowest AbsRel on the 3 validation scenes. One run takes about an hour on an RTX~3070 (\SI{3.2}{GB} of VRAM).
+the lowest AbsRel on the 3 validation scenes. A \num{6000}-step run takes about an hour on an RTX~3070 (\SI{3.2}{GB} of VRAM), R3 about two.
 \paragraph{At test time} the fine-tuned models are plain \code{DepthSource} rows like any other: RGB in, metres out,
 \code{aligner: identity}, no access to depth, poses or intrinsics. Input preparation is identical for the pretrained and
 fine-tuned rows (upright rotation, short side 518 and long side rounded to a multiple of 14, i.e.\ $518\times686$,

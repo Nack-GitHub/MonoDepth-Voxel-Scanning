@@ -28,14 +28,14 @@ question a product team actually faces---rather than on the architecture, and it
 both in mesh centimetres on held-out rooms and in per-frame AbsRel on 26 rooms, not on a single-image benchmark
 (\S\ref{sec:main}). The two families are complementary: an
 intrinsics-conditioned model could be fine-tuned with the same LiDAR labels. We measure one of them
-(Depth Pro, handed the camera's true focal length) as the Level-0 row of Exp.~6: on these captures it does
+(Depth Pro, handed the camera's true focal length) as the no-fine-tuning baseline row of Exp.~6: on these captures it does
 \emph{not} deliver usable metric depth (\S\ref{sec:finetune}), which is why fine-tuning is the axis we study.
 
 \paragraph{Mobile LiDAR depth} ARKit provides $256\times192$ depth fusing LiDAR with imagery; ARKitScenes~\cite{arkitscenes}
 is the first dataset to release both this depth and Faro laser-scanner depth for the same rooms, making a direct
 ``mobile LiDAR vs.\ laser'' comparison possible. We use both as two rows of the same table.
 
-\subsection{Multi-view 3D reconstruction from video}
+\subsection{Multi-view 3D reconstruction from video}\label{sec:related-mv}
 \paragraph{Classical depth fusion} Volumetric TSDF fusion~\cite{curless96} and KinectFusion~\cite{kinectfusion}
 combine many depth frames through a truncated signed distance per voxel and extract the surface with marching cubes.
 The property we need is that \textbf{fusion neither knows nor cares where depth comes from}---as long as it is metric

@@ -112,22 +112,22 @@ points, R3 is the only row in this paper that works without calibration at run t
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{exp6_finetune_topdown_grid}
-\caption{Exp.~6 top-down error maps (rows $=$ scenes, columns $=$ the three fine-tunes and the pretrained metric
-model, colour $=$ distance to the reference, 0--\SI{10}{cm}). The pretrained column is red almost everywhere---the
+\caption{Exp.~6 top-down error maps (rows $=$ scenes, columns $=$ Depth Pro, the three fine-tunes and the pretrained
+metric model, as labelled above each panel; colour $=$ distance to the reference, 0--\SI{10}{cm}). The pretrained column is red almost everywhere---the
 room is built, at the wrong distance. After fine-tuning the walls and floor come back (blue/cyan) and the error
 concentrates at object edges and far walls; where a fine-tune is weaker (45261556 and 47333774 with the LiDAR
 teacher) it shows as a thick red rim around the room rather than a displaced room.}
 \label{fig:exp6}
 \end{figure*}
 
-\subsection{Teacher ablation and a Level-0 baseline}\label{sec:finetune}
+\subsection{Teacher ablation and a no-fine-tuning baseline}\label{sec:finetune}
 R3 is one of three fine-tunes with the same recipe (frozen DINOv2 backbone, DPT neck $+$ head, SiLog loss) that differ
 in label and number of rooms: Faro \code{highres\_depth} on 10 rooms (R1, 3{,}594 frames), the iPad's LiDAR on the
 same 10 rooms (R2, 8{,}656 frames), and LiDAR on 24 rooms (R3, the 10 $+$ 14 rooms with no laser scan at all,
 19{,}896 frames). R1 and R2 share rooms but \emph{not frames}: Faro exists only on the frames Apple kept
 ($\sim$4~fps) whereas LiDAR accompanies every colour frame (every third taken, $\sim$10~fps), so at the same 6{,}000 steps
 R2 sees $\sim$2.4$\times$ more distinct views than R1. The R1--R2 comparison therefore changes both the label and view
-diversity. As a Level-0 reference the table also carries Depth Pro~\cite{depthpro}, a metric model of the other family
+diversity. As a no-fine-tuning reference the table also carries Depth Pro~\cite{depthpro}, a metric model of the other family
 (\S\ref{sec:related}): no fine-tuning, and \emph{handed the camera's true focal length} (\SI{533}{px}) rather than the
 one it predicts, which is the strongest form of that baseline.
 
@@ -268,7 +268,7 @@ frames); metric is red almost everywhere.}
 \label{fig:exp1}
 \end{figure*}
 
-\subsection{Context, Exp.~2: voxel size (GT depth)}
+\subsection{Context, Exp.~2: voxel size (GT depth)}\label{sec:voxel}
 \begin{table}[h]
 \centering\small
 \caption{\code{depth.source: gt}, \code{sdf\_trunc} $=3\times$ voxel.}
@@ -333,7 +333,7 @@ the depth source.
 \subsection{Context, Exp.~4: model size (oracle scale)}
 \begin{table}[h]
 \centering\small
-\caption{\code{oracle\_frame} for every model, \SI{4}{cm}, every frame---pure ``shape,'' excluding the scale problem of \S5.1.}
+\caption{\code{oracle\_frame} for every model, \SI{4}{cm}, every frame---pure ``shape,'' excluding the scale problem of \S\ref{sec:exp1}.}
 \begin{adjustbox}{max width=\columnwidth}
 \begin{tabular}{@{}lrrrrrrr@{}}
 \toprule
@@ -379,7 +379,7 @@ confidence-2 pixels improves accuracy slightly (2.23$\rightarrow$2.08) but loses
 worst in the closet-heavy bedroom 47429736: 3.1$\rightarrow$5.8). The \SI{1}{cm} LiDAR$-$laser gap is not a
 low-confidence-pixel problem; it is the sensor's resolution and its 2--\SI{4}{cm} noise everywhere.
 
-\subsection{Numbers carried into \S6--7}
+\subsection{Numbers carried into \S\ref{sec:discussion}--\ref{sec:business}}
 \begin{table}[h]
 \centering\small
 \begin{tabularx}{\columnwidth}{@{}lX@{}}

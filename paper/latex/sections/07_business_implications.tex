@@ -23,13 +23,13 @@ floor-area sale / renovation (walls, trim) & \SI{2}{cm} & $\sim$ \rsGTRtwo & $\t
 \begin{itemize}
 \item \textbf{iPad~Pro today is enough for ``furniture placement'' but not for ``renovation measurement'':} at
 \SI{2}{cm} LiDAR reaches only half, and even Faro through this pipeline reaches 0.84 (the \SI{4}{cm} voxel eats it;
-\S5.2 shows \SI{2}{cm} voxels reach 0.92). A product promising centimetre accuracy needs finer voxels plus multiple
+\S\ref{sec:voxel} shows \SI{2}{cm} voxels reach 0.92). A product promising centimetre accuracy needs finer voxels plus multiple
 LiDAR passes, or a laser. Confidence weighting does not move this (Exp.~5).
 \item \textbf{Devices without LiDAR serve no use case} with one-off calibration (per\_scene \SI{\rsSCENECM}{cm}) or a
-raw metric model (\SI{\rsMETRICCM}{cm}). Fine-tuning that metric model with a teacher a phone collects itself (R3) nearly
-reaches the ``rough overview'' tier without any run-time calibration or sensor (\SI{\rsFTLIDARALLCM}{cm},
-recall@\SI{10}{cm} \rsFTLIDARALLRten{} vs.\ \rsMETRICRten{} pretrained, \S\ref{sec:main}) but not the ``furniture
-placement'' tier---the remainder is per-frame scale (\S\ref{sec:whyft}).
+raw metric model (\SI{\rsMETRICCM}{cm}). Fine-tuning that metric model with a teacher a phone collects itself (R3) moves it
+a large step toward the ``rough overview'' tier without any run-time calibration or sensor (\SI{\rsFTLIDARALLCM}{cm},
+recall@\SI{10}{cm} \rsFTLIDARALLRten{} vs.\ \rsMETRICRten{} pretrained, \S\ref{sec:main}), but still short of its
+0.9 threshold and far from ``furniture placement''---the remainder is per-frame scale (\S\ref{sec:whyft}).
 \item \textbf{With per-frame sparse points the same device reaches \SI{\rsSPARSECM}{cm}, recall@\SI{5}{cm} \rsSPARSERfive}---the
 ``furniture placement'' tier at a level close to iPad~Pro, and the mono ceiling (oracle \SI{\rsORACLECM}{cm}) is only
 \SI{\rsORACLEGAPLIDARCM}{cm} behind LiDAR. This is the gap to invest in, not the model.
@@ -120,6 +120,7 @@ accuracy''---the data say the opposite in every scene.
 \subsection{Risks the numbers do not cover}
 VIO pose on low-end Android may be worse than ARKit's, adding error to every row equally (not measured); regions Faro
 did not see (behind cabinets, high ceilings) are outside the numbers, so a product must handle ``the part not
-captured'' itself; the bathroom is the worst scene for every source (LiDAR 4.1, oracle 10.7)---if the target market is
+captured'' itself; the bathroom is the worst scene for every source that gets its scale right (Faro \rsGTd, LiDAR \rsLIDARd, oracle
+\rsORACLEd, sparse \rsSPARSEd)---if the target market is
 bathroom/kitchen renovation, more such scenes must be collected; and the sparse-point row uses LiDAR-sampled points,
 cleaner than real VIO features (\S\ref{sec:limitations}).

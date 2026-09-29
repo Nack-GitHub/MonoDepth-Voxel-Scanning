@@ -1,0 +1,61 @@
+% roomscan — SHORT version (<=10 pages) for the course report. Full version: main.tex + sections/.
+% Translated from paper/draft/00–09 (Thai) on 2026-09-17; re-framed around R3 vs pretrained (ADR-014) on 2026-09-25.
+% Numbers from experiments/results/*/table.md via scripts/paper_numbers.py -> numbers.tex.
+% Build:  make paper   (tectonic)   or   pdflatex main && bibtex main && pdflatex main && pdflatex main
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{adjustbox}
+\usepackage{tabularx}
+\usepackage{url}
+\urlstyle{tt}
+\usepackage{xcolor}
+\usepackage{siunitx}
+\usepackage[hidelinks]{hyperref}
+\usepackage{cite}
+
+\graphicspath{{../figures/}}
+\sisetup{detect-all,range-phrase=--,range-units=single,separate-uncertainty=true,multi-part-units=single}
+\newcommand{\code}[1]{\texttt{#1}}
+\sloppy   % long code identifiers in prose: prefer loose lines over overfull boxes
+\newcommand{\fscore}{F@\SI{5}{cm}}
+
+\begin{document}
+
+\title{Teaching Monocular Depth the Metre with the Phone's Own LiDAR:\\
+Fine-Tuned vs.\ Pretrained Depth Anything~V2 for Room Reconstruction, Measured Against a Laser Scanner}
+
+% TODO: fill in author name(s) and affiliation before submission
+\author{\IEEEauthorblockN{Author Name}
+\IEEEauthorblockA{Affiliation\\
+email@example.com}}
+
+\maketitle
+
+\input{numbers}
+\input{sections_short/00_abstract}
+
+\begin{IEEEkeywords}
+monocular depth estimation, transfer learning, metric depth, LiDAR supervision, TSDF fusion, 3D room reconstruction, ARKitScenes
+\end{IEEEkeywords}
+
+\input{sections_short/01_introduction}
+\input{sections_short/02_related_work}
+\input{sections_short/03_system_design}
+\input{sections_short/04_experimental_setup}
+\input{sections_short/05_results}
+\input{sections_short/06_discussion}
+
+\input{sections_short/08_limitations}
+\input{sections_short/09_conclusion}
+
+\bibliographystyle{IEEEtran}
+\bibliography{refs}
+
+\end{document}
