@@ -1,25 +1,108 @@
-\section{Related Work}\label{sec:related}
+\section{Background and Related Work}\label{sec:related}
+% Thai version: 02_related_work_th.tex (main_short_th.tex); keep the two in step.
 
-\textbf{Relative monocular depth.} MiDaS~\cite{midas} trains across datasets with a scale- and shift-invariant loss,
-so its output is disparity up to an affine transform: two constants $(s,t)$ per image are needed for metres. Depth
-Anything~\cite{da1} and V2~\cite{da2} scale this idea with large unlabelled corpora. We treat $(s,t)$ as an
-experimental variable (the \code{ScaleAligner}) rather than hiding it in the model.
+This section explains the theory the study rests on---why one image does not fix depth in metres, how the model we
+fine-tune is built and trained, and how depth maps become a room---and places the study among prior work on each point.
 
-\textbf{Metric monocular depth.} ZoeDepth~\cite{zoedepth} and the metric DA-v2 variants (fine-tuned on Hypersim /
-Virtual KITTI) output metres directly. Metric3D~\cite{metric3d}, UniDepth~\cite{unidepth} and Depth Pro~\cite{depthpro}
-instead condition on, or estimate, camera intrinsics. These works report per-image metrics on NYUv2/KITTI; we show
-that on real room video the per-frame scale of a metric model still swings widely within one scan---invisible to
-per-image metrics, obvious once frames are fused. The closest work in data is Prompt Depth Anything~\cite{promptda},
-which feeds iPhone LiDAR to the network \emph{at run time} on ARKitScenes; we instead use LiDAR only as a
-\emph{training} teacher, so the deployed model needs no depth sensor.
+\subsection{Depth from a single image}
+In the pinhole model of a camera~\cite{hartley}, the size of an object in the image is proportional to its real size
+divided by its distance, multiplied by the focal length of the lens. A room twice as large seen from twice as far
+therefore gives the same image, so geometry alone cannot recover depth in metres from one image; a network can only
+infer it from learned cues, such as the usual height of a door or a table, and even these cues depend on the focal
+length, because the same object at the same distance looks larger through a longer lens. Eigen et al.~\cite{eigen14}
+trained an early deep network for this task and, because of this ambiguity, measured its error on the logarithm of
+depth in a way that separates an error in the overall scale of the scene from an error in its shape. A weighted form
+of this scale-invariant logarithmic loss, known as SiLog, also trains ZoeDepth~\cite{zoedepth} and the fine-tunes of
+this study.
 
-\textbf{Depth fusion and learned reconstruction.} TSDF fusion~\cite{curless96,kinectfusion} neither knows nor cares
-where metric, posed depth comes from, making it a fair fixed stage for every source; we use Open3D~\cite{open3d}.
-Atlas~\cite{atlas}, NeuralRecon~\cite{neuralrecon} and SimpleRecon~\cite{simplerecon} learn depth or TSDF from
-multiple images and are strong ScanNet baselines, but do not answer what room a per-image model plus the device's VIO
-pose yields, so we do not compare against them. Scale recovery from sparse tracked points follows
-CNN-SLAM~\cite{cnnslam} and MonoSDF~\cite{monosdf}; our \code{sparse\_points} aligner belongs to this line.
+Two families of models handle the missing scale differently. Relative models give it up: MiDaS~\cite{midas} trained one
+network on a mixture of datasets whose depths came from different sensors and units, which is possible only if the loss
+ignores the scale and offset of each image. Its output is therefore inverse depth (disparity) that is correct only up
+to an unknown scale and offset per image, and these two numbers must be found from other data before the output gives
+metres. Depth Anything~\cite{da1} and Depth Anything~V2~\cite{da2} (\mbox{DA-v2}) keep this output but train on far more
+images. Metric models output metres directly by learning the scale from labelled data. ZoeDepth~\cite{zoedepth} attaches
+metric heads, fine-tuned on NYU Depth~v2~\cite{nyuv2} and KITTI~\cite{kitti}, to a relative model, and \mbox{DA-v2} releases
+metric variants fine-tuned from its relative model, the indoor one (\mbox{DA-v2} Metric-Indoor) on the rendered rooms of
+Hypersim~\cite{hypersim}. A further line addresses the focal length: Metric3D~\cite{metric3d} maps every image to a
+canonical camera with a fixed focal length, UniDepth~\cite{unidepth} predicts the camera together with the depth, and
+Depth Pro~\cite{depthpro} estimates the focal length when it is not given. These works report per-image metrics on
+benchmarks such as NYU Depth~v2 and KITTI. Because such metrics average over independent images, they cannot show
+whether a model's scale stays the same across the frames of one scan, which is what matters once the frames are fused
+into one room.
 
-\textbf{Mobile LiDAR and products.} ARKitScenes~\cite{arkitscenes} is the first dataset releasing both iPad LiDAR
-depth and Faro laser depth for the same rooms. RoomPlan~\cite{roomplan} and similar apps require LiDAR, and no public
-report states how many centimetres they deviate from a laser scanner.
+\subsection{Architecture and training of Depth Anything V2}
+\mbox{DA-v2} consists of an image encoder and a depth decoder. The encoder is DINOv2~\cite{dinov2}, a vision transformer
+(ViT)~\cite{vit}: it cuts the image into small square patches and lets every patch draw information from every other
+patch through a mechanism called self-attention. DINOv2 was pretrained without labels on a large curated collection of
+images, so that its features serve many tasks. The decoder is the Dense Prediction Transformer (DPT)~\cite{dpt}, which
+takes features from several encoder layers, reassembles them into image-like maps at several resolutions and fuses
+these into one dense depth map. The released code splits the decoder into a neck, which reassembles and fuses, and a
+head, which outputs depth; as in the Introduction, ``DPT head'' in this paper means both.
+
+\mbox{DA-v2} is itself trained with a teacher. A large model is first trained on synthetic images only, whose depth is exact;
+it then labels about 62 million real images that have no depth, and the released models learn from these model-made
+labels, called pseudo-labels~\cite{da2}. The DINOv2 authors report that depth can be predicted well with the encoder
+kept frozen and only a DPT decoder trained on top~\cite{dinov2}. Adapting a model trained on one task or domain to
+another in this way is called transfer learning~\cite{yosinski}; training only the decoder, as we do, needs much less
+memory and keeps the general visual features that the encoder learned from millions of images.
+
+\subsection{Training on sensor depth}
+Supervised depth models have long been trained on depth measured by a sensor rather than drawn by people: NYU
+Depth~v2 provides indoor depth from a Microsoft Kinect camera~\cite{nyuv2}, KITTI provides street depth from a laser
+scanner mounted on a car~\cite{kitti}, and Eigen et al.~\cite{eigen14} trained on both. What differs between such
+studies is the quality of the sensor. On the iPhone~Pro and iPad~Pro, ARKit combines the LiDAR measurements with the
+colour image into a depth map of $256\times192$ pixels with a confidence value for every pixel~\cite{arkitscenes}.
+Studies that tested this LiDAR against established surveying methods found it accurate to about \SI{1}{cm} on objects
+larger than \SI{10}{cm}~\cite{luetzenburg} and adequate for rapid architectural mapping at a scale of
+1:200~\cite{spreafico}, which makes it a plausible teacher. ARKitScenes~\cite{arkitscenes} provides this depth together
+with the depth of a Faro survey laser scanner~\cite{faro} for the same rooms, registered to the same camera frames, and
+uses the Faro depth as ground truth for a task in which the LiDAR depth is upsampled with the help of the colour image.
+Prompt Depth Anything~\cite{promptda}, the closest work to ours in data, likewise feeds iPhone LiDAR depth into a Depth
+Anything model as an extra input. In both, the LiDAR must be present whenever the model runs; in this study it is used
+only at training time, so the deployed model needs nothing but a colour image. Whether this noisier teacher helps a
+large pretrained model as much as a laser scanner does, when both are judged against an independent laser reference,
+is the subject of objectives~(1) and~(2).
+
+\subsection{From depth maps to a room}
+Fusing frames requires the camera pose of each frame, that is, its position and orientation. ARKit tracks the pose by
+visual-inertial odometry (VIO), which follows image features from frame to frame and combines them with the device's
+motion sensor~\cite{vinsmono}. Because the motion sensor measures acceleration in metric units, the tracked feature
+points have positions in metres, and such sparse points can supply, frame by frame, the scale and offset that a
+relative model lacks. Combining learned depth with the sparse geometry of a tracking system goes back to
+CNN-SLAM~\cite{cnnslam}, and MonoSDF~\cite{monosdf} fits a scale and an offset to every image before using monocular
+depth to guide surface reconstruction; the sparse-point alignment of Section~\ref{sec:design} follows this line.
+
+The room itself is built by fusion into a truncated signed distance function (TSDF)~\cite{curless96}. Space is divided
+into small cubes called voxels; each voxel stores its distance to the nearest observed surface, positive in front of
+the surface and negative behind it, cut off (truncated) beyond a few voxels, and this value is averaged over every frame
+that sees the voxel. The surface is then extracted where the average crosses zero, with the marching cubes
+algorithm~\cite{marchingcubes}. KinectFusion~\cite{kinectfusion} made this fusion run in real time on Kinect depth,
+and we use the implementation in Open3D~\cite{open3d}. Averaging suppresses noise that is random from frame to frame,
+but frames that disagree in scale place the same wall at different distances, and the average then blurs or thickens
+it; the consistency of scale across frames, which per-image metrics do not measure, therefore shapes the room. TSDF
+fusion also does not depend on where the depth in metres comes from, which makes it a fair fixed stage for every depth
+source.
+
+Learned reconstruction systems replace parts of this pipeline with networks. Atlas~\cite{atlas} predicts the TSDF
+directly from features of many posed images, NeuralRecon~\cite{neuralrecon} does so incrementally and in real time,
+and SimpleRecon~\cite{simplerecon} estimates depth from several neighbouring frames before classic fusion; all are
+evaluated on ScanNet~\cite{scannet}, a large collection of indoor colour-and-depth scans. Each needs several frames per
+prediction and a network trained for its own pipeline, so they answer a different question from ours---what room a
+single-image model yields when nothing else in the pipeline changes---and we do not compare against them.
+
+\subsection{Measuring a reconstructed room}
+A reconstructed room is compared with a reference surface through distances between points sampled on both. The
+Chamfer distance~\cite{chamfer} averages, in both directions, the distance from each point to the nearest point of the
+other surface. Tanks and Temples~\cite{tanks} instead fixes a distance threshold and reports precision, the share of
+the reconstruction within the threshold of the reference; recall, the share of the reference within the threshold of
+the reconstruction; and their harmonic mean, the F-score. A threshold ties the score to a use, which is how the
+Introduction links 2, 5 and \SI{10}{cm} to renovation measurement, furniture placement and a room overview. Per frame,
+we use AbsRel and \wone{} from the single-image literature~\cite{eigen14}.
+
+\subsection{Position of this study}
+In summary, prior work reports the per-image accuracy of depth models on standard benchmarks, adapts metric models
+with labels from synthetic images or from the sensors of public datasets, feeds mobile LiDAR to a model at run time,
+or tests mobile LiDAR itself against surveying methods. We did not find a study that combines these threads as this one
+does: it uses the LiDAR of a consumer device only as a training teacher, compares it with a survey laser scanner as
+teacher on the same rooms, and judges both against an independent laser reference, in centimetres on fused rooms as
+well as per frame.
