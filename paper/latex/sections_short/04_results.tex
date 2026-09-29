@@ -63,7 +63,7 @@ DA-v2 Metric-Indoor, pretrained & $\rsVMETRICABSREL \pm \rsVMETRICABSRELSD$ & $\
 \begin{figure}[t]
 \centering
 \begin{tikzpicture}
-\begin{axis}[width=0.8\columnwidth, height=0.8\columnwidth, xmin=0, xmax=0.95, ymin=0, ymax=0.95,
+\begin{axis}[width=0.68\columnwidth, height=0.68\columnwidth, xmin=0, xmax=0.95, ymin=0, ymax=0.95,
   xtick={0,0.2,0.4,0.6,0.8}, ytick={0,0.2,0.4,0.6,0.8}, tick label style={font=\scriptsize},
   label style={font=\footnotesize}, xlabel={AbsRel, pretrained}, ylabel={AbsRel, \ftmain{}},
   grid=major, grid style={black!8}, legend pos=north west, legend cell align=left,
@@ -108,7 +108,7 @@ was 0.24 to 0.54, against 0.04 to 0.13 for pretrained DA-v2 Metric-Indoor on the
 
 \begin{figure}[t]
 \centering
-\newlength{\gridw}\setlength{\gridw}{0.92\columnwidth}
+\newlength{\gridw}\setlength{\gridw}{0.84\columnwidth}
 \pgfmathsetlengthmacro{\gpx}{\gridw/1556}
 \begin{tikzpicture}[x=\gpx, y=-\gpx, font=\scriptsize]
 \node[anchor=north west, inner sep=0] at (0,0) {\includegraphics[width=\gridw]{exp6_finetune_topdown_grid}};
@@ -131,10 +131,9 @@ columns are models.}
 \subsection{Place among the run-time depth sources (objective 3)}\label{sec:exp1}
 \begin{table}[t]
 \centering\small
-\caption{Exp.~1: the same pipeline with only the depth source and the scale alignment changed, six test rooms;
-\ftmain{} from Exp.~6. Recall at 10, 5 and \SI{2}{cm} stands for a room overview, furniture placement and renovation
-measurement; for the rows usable at run time, \checkmark: served ($\geq0.9$), $\sim$: partly (0.75--0.9),
-$\times$: not ($<0.75$).}
+\caption{Exp.~1, six test rooms: only the depth source and the scale alignment change (\ftmain{} from Exp.~6).
+Recall at 10, 5 and \SI{2}{cm}: room overview, furniture placement, renovation measurement; for rows usable at run
+time, \checkmark{} served ($\geq0.9$), $\sim$ partly (0.75--0.9), $\times$ not ($<0.75$).}
 \label{tab:exp1}
 \setlength{\tabcolsep}{3.5pt}
 \begin{adjustbox}{max width=\columnwidth}
@@ -229,7 +228,7 @@ of the way from no help to the oracle, and to 0.051 for \ftmain{}.
 \begin{figure}[t]
 \centering
 \begin{tikzpicture}
-\begin{axis}[width=0.95\columnwidth, height=0.68\columnwidth, xmode=log, ymode=log, xmin=0.3, xmax=6, ymin=0.2,
+\begin{axis}[width=0.95\columnwidth, height=0.55\columnwidth, xmode=log, ymode=log, xmin=0.3, xmax=6, ymin=0.2,
   ymax=5, xtick={0.5,1,2,4}, xticklabels={0.5,1,2,4}, ytick={0.25,0.5,1,2,4}, yticklabels={0.25,0.5,1,2,4},
   tick label style={font=\scriptsize}, label style={font=\footnotesize}, grid=major, grid style={black!8},
   xlabel={median Faro depth of the frame (m)}, ylabel={per-frame scale / per-room scale}]
@@ -254,14 +253,15 @@ $-0.27$, negative in all six (Fig.~\ref{fig:scalevsdepth}).
 \centering\small
 \caption{Sensitivity experiments on the six test rooms; one setting changes, everything else as in Section~\ref{sec:method}.}
 \label{tab:secondary}
+\footnotesize
 \begin{tabularx}{\columnwidth}{@{}l>{\raggedright\arraybackslash}X@{}}
 \toprule
 Exp. & Result \\
 \midrule
-2 voxel size (Faro) & 2 / 4 / \SI{8}{cm}: Chamfer 1.2 / 2.1 / \SI{2.8}{cm}; fusion at most \SI{2}{s} per room at every size \\
-3 frame stride (Faro) & every 1st / 5th / 10th frame (4 / 0.8 / 0.4 per second): accuracy \rsSTRGTONEACC{} / \rsSTRGTFIVEACC{} / \SI{\rsSTRGTTENACC}{cm},
+2 voxel size & Faro depth; 2 / 4 / \SI{8}{cm}: Chamfer 1.2 / 2.1 / \SI{2.8}{cm}; fusion at most \SI{2}{s} per room at every size \\
+3 frame stride & Faro depth; every 1st / 5th / 10th frame (4 / 0.8 / 0.4 per second): accuracy \rsSTRGTONEACC{} / \rsSTRGTFIVEACC{} / \SI{\rsSTRGTTENACC}{cm},
 completeness \rsSTRGTONECOMP{} / \rsSTRGTFIVECOMP{} / \SI{\rsSTRGTTENCOMP}{cm}, \fscore{} \rsSTRGTONEF{} / \rsSTRGTFIVEF{} / \rsSTRGTTENF{} \\
-4 model size (per-frame oracle) & DA-v2 Large (335\,M parameters) / Small (25\,M) / MiDaS small (21\,M): Chamfer
+4 model size & per-frame oracle; DA-v2 Large (335\,M parameters) / Small (25\,M) / MiDaS small (21\,M): Chamfer
 \rsDALARGECM{} / \rsDASMALLCM{} / \SI{\rsMIDASCM}{cm}; \rsDALARGESCAN{} / \rsDASMALLSCAN{} / \SI{\rsMIDASSCAN}{s} per room \\
 5 LiDAR confidence & Chamfer \SI{3.04}{cm} with every pixel, \SI{\rsCONFONECM}{cm} without low-confidence pixels,
 \SI{\rsCONFTWOCM}{cm} with high-confidence pixels only (completeness 3.85 $\rightarrow$ \SI{\rsCONFTWOCOMP}{cm}),

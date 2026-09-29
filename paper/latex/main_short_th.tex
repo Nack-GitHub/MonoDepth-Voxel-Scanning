@@ -1,5 +1,5 @@
 % roomscan — SHORT version, Thai — the Thai companion of main_short.tex (English); chapters are added as
-% they are translated (so far: บทคัดย่อ, บทนำ, ทฤษฎีและงานวิจัยที่เกี่ยวข้อง, วิธีดำเนินการวิจัย, ผลการทดลอง).
+% they are translated (so far: บทคัดย่อ, บทนำ, ทฤษฎีและงานวิจัยที่เกี่ยวข้อง, วิธีดำเนินการวิจัย, ผลการทดลอง, อภิปรายและสรุปผล — complete).
 % Same macros (shortmacros.tex), numbers (numbers.tex) and references (refs.bib) as the English version,
 % so the two stay in sync when numbers change.
 % Build:  cd paper/latex && tectonic main_short_th.tex   (needs XeTeX: Thai font + Thai line breaking)
@@ -53,10 +53,13 @@
 เปรียบเทียบ Depth Anything~V2 แบบ fine-tune กับแบบ pretrained สำหรับการสร้างแบบจำลองห้อง
 โดยวัดเทียบกับ laser scanner}
 
-% TODO: fill in author name(s) and affiliation before submission
-\author{\IEEEauthorblockN{Author Name}
-\IEEEauthorblockA{Affiliation\\
-email@example.com}}
+\author{\IEEEauthorblockN{1\textsuperscript{st} Panupong Duangdet}
+\IEEEauthorblockA{\textit{dept. Master of Science Programme} \\
+\textit{Software Engineering for Artificial Intelligence}\\
+Bangkok, Thailand \\
+email: dev.panupong@gmail.com\\
+No.68130702310}
+}
 
 \maketitle
 
@@ -73,6 +76,7 @@ email@example.com}}
 \input{sections_short/02_related_work_th}
 \input{sections_short/03_methodology_th}
 \input{sections_short/04_results_th}
+\input{sections_short/05_discussion_th}
 
 \bibliographystyle{IEEEtran}
 \bibliography{refs}

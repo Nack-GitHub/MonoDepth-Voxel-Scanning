@@ -152,7 +152,7 @@ gradients accumulated over 4), and gradients are clipped at a norm of 1. Trainin
 \ftfaro{} and \ftlidar{} and \num{12000} for \ftmain{}. Every 500 steps the model is scored by AbsRel against the Faro
 depth of every fifth frame of the three checkpoint-selection rooms, and the checkpoint with the lowest AbsRel is kept;
 the weights of the LiDAR-taught models are therefore learned from LiDAR alone, but their checkpoint is chosen with Faro
-depth on these three rooms. A \num{6000}-step run takes about an hour on an NVIDIA RTX~3070 GPU. At test time a
+depth on these three rooms. A \num{6000}-step run takes about an hour on an NVIDIA RTX~3070~Ti GPU. At test time a
 fine-tuned model is used exactly like the pretrained one: colour image in, metres out, no alignment and the same input
 preparation.
 

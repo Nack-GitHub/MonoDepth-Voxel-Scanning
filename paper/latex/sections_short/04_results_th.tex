@@ -1,9 +1,8 @@
 \section{ผลการทดลอง}\label{sec:results}
 % Thai twin of 04_results.tex; keep the two in step. Facts only.
-% TODO: "บทที่ V" is plain text until the Discussion is translated; then use \ref{sec:discussion}.
 
 บทนี้รายงานผลที่วัดได้จากการทดลองในตารางที่~\ref{tab:exps} โดยจัดกลุ่มตามวัตถุประสงค์
-ส่วนความหมายของผลจะอภิปรายในบทที่ V ระยะทั้งหมดมีหน่วยเป็นเซนติเมตร ค่าในตารางเป็นค่าเฉลี่ยข้ามห้อง
+ส่วนความหมายของผลจะอภิปรายในบทที่~\ref{sec:discussion} ระยะทั้งหมดมีหน่วยเป็นเซนติเมตร ค่าในตารางเป็นค่าเฉลี่ยข้ามห้อง
 และ $\pm$ คือส่วนเบี่ยงเบนมาตรฐานข้ามห้อง เมื่อเปรียบเทียบสองโมเดล เราระบุว่าโมเดลหนึ่งดีกว่าในกี่ห้อง
 พร้อมค่า p จากการทดสอบ Wilcoxon signed-rank แบบ exact บนค่ารายห้อง (หัวข้อ~\ref{sec:metrics})
 
@@ -62,7 +61,7 @@ Depth Pro ให้ความยาวโฟกัสจริง & --- & $\rs
 \begin{figure}[t]
 \centering
 \begin{tikzpicture}
-\begin{axis}[width=0.8\columnwidth, height=0.8\columnwidth, xmin=0, xmax=0.95, ymin=0, ymax=0.95,
+\begin{axis}[width=0.68\columnwidth, height=0.68\columnwidth, xmin=0, xmax=0.95, ymin=0, ymax=0.95,
   xtick={0,0.2,0.4,0.6,0.8}, ytick={0,0.2,0.4,0.6,0.8}, tick label style={font=\scriptsize},
   label style={font=\footnotesize}, xlabel={AbsRel ของโมเดลเดิม}, ylabel={AbsRel ของ \ftmain{}},
   grid=major, grid style={black!8}, legend pos=north west, legend cell align=left,
@@ -109,7 +108,7 @@ Depth Pro ซึ่งได้รับความยาวโฟกัสจ�
 
 \begin{figure}[t]
 \centering
-\newlength{\gridw}\setlength{\gridw}{0.92\columnwidth}
+\newlength{\gridw}\setlength{\gridw}{0.84\columnwidth}
 \pgfmathsetlengthmacro{\gpx}{\gridw/1556}
 \begin{tikzpicture}[x=\gpx, y=-\gpx, font=\scriptsize]
 \node[anchor=north west, inner sep=0] at (0,0) {\includegraphics[width=\gridw]{exp6_finetune_topdown_grid}};
@@ -232,7 +231,7 @@ AbsRel ของโมเดลเดิมลดเหลือ 0.045 ซึ่
 \begin{figure}[t]
 \centering
 \begin{tikzpicture}
-\begin{axis}[width=0.95\columnwidth, height=0.68\columnwidth, xmode=log, ymode=log, xmin=0.3, xmax=6, ymin=0.2,
+\begin{axis}[width=0.95\columnwidth, height=0.55\columnwidth, xmode=log, ymode=log, xmin=0.3, xmax=6, ymin=0.2,
   ymax=5, xtick={0.5,1,2,4}, xticklabels={0.5,1,2,4}, ytick={0.25,0.5,1,2,4}, yticklabels={0.25,0.5,1,2,4},
   tick label style={font=\scriptsize}, label style={font=\footnotesize}, grid=major, grid style={black!8},
   xlabel={ค่ามัธยฐานของความลึกจาก Faro ในเฟรม (ม.)}, ylabel={สเกลรายเฟรม / สเกลรายห้อง}]

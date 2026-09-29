@@ -1,0 +1,91 @@
+\section{Discussion and Conclusion}\label{sec:discussion}
+% Thai version: 05_discussion_th.tex (main_short_th.tex); keep the two in step.
+% Replaces the former 06_discussion.tex + 08_limitations.tex + 09_conclusion.tex of the short version.
+% Every number here is reported in Section IV; this chapter interprets, relates to prior work and qualifies.
+
+This section relates the results to prior work, interprets the error that remains, draws implications, states the
+limitations and future work, and concludes objective by objective.
+
+\subsection{Relation to prior work}\label{sec:prior}
+\mbox{DA-v2} Metric-Indoor learned metres from the rendered rooms of Hypersim~\cite{da2,hypersim} and placed every real
+test room 1.18 to 1.45 times too far. ZoeDepth~\cite{zoedepth} and \mbox{DA-v2} adapt their metric heads to a target
+domain by fine-tuning on labelled data; our result shows that the same remedy works with the target device's own LiDAR
+as the labels. As the DINOv2 authors did for depth~\cite{dinov2}, we trained only the decoder on the frozen encoder,
+and the shape of the prediction barely changed (per-frame oracle AbsRel 0.035 against 0.042), which fits the view that
+the encoder's features transfer~\cite{yosinski} and the head mainly learned the scale.
+
+Sensor depth has long served as a training label, from Kinect indoors to laser scanners on
+cars~\cite{nyuv2,kitti,eigen14}. The roughly \SI{1}{cm} that phone LiDAR adds to the Faro depth in our pipeline agrees
+with the centimetre-level accuracy reported against surveying methods~\cite{luetzenburg,spreafico}, and its error as a
+label (AbsRel \rsLIDARABSREL{}) is an order of magnitude below the error left in the fine-tuned model
+(\rsFTLIDARALLABSREL{}), which may explain why a laser teacher gave no measurable gain. Prompt Depth
+Anything~\cite{promptda} and the upsampling task of ARKitScenes~\cite{arkitscenes} use the LiDAR at run time; our model
+needs only a colour image, at a large price (\SI{\rsFTLIDARALLCM}{cm} against \SI{\rsLIDARCM}{cm}).
+
+Camera-aware models~\cite{metric3d,unidepth,depthpro} treat the unknown focal length as the main obstacle to metric
+depth. For Depth Pro on these $640\times480$ indoor frames, the true focal length did not make it usable, and its error
+without scale stayed several times that of \mbox{DA-v2} Metric-Indoor; we did not test Metric3D or UniDepth, so this
+does not extend to the approach in general. Per-image benchmarks cannot show whether the scale stays the same across
+the frames of a scan (Section~\ref{sec:related}); we found that it does not, for relative and metric models alike.
+Video Depth Anything~\cite{videoda} targets such consistency across video frames, and sparse metric points, used as in
+CNN-SLAM and MonoSDF~\cite{cnnslam,monosdf}, came within \SI{\rsSPARSEGAP}{cm} of the per-frame oracle in their
+upper-bound form. Learned reconstruction systems~\cite{atlas,neuralrecon,simplerecon} use several frames per prediction
+and other data, so our numbers are not comparable with theirs.
+
+\subsection{Why a scale error remains}\label{sec:whyft}
+Fine-tuning learned the domain's multiplier: \ftmain{} without calibration (AbsRel 0.134) is on a par with the
+pretrained model given one scale and offset per room fitted on ground truth (0.127), so what a one-off calibration
+provides has moved into the weights of the head. The swing from frame to frame did not shrink (1.52 against 1.55). A
+likely reason follows from the pinhole model (Section~\ref{sec:related}): views such as a close-up of a table top or a
+blank wall look alike at different distances and give no cue to absolute size, so the model falls back on a typical
+indoor distance; the negative correlation between the needed scale and the depth of the view, found in every room, fits
+this reading. If it is right, more or better labels will not remove the swing, and metric data at run time will be
+needed. TSDF fusion~\cite{curless96} then averages the same surface placed at several distances into a thicker, blurred
+surface, consistent with a moderate per-frame error becoming \SI{\rsFTLIDARALLCM}{cm} in Chamfer distance.
+
+\subsection{Implications for practice}\label{sec:business}
+For an app on a device without LiDAR, the results suggest an order of work: per-frame metric scale first (within
+\SI{\rsSPARSEGAP}{cm} of the per-frame oracle, against \SI{\rsSCENECM}{cm} with one calibration per room, an upper bound
+because the points came from LiDAR, not from VIO), then a fine-tuned model, which removes the domain bias with nothing at
+run time, and model size last (\mbox{DA-v2} Small was \SI{1.0}{cm} worse than Large under the per-frame oracle and 6.4
+times faster). The labels can be collected from Pro devices during normal use, since ARKit delivers colour, LiDAR depth
+and pose together. At 3.6 times the video length on a laptop, the pipeline as tested runs offline.
+
+\subsection{Limitations}\label{sec:limitations}
+The evaluation is small: six test rooms in 3D, one used during development, and 26 rooms per frame, all homes captured
+with one iPad model; offices, empty rooms, low light and other phone cameras are absent, and the bathroom with a mirror
+was the hardest room for every source with the right scale (Table~\ref{tab:perroom}). With six rooms the Wilcoxon test
+detects only a difference present in every room, so the teacher comparison cannot rule out differences of the size seen
+in the means, one to two centimetres. The main comparison was fixed after the six test rooms had been evaluated; the
+\rsVN{} rooms of Exp.~7 were added afterwards so that the conclusion also rests on rooms that decided nothing. The
+reference shares the ARKit poses of every row, so a real phone system would add pose drift, and completeness is relative
+to what Faro saw. Only the head of one model was fine-tuned, with one recipe, and \ftfaro{} and \ftlidar{} differ in
+the number of views as well as the labels. Checkpoints were chosen with Faro depth, also for the LiDAR-taught models, on
+three rooms; \ftmain{} became the main model because it was best there and its labels need no laser scanner, but that
+ranking did not reproduce on the test rooms, and its validation AbsRel changed by up to 0.1 between checkpoints 500
+steps apart. The once-per-room and sparse-point
+alignments are upper bounds, calibrated on ground truth and on clean LiDAR samples. Depth Pro was run through one
+implementation, and its focal-length check covered five frames of one room. The thresholds that link recall to use
+cases are our illustration, not an industry standard, and times are unoptimised and meaningful only as ratios.
+
+\subsection{Future work}\label{sec:future}
+In order of expected impact, future work should (1)~combine \ftmain{} with per-frame metric points from the device's
+tracker, for which Section~\ref{sec:scale} gives AbsRel 0.051 with the right scale on every frame; (2)~choose
+checkpoints with LiDAR depth, so that no step needs a laser scanner, and compare teachers on identical frames and more
+test rooms; (3)~train and evaluate on more phone cameras, including Android; (4)~evaluate with real ARKit or ARCore
+feature points and a reference captured by the app itself; and (5)~test fine-tuning more of the network, and video
+models that keep the scale consistent across frames~\cite{videoda}.
+
+\subsection{Conclusion}\label{sec:conclusion}
+We asked whether fine-tuning a metric monocular depth model with a phone's own LiDAR makes it more accurate than its
+pretrained self against a laser scanner. For objective~(1) it did, on the rooms tested and by the criterion of the
+Introduction: \ftmain{} lowered the Chamfer distance from \rsMETRICCM{} to \SI{\rsFTLIDARALLCM}{cm} in all six test rooms
+and AbsRel from \rsVMETRICABSREL{} to \rsVFTALLABSREL{} in \rsVWINS{} of \rsVN{} further rooms, with no calibration or
+sensor at run time and with weights learned from LiDAR alone, although \wone{} improved in only five of the six test
+rooms. For objective~(2), laser labels were not measurably better than LiDAR labels, nor 24 rooms better than 10, within
+the limited power of six rooms, and the true focal length did not make Depth Pro competitive. For objective~(3), the
+model lies between a relative model calibrated once per room and one aligned on sparse points in every frame, serves
+none of the three use cases, and is no substitute for iPad LiDAR (\SI{\rsLIDARCM}{cm}). For objective~(4), its remaining
+error is a scale that varies with the view rather than drifting with time, whose bias fine-tuning removed but whose
+spread it did not. Per-frame metric points from the device's tracker are the most promising next step; their
+combination with the fine-tuned model remains to be tested.
