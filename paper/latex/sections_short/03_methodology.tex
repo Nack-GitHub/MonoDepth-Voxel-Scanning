@@ -1,0 +1,209 @@
+\section{Methodology}\label{sec:method}
+% Thai version: 03_methodology_th.tex (main_short_th.tex); keep the two in step.
+% Replaces the former 03_system_design.tex + 04_experimental_setup.tex of the short version.
+
+The study compares depth sources inside one fixed reconstruction pipeline (Fig.~\ref{fig:pipeline}). For every room
+and every depth source it (1)~reads the colour frames and camera poses, (2)~obtains a depth map for every frame from
+the source, (3)~converts that depth to metres if the source does not give metres, (4)~fuses the frames into a room
+mesh, and (5)~measures the per-frame depth and the mesh against the Faro reference. Only steps (2) and (3) change
+between the rows of a result table; each is chosen by one entry of a configuration file, and every later step runs the
+same code with the same settings. The fine-tuned models enter at step~(2) as ordinary depth sources. This section
+describes the data, each step, the fine-tuning, the metrics and statistics, and the experiments.
+
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}[font=\footnotesize, >=Stealth, node distance=5mm,
+  box/.style={draw=black!65, rounded corners=2pt, align=center, text width=27mm, minimum height=12mm, inner sep=2pt},
+  swap/.style={box, draw=blue!70!black, very thick, fill=blue!4},
+  side/.style={box, dashed}]
+\node[box]  (in)   {\textbf{Frames}\\colour image, ARKit pose};
+\node[swap, right=of in]  (src)  {\textbf{Depth source}\\Faro, iPad LiDAR or a monocular model};
+\node[swap, right=of src] (aln)  {\textbf{Scale alignment}\\none, per-frame oracle, once per room or sparse points};
+\node[box, right=of aln]  (fus)  {\textbf{TSDF fusion}\\\SI{4}{cm} voxels, then marching cubes and clean-up};
+\node[box, right=of fus]  (ev3)  {\textbf{3D evaluation}\\Chamfer, F-score against the Faro mesh};
+\node[side, above=8mm of src] (ft)   {\textbf{Fine-tuning}\\on training rooms, Faro or LiDAR labels};
+\node[box, below=of aln]  (ev2)  {\textbf{Per-frame evaluation}\\AbsRel, \wone{} against Faro depth};
+\draw[->] (in) -- (src); \draw[->] (src) -- (aln); \draw[->] (aln) -- (fus); \draw[->] (fus) -- (ev3);
+\draw[->, dashed] (ft) -- node[right, align=left, font=\scriptsize] {model\\weights} (src);
+\draw[->] (aln) -- (ev2);
+\end{tikzpicture}
+\caption{Pipeline. The two highlighted steps are the only ones that change between the rows of a result table, each
+by one configuration entry; every step after them is fixed. Fine-tuning (dashed) happens once, beforehand, and only
+supplies the weights of a monocular model.}
+\label{fig:pipeline}
+\end{figure*}
+
+\subsection{Data, rooms and reference}\label{sec:data}
+ARKitScenes~\cite{arkitscenes} provides, for the same room, the colour video of an iPad~Pro ($640\times480$ pixels),
+the depth of its LiDAR as produced by ARKit ($256\times192$ pixels, with a confidence of low, medium or high for every
+pixel), the camera pose of every frame from ARKit's visual-inertial odometry, and depth from a Faro laser
+scanner~\cite{faro} registered to those poses ($1920\times1440$ pixels, about four frames per second).
+\textbf{The ground truth is this Faro depth as distributed.} For per-frame evaluation it is resampled to
+$256\times192$ by taking the nearest pixel, so every reference value is a measured one. For 3D evaluation, since no
+laser mesh is distributed, we fuse the Faro depth of every frame at \SI{1}{cm} voxels, once per room, into a
+reference mesh with the fusion of Section~\ref{sec:fusion}. Because this reference and every depth source use the same
+poses, pose error is excluded and every difference between rows is due to the depth source. iPad LiDAR is never used
+as ground truth.
+
+\begin{table}[t]
+\centering\small
+\caption{Test rooms, evaluated in 3D and per frame. Frames: Faro frames on which every row is evaluated.}
+\label{tab:scenes}
+\begin{adjustbox}{max width=\columnwidth}
+\begin{tabular}{@{}llrr@{}}
+\toprule
+Scan ID & Room & Extent (m) & Frames \\
+\midrule
+42444474 & kitchen/dining with glass (development room) & $9.9\times5.1\times4.2$ & 236 \\
+47333774 & standard bedroom & $5.1\times4.9\times3.3$ & 375 \\
+47115299 & large living room & $8.1\times6.1\times2.5$ & 324 \\
+42897743 & bathroom (mirror, tiles) & $8.0\times3.4\times3.6$ & 448 \\
+47429736 & bedroom with closets & $6.6\times6.4\times2.7$ & 504 \\
+45261556 & kitchen (glossy cabinets) & $7.1\times6.1\times2.4$ & 465 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+The six test rooms (Table~\ref{tab:scenes}) span a standard bedroom, large rooms and rooms with mirrors or glossy
+surfaces. Room 42444474 was used while the pipeline was developed, so its numbers are not held out; the per-room
+results let the reader check every conclusion on the other five. The rooms for fine-tuning were drawn at random
+(seed~0) from ARKitScenes scans of 60 to \SI{120}{s}, excluding every visit of a test room, a visit being the capture
+session of one home, whose videos show the same rooms: 10 training rooms with both Faro and LiDAR depth, 14 more with
+LiDAR only, and 3 rooms of the dataset's Validation fold for choosing the checkpoint. Exp.~7 adds \rsVN{} further
+Validation-fold rooms, one video per visit, drawn with seed~0 and excluding every visit of the training,
+checkpoint-selection and test rooms. They decided nothing and are evaluated per frame only, on every second Faro frame
+(\rsVFRAMES{} frames in total).
+
+\subsection{Depth sources}\label{sec:sources}
+Four kinds of depth source are compared. (1)~The Faro depth itself shows what the pipeline loses when depth is perfect:
+at \SI{4}{cm} voxels it still differs from the \SI{1}{cm} reference, and that difference is the pipeline's own
+discretisation loss. (2)~The iPad LiDAR depth as recorded by ARKit is what a Pro device uses today. (3)~Relative
+monocular models need the scale alignment of Section~\ref{sec:align}: DA-v2 Large in the main experiments, and DA-v2
+Small and MiDaS small~\cite{midas} when model size is varied. (4)~Metric monocular models are used with no alignment:
+DA-v2 Metric-Indoor Large, pretrained; its three fine-tunes (Section~\ref{sec:ftsetup}); and Depth Pro~\cite{depthpro},
+given the camera's true focal length of 533 pixels, its most favourable setting. ARKitScenes stores the frames of an
+iPad held upright rotated by a quarter turn, so every monocular model receives the frame rotated upright and its output
+is rotated back. Every source is resampled by nearest pixel to the LiDAR resolution of $256\times192$, so that all
+sources are fused and scored on the same grid.
+
+\subsection{Scale alignment}\label{sec:align}
+A relative model gives inverse depth that is known only up to a scale and an offset per image
+(Section~\ref{sec:related}). Alignment finds the scale and offset that make the model's inverse depth best match a set
+of reference depths, also inverted, and converts the result back to depth. Fitting in inverse depth rather than in
+depth follows how these models are trained; on the development room it reduced the Chamfer distance of the per-frame
+oracle from 15.2 to \SI{5.4}{cm}. The fit is by least squares, repeated three times, each time leaving out the
+20\,\% of pixels with the largest residuals, because depth edges produce a few very large residuals that would
+otherwise pull the fit. The four alignments differ only in the reference depths they fit against
+(Table~\ref{tab:aligners}); a metric source is always used with no alignment, and the pipeline refuses to run
+otherwise.
+
+\begin{table}[t]
+\centering\small
+\caption{Scale alignments. Every alignment other than ``none'' fits one scale and one offset in inverse depth by
+trimmed least squares.}
+\label{tab:aligners}
+\begin{tabularx}{\columnwidth}{@{}l>{\raggedright\arraybackslash}X@{}}
+\toprule
+Alignment & Fitted on, and what the row shows \\
+\midrule
+none & nothing; used for Faro, LiDAR and metric models \\
+per-frame oracle & the frame's own Faro depth; the best the model's shape allows (not usable in a product) \\
+once per room & Faro depth of 10 frames spread evenly over the scan, fitted once and kept for every frame; an upper
+bound of a one-off calibration \\
+sparse points & 200 metric points per frame, standing for the feature points of VIO (Section~\ref{sec:related});
+ARKitScenes stores none, so they are sampled from LiDAR pixels of high confidence, which are cleaner than
+triangulated features; an upper bound of a VIO-based system \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+For sparse points the fit is repeated twice and leaves out the worst 10\,\% of points, and a frame with fewer than 20
+usable points reuses the previous frame's scale and offset, as a deployed system would when tracking briefly fails.
+
+\subsection{Fusion into a room mesh}\label{sec:fusion}
+The depth maps are fused by TSDF fusion (Section~\ref{sec:related}) in Open3D~\cite{open3d} with \SI{4}{cm} voxels,
+a truncation distance of \SI{12}{cm} (three voxels) and depths from 0.1 to \SI{5}{m}. For every source, only the
+pixels where Faro has depth are integrated, so no source is penalised for seeing parts of the room the reference does
+not cover, and every pixel has the same weight (only Exp.~5 weights pixels by LiDAR confidence). The mesh is
+extracted with marching cubes~\cite{marchingcubes}, and connected pieces of fewer than \num{1000} triangles are removed
+as floating noise. Every row uses the ARKit poses of the dataset.
+
+\subsection{Fine-tuning}\label{sec:ftsetup}
+Three fine-tunes of DA-v2 Metric-Indoor Large share one recipe and differ only in their labels. \ftfaro{} learns from
+Faro depth on the 10 training rooms (\num{3594} frames), \ftlidar{} from iPad LiDAR depth on the same 10 rooms
+(\num{8656} frames), and \ftmain{}, the main model, from LiDAR depth on all 24 rooms (\num{19896} frames). LiDAR pixels
+of low confidence are dropped, and label depths beyond \SI{10}{m} are ignored. The two teachers do not see the same
+frames: Faro depth exists at about four frames per second, whereas LiDAR depth comes with every colour frame, of which
+we take every third (about ten per second), so \ftlidar{} sees about 2.4 times as many distinct views as \ftfaro{}.
+
+The image encoder is frozen and only the DPT decoder, neck and head, is trained (Section~\ref{sec:related}). Each
+training image is rotated upright, resized so that its short side is 518 pixels and cropped to $518\times518$ at a
+random position; it is never zoomed, because enlarging an image changes the apparent size of objects and would teach
+wrong metres. Horizontal flips (probability 0.5) and colour jitter (strength 0.2) add variety. The loss is SiLog
+(Section~\ref{sec:related}): for each image, the variance of the difference between the logarithms of predicted and
+label depth, which scores shape, plus 0.15 times the square of its mean, which scores the overall scale; the square
+root of this sum is multiplied by 10. The optimiser is AdamW~\cite{adamw}, a form of the Adam optimiser that applies
+weight decay separately from the gradient step, with a learning rate of \num{5e-5}, weight decay 0.01, a linear
+warm-up over 200 steps and then a cosine decay to zero~\cite{sgdr}. Each step uses 8 images (2 at a time, with
+gradients accumulated over 4), and gradients are clipped at a norm of 1. Training runs for \num{6000} steps for
+\ftfaro{} and \ftlidar{} and \num{12000} for \ftmain{}. Every 500 steps the model is scored by AbsRel against the Faro
+depth of every fifth frame of the three checkpoint-selection rooms, and the checkpoint with the lowest AbsRel is kept;
+the weights of the LiDAR-taught models are therefore learned from LiDAR alone, but their checkpoint is chosen with Faro
+depth on these three rooms. A \num{6000}-step run takes about an hour on an NVIDIA RTX~3070 GPU. At test time a
+fine-tuned model is used exactly like the pretrained one: colour image in, metres out, no alignment and the same input
+preparation.
+
+\subsection{Metrics and statistics}\label{sec:metrics}
+\textbf{3D.} \num{200000} points are sampled uniformly on each mesh. Accuracy is the mean distance from a point of the
+reconstruction to the nearest point of the reference, completeness the mean distance in the other direction, and the
+Chamfer distance~\cite{chamfer} their mean. Precision, recall and F-score~\cite{tanks} (Section~\ref{sec:related})
+are computed at thresholds of 2, 5 and \SI{10}{cm}, with \fscore{} as the headline. For objective~(3), a use case
+counts as served when recall at its threshold is at least 0.9, as partly served from 0.75 to 0.9, and as not served
+below 0.75. \textbf{Per frame.} Each depth map is compared with the Faro depth on the $256\times192$ grid, over the
+pixels where Faro depth lies between 0.1 and \SI{5}{m} and the source gave a value; a prediction outside that range is
+clipped to it rather than dropped, so a model that places a wall too far away is still scored on that wall. We report
+AbsRel, \wone{} and the root mean square error (RMSE) of depth~\cite{eigen14}, averaged over the frames of a room and
+then over rooms. \textbf{Statistics.} Tables give the mean $\pm$ standard deviation over rooms. Because the rooms, not
+the frames, are the independent units, two models are compared by their per-room values with the exact two-sided
+Wilcoxon signed-rank test~\cite{wilcoxon}. The test ranks the per-room differences by size and asks whether the ranks of
+positive and negative differences are balanced; ``exact'' means the p-value is computed from every possible assignment
+of signs rather than from an approximation, which matters for few rooms. With six rooms the smallest attainable
+p-value is $2/64 \approx 0.031$, so the difference is significant at the 5\,\% level only if one model wins in all six.
+
+\subsection{Experiments}\label{sec:experiments}
+Table~\ref{tab:exps} lists the experiments and the objective each serves. Exp.~6 and~7 answer the main question
+(objectives 1 and~2), Exp.~1 places the models among the run-time depth sources (objective~3), and Exp.~2--5 test how
+sensitive the pipeline is to its own settings. Times in Exp.~4 were measured with unoptimised PyTorch on an Apple
+Silicon laptop and are used only as ratios.
+
+\begin{table}[t]
+\centering\small
+\caption{Experiments. In each, the listed variable changes and everything else is fixed.}
+\label{tab:exps}
+\begin{tabularx}{\columnwidth}{@{}ll>{\raggedright\arraybackslash}X@{}}
+\toprule
+Exp. & Obj. & Variable; rooms and evaluation \\
+\midrule
+6 & 1, 2 & pretrained vs.\ \ftmain{}; \ftfaro{}, \ftlidar{} and Depth Pro; 6 test rooms, 3D and per frame \\
+7 & 1 & pretrained vs.\ \ftmain{}, iPad LiDAR for reference; \rsVN{} further rooms, per frame \\
+1 & 3 & depth source and alignment: Faro, LiDAR, DA-v2 Large with each alignment, pretrained DA-v2 Metric; 6 test
+rooms, 3D and per frame \\
+-- & 4 & per-frame scale analysis (Section~\ref{sec:scaleanalysis}); 6 test rooms, every fifth frame \\
+2--5 & -- & voxel size; frame stride; model size; LiDAR confidence; 6 test rooms, 3D \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Per-frame scale analysis}\label{sec:scaleanalysis}
+Objective~(4) asks which error fine-tuning leaves and whether it comes from time or from the view. On every fifth
+frame of the six test rooms (471 frames) we compute, for the pretrained metric model and for \ftmain{}, the ratio of
+Faro depth to predicted depth, taken as the median over the frame's pixels; its median over the frames of a room shows
+how far the model's scale is off, and the ratio of its 95th to its 5th percentile over those frames shows how much the
+needed scale varies within one room. We then compute AbsRel with increasing help: none; one scale and offset per room,
+fitted on 10 frames as in Table~\ref{tab:aligners}; the right scale for every frame (the frame's median ratio, no
+offset); and the per-frame oracle scale and offset. For the relative model DA-v2 Large we fit the per-frame oracle scale
+on the same frames and compute its Pearson correlation coefficient~\cite{pearson}, a measure of linear association from
+$-1$ to $+1$, with the frame's time in the scan and with the median Faro depth of the frame. Drift, an error that builds
+up over the scan, would show as a correlation with time of the same sign in every room; dependence on the view would
+show as a consistent correlation with the depth of the scene in front of the camera.

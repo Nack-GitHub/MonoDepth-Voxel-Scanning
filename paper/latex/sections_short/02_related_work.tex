@@ -70,7 +70,7 @@ motion sensor~\cite{vinsmono}. Because the motion sensor measures acceleration i
 points have positions in metres, and such sparse points can supply, frame by frame, the scale and offset that a
 relative model lacks. Combining learned depth with the sparse geometry of a tracking system goes back to
 CNN-SLAM~\cite{cnnslam}, and MonoSDF~\cite{monosdf} fits a scale and an offset to every image before using monocular
-depth to guide surface reconstruction; the sparse-point alignment of Section~\ref{sec:design} follows this line.
+depth to guide surface reconstruction; the sparse-point alignment of Section~\ref{sec:align} follows this line.
 
 The room itself is built by fusion into a truncated signed distance function (TSDF)~\cite{curless96}. Space is divided
 into small cubes called voxels; each voxel stores its distance to the nearest observed surface, positive in front of

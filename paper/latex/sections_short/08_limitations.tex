@@ -5,8 +5,8 @@ saw. \textbf{Scale of the evaluation.} Mesh numbers come from six rooms (one use
 26, all captured with one iPad model in homes; offices, empty rooms, low light and other phone cameras are absent.
 \textbf{Fine-tuning.} Checkpoints were selected on only three validation rooms, whose ranking (\ftmain{} $>$ \ftlidar{} $>$ \ftfaro{}) does
 not reproduce on the test rooms; \ftfaro{} and \ftlidar{} differ in the number of views as well as the label; and only the head of one
-model was trained with one recipe. \textbf{Proxies and bounds.} \code{per\_scene} calibrates on ground truth and
-\code{sparse\_points} uses clean LiDAR samples instead of triangulated VIO features, so both are upper bounds.
+model was trained with one recipe. \textbf{Proxies and bounds.} The once-per-room alignment calibrates on ground truth and
+the sparse-point alignment uses clean LiDAR samples instead of triangulated VIO features, so both are upper bounds.
 Depth Pro was run through one implementation on $640\times480$ input. Times are unoptimised PyTorch on Apple Silicon
 and are meaningful only as ratios.
 

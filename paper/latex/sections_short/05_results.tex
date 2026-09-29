@@ -116,19 +116,19 @@ this model on this low-resolution indoor input, not about intrinsics-conditioned
 \subsection{Context: the price of each depth source (Exp.~1)}\label{sec:exp1}
 \begin{table}[t]
 \centering\small
-\caption{Exp.~1: same pipeline, only \code{depth.source} / \code{depth.aligner} change (6 scenes).}
+\caption{Exp.~1: same pipeline, only the depth source and the scale alignment change (6 scenes).}
 \label{tab:exp1}
 \begin{adjustbox}{max width=\columnwidth}
 \begin{tabular}{@{}llrrrr@{}}
 \toprule
-Source & Aligner & Chamfer & F@2 & \textbf{F@5} & AbsRel \\
+Source & Alignment & Chamfer & F@2 & \textbf{F@5} & AbsRel \\
 \midrule
-Faro (\code{gt}) & identity & $\rsGTCM \pm \rsGTSD$ & \rsGTFtwo & \rsGTF & 0 \\
-ARKit LiDAR & identity & $\rsLIDARCM \pm \rsLIDARSD$ & \rsLIDARFtwo & \rsLIDARF & \rsLIDARABSREL \\
-DA-v2 L & oracle\_frame & $\rsORACLECM \pm \rsORACLESD$ & \rsORACLEFtwo & \rsORACLEF & \rsORACLEABSREL \\
-DA-v2 L & sparse\_points & $\rsSPARSECM \pm \rsSPARSESD$ & \rsSPARSEFtwo & \rsSPARSEF & \rsSPARSEABSREL \\
-DA-v2 L & per\_scene & $\rsSCENECM \pm \rsSCENESD$ & \rsSCENEFtwo & \rsSCENEF & \rsSCENEABSREL \\
-DA-v2 Metric & identity & $\rsMETRICCM \pm \rsMETRICSD$ & \rsMETRICFtwo & \rsMETRICF & \rsMETRICABSREL \\
+Faro & none & $\rsGTCM \pm \rsGTSD$ & \rsGTFtwo & \rsGTF & 0 \\
+ARKit LiDAR & none & $\rsLIDARCM \pm \rsLIDARSD$ & \rsLIDARFtwo & \rsLIDARF & \rsLIDARABSREL \\
+DA-v2 L & per-frame oracle & $\rsORACLECM \pm \rsORACLESD$ & \rsORACLEFtwo & \rsORACLEF & \rsORACLEABSREL \\
+DA-v2 L & sparse points & $\rsSPARSECM \pm \rsSPARSESD$ & \rsSPARSEFtwo & \rsSPARSEF & \rsSPARSEABSREL \\
+DA-v2 L & once per room & $\rsSCENECM \pm \rsSCENESD$ & \rsSCENEFtwo & \rsSCENEF & \rsSCENEABSREL \\
+DA-v2 Metric & none & $\rsMETRICCM \pm \rsMETRICSD$ & \rsMETRICFtwo & \rsMETRICF & \rsMETRICABSREL \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

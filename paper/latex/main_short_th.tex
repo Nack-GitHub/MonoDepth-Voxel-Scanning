@@ -1,5 +1,5 @@
 % roomscan — SHORT version, Thai — the Thai companion of main_short.tex (English); chapters are added as
-% they are translated (so far: บทคัดย่อ, บทนำ, ทฤษฎีและงานวิจัยที่เกี่ยวข้อง).
+% they are translated (so far: บทคัดย่อ, บทนำ, ทฤษฎีและงานวิจัยที่เกี่ยวข้อง, วิธีดำเนินการวิจัย).
 % Same macros (shortmacros.tex), numbers (numbers.tex) and references (refs.bib) as the English version,
 % so the two stay in sync when numbers change.
 % Build:  cd paper/latex && tectonic main_short_th.tex   (needs XeTeX: Thai font + Thai line breaking)
@@ -22,6 +22,12 @@
 \XeTeXlinebreakskip=0pt plus 0.1pt
 
 \usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{adjustbox}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta}
 \usepackage{url}
 \urlstyle{tt}
 \usepackage{siunitx}
@@ -32,6 +38,8 @@
 \renewcommand{\abstractname}{บทคัดย่อ}
 \renewcommand{\IEEEkeywordsname}{คำสำคัญ}
 \renewcommand{\refname}{เอกสารอ้างอิง}
+\renewcommand{\figurename}{รูปที่}
+\renewcommand{\tablename}{ตารางที่}
 % IEEEtran sets the abstract and keywords in bold; a bold Thai paragraph is hard to read, so use regular.
 \newenvironment{thaiabstract}{\begin{abstract}\mdseries}{\end{abstract}}
 
@@ -59,6 +67,7 @@ email@example.com}}
 
 \input{sections_short/01_introduction_th}
 \input{sections_short/02_related_work_th}
+\input{sections_short/03_methodology_th}
 
 \bibliographystyle{IEEEtran}
 \bibliography{refs}
