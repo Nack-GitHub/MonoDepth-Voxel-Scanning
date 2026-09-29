@@ -1,8 +1,8 @@
 \begin{abstract}
 Most phones have no LiDAR and must scan rooms with monocular depth, yet off-the-shelf ``metric'' models such as
 Depth Anything~V2 (DA-v2) Metric-Indoor~\cite{da2}, trained on synthetic images, misplace a real room by
-\SI{\rsMETRICCM}{cm}. We ask whether fine-tuning such a model with the phone's own LiDAR depth, with no laser scanner
-involved, makes it more accurate than its pretrained self, measured against the Faro Focus S70 laser
+\SI{\rsMETRICCM}{cm}. We ask whether fine-tuning such a model with the phone's own LiDAR depth, its weights learned from
+LiDAR alone (laser-scanner depth only chooses the checkpoint, on three rooms), makes it more accurate than its pretrained self, measured against the Faro Focus S70 laser
 scanner~\cite{faro} that provides the ground truth of ARKitScenes~\cite{arkitscenes}. We fine-tune only the DPT
 head~\cite{dpt} (the depth decoder; the image encoder stays frozen) on 24 rooms with iPad LiDAR labels, giving
 \ftmain{}, and compare it with the pretrained model in one pipeline---per-frame depth fused into a truncated signed

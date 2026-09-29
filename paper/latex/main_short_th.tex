@@ -1,5 +1,5 @@
 % roomscan — SHORT version, Thai — the Thai companion of main_short.tex (English); chapters are added as
-% they are translated (so far: บทคัดย่อ, บทนำ, ทฤษฎีและงานวิจัยที่เกี่ยวข้อง, วิธีดำเนินการวิจัย).
+% they are translated (so far: บทคัดย่อ, บทนำ, ทฤษฎีและงานวิจัยที่เกี่ยวข้อง, วิธีดำเนินการวิจัย, ผลการทดลอง).
 % Same macros (shortmacros.tex), numbers (numbers.tex) and references (refs.bib) as the English version,
 % so the two stay in sync when numbers change.
 % Build:  cd paper/latex && tectonic main_short_th.tex   (needs XeTeX: Thai font + Thai line breaking)
@@ -23,17 +23,21 @@
 
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
+\usepackage{graphicx}
 \usepackage{adjustbox}
 \usepackage{tabularx}
 \usepackage{xcolor}
 \usepackage{tikz}
 \usetikzlibrary{positioning,arrows.meta}
+\usepackage{pgfplots}   % Fig. 2 and 4 are drawn from ../figures/data/*.dat
+\pgfplotsset{compat=1.18}
 \usepackage{url}
 \urlstyle{tt}
 \usepackage{siunitx}
 \usepackage[hidelinks]{hyperref}
 \usepackage{cite}
 
+\graphicspath{{../figures/}}
 \input{shortmacros}
 \renewcommand{\abstractname}{บทคัดย่อ}
 \renewcommand{\IEEEkeywordsname}{คำสำคัญ}
@@ -68,6 +72,7 @@ email@example.com}}
 \input{sections_short/01_introduction_th}
 \input{sections_short/02_related_work_th}
 \input{sections_short/03_methodology_th}
+\input{sections_short/04_results_th}
 
 \bibliographystyle{IEEEtran}
 \bibliography{refs}

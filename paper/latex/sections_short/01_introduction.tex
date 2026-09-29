@@ -19,8 +19,8 @@ from: a survey-grade laser scanner~\cite{faro}, which few app makers own, or the
 devices}, whose depth an app can collect during normal use. If the latter works, devices with LiDAR can teach those
 without it.
 
-We therefore ask whether DA-v2 Metric-Indoor fine-tuned with iPad LiDAR depth, with no laser scanner at training time,
-is more accurate than the same model pretrained, when both are measured against the Faro laser scanner that provides
+We therefore ask whether DA-v2 Metric-Indoor fine-tuned with iPad LiDAR depth, its weights learned from LiDAR alone
+(laser-scanner depth only chooses the checkpoint, on three rooms that are not test rooms), is more accurate than the same model pretrained, when both are measured against the Faro laser scanner that provides
 the ground truth of ARKitScenes~\cite{arkitscenes} on rooms never used for training. The study has four objectives:
 (1)~to fine-tune the model on iPad LiDAR depth from 24 rooms, giving \ftmain{}, and compare it with the pretrained
 model on held-out rooms, counting it as better if its mean error is lower and the per-room difference is significant

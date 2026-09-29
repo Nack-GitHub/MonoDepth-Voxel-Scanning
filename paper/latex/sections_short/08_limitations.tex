@@ -3,7 +3,8 @@
 drift is excluded and a real phone system incurs additional error; completeness means complete relative to what Faro
 saw. \textbf{Scale of the evaluation.} Mesh numbers come from six rooms (one used in development) and 2D numbers from
 26, all captured with one iPad model in homes; offices, empty rooms, low light and other phone cameras are absent.
-\textbf{Fine-tuning.} Checkpoints were selected on only three validation rooms, whose ranking (\ftmain{} $>$ \ftlidar{} $>$ \ftfaro{}) does
+\textbf{Fine-tuning.} Checkpoints were selected with Faro depth, also for the LiDAR-taught models, so a laser
+scanner was still used for that step, though not for their weights; and they were selected on only three validation rooms, whose ranking (\ftmain{} $>$ \ftlidar{} $>$ \ftfaro{}) does
 not reproduce on the test rooms; \ftfaro{} and \ftlidar{} differ in the number of views as well as the label; and only the head of one
 model was trained with one recipe. \textbf{Proxies and bounds.} The once-per-room alignment calibrates on ground truth and
 the sparse-point alignment uses clean LiDAR samples instead of triangulated VIO features, so both are upper bounds.

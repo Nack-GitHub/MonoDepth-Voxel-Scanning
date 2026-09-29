@@ -1,0 +1,10 @@
+# Per-room AbsRel against Faro, Exp. 6, the six test rooms: pretrained DA-v2 Metric-Indoor (pre) vs FT-LiDAR-24 (ft).
+# Extracted from experiments/results/summary.csv (experiment exp6_finetune, run_name mono_metric /
+# mono_ft_lidar_all, column abs_rel). Read by paper/latex/sections_short/04_results*.tex (pgfplots).
+scene pre ft
+42444474 0.3749 0.1266
+42897743 0.4125 0.0872
+45261556 0.4304 0.1007
+47115299 0.2547 0.1925
+47333774 0.3462 0.1556
+47429736 0.4757 0.1411

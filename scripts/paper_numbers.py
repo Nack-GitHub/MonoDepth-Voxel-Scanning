@@ -117,6 +117,9 @@ def main() -> None:
         macro(f"{tag}F", _fmt(m6.loc[run, "fscore@0.05"], 2))
         macro(f"{tag}ABSREL", _fmt(m6.loc[run, "abs_rel"], 3))
         macro(f"{tag}DELTAONE", _fmt(m6.loc[run, "delta1"], 3))
+        macro(f"{tag}ACC", _fmt(m6.loc[run, "accuracy"] * 100))
+        macro(f"{tag}COMP", _fmt(m6.loc[run, "completeness"] * 100))
+        macro(f"{tag}RMSE", _fmt(m6.loc[run, "rmse"] * 100))
         for tau, word in (("0.02", "two"), ("0.05", "five"), ("0.1", "ten")):
             macro(f"{tag}R{word}", _fmt(m6.loc[run, f"recall@{tau}"], 2))
     # the paper's main comparison (ADR-014): R3 (LiDAR teacher, 24 scenes) vs the same checkpoint pretrained
@@ -133,11 +136,8 @@ def main() -> None:
         macro("METRICSIXABSREL", _fmt(m6.loc["mono_metric", "abs_rel"], 3))
         macro("METRICSIXDELTAONE", _fmt(m6.loc["mono_metric", "delta1"], 3))
         macro("METRICSIXRMSE", _fmt(m6.loc["mono_metric", "rmse"] * 100))
-        macro("FTLIDARALLRMSE", _fmt(m6.loc["mono_ft_lidar_all", "rmse"] * 100))
         gap_sparse = m6.loc["mono_ft_lidar_all", "chamfer"] - mean.loc["mono_sparse", "chamfer"]
         macro("FTALLGAPSPARSE", _fmt(gap_sparse * 100))
-        macro("FTLIDARALLACC", _fmt(m6.loc["mono_ft_lidar_all", "accuracy"] * 100))
-        macro("FTLIDARALLCOMP", _fmt(m6.loc["mono_ft_lidar_all", "completeness"] * 100))
         # per-scene AbsRel (Table 4.1 order) for the main per-scene table -> \rsMETRICARa ... \rsFTALLARf
         for run, tag in (("mono_metric", "METRICAR"), ("mono_ft_lidar_all", "FTALLAR")):
             sub = df[(df.experiment == "exp6_finetune") & (df.run_name == run)]

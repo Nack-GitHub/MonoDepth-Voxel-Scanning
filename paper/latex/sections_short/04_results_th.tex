@@ -1,0 +1,282 @@
+\section{ผลการทดลอง}\label{sec:results}
+% Thai twin of 04_results.tex; keep the two in step. Facts only.
+% TODO: "บทที่ V" is plain text until the Discussion is translated; then use \ref{sec:discussion}.
+
+บทนี้รายงานผลที่วัดได้จากการทดลองในตารางที่~\ref{tab:exps} โดยจัดกลุ่มตามวัตถุประสงค์
+ส่วนความหมายของผลจะอภิปรายในบทที่ V ระยะทั้งหมดมีหน่วยเป็นเซนติเมตร ค่าในตารางเป็นค่าเฉลี่ยข้ามห้อง
+และ $\pm$ คือส่วนเบี่ยงเบนมาตรฐานข้ามห้อง เมื่อเปรียบเทียบสองโมเดล เราระบุว่าโมเดลหนึ่งดีกว่าในกี่ห้อง
+พร้อมค่า p จากการทดสอบ Wilcoxon signed-rank แบบ exact บนค่ารายห้อง (หัวข้อ~\ref{sec:metrics})
+
+\begin{table*}[t]
+\centering\small
+\caption{การทดลองที่ 6 บนห้องทดสอบทั้งหก: ใช้ภาพสีเท่านั้น ไม่ปรับสเกล และวัดเทียบกับ Faro
+สองแถวสุดท้ายต้องใช้เซนเซอร์ขณะใช้งาน จึงแสดงไว้เพื่ออ้างอิง (การทดลองที่ 1)
+Acc.: ความแม่นยำ, Compl.: ความครบถ้วน, F@5 และ R@10: F-score ที่ 5~ซม. และ recall ที่ 10~ซม.}
+\label{tab:main}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}llrrrrrrrr@{}}
+\toprule
+โมเดล & ข้อมูลสอน & Chamfer & Acc. & Compl. & F@5 & R@10 & AbsRel & \wone{} & RMSE \\
+\midrule
+\mbox{DA-v2} Metric-Indoor แบบเดิม & --- (ห้องจำลอง Hypersim) & $\rsMETRICCM \pm \rsMETRICSD$ & \rsMETRICACC & \rsMETRICCOMP & \rsMETRICF & \rsMETRICRten & \rsMETRICSIXABSREL & \rsMETRICSIXDELTAONE & \rsMETRICSIXRMSE \\
+Depth Pro ให้ความยาวโฟกัสจริง & --- & $\rsDEPTHPROCM \pm \rsDEPTHPROSD$ & \rsDEPTHPROACC & \rsDEPTHPROCOMP & \rsDEPTHPROF & \rsDEPTHPRORten & \rsDEPTHPROABSREL & \rsDEPTHPRODELTAONE & \rsDEPTHPRORMSE \\
+\ftfaro{} & Faro, 10 ห้อง & $\rsFTFAROCM \pm \rsFTFAROSD$ & \rsFTFAROACC & \rsFTFAROCOMP & \rsFTFAROF & \rsFTFARORten & \rsFTFAROABSREL & \rsFTFARODELTAONE & \rsFTFARORMSE \\
+\ftlidar{} & LiDAR ของ iPad, 10 ห้อง & $\rsFTLIDARCM \pm \rsFTLIDARSD$ & \rsFTLIDARACC & \rsFTLIDARCOMP & \rsFTLIDARF & \rsFTLIDARRten & \rsFTLIDARABSREL & \rsFTLIDARDELTAONE & \rsFTLIDARRMSE \\
+\textbf{\ftmain{}} & LiDAR ของ iPad, 24 ห้อง & $\mathbf{\rsFTLIDARALLCM \pm \rsFTLIDARALLSD}$ & \textbf{\rsFTLIDARALLACC} & \textbf{\rsFTLIDARALLCOMP} & \textbf{\rsFTLIDARALLF} & \textbf{\rsFTLIDARALLRten} & \textbf{\rsFTLIDARALLABSREL} & \textbf{\rsFTLIDARALLDELTAONE} & \textbf{\rsFTLIDARALLRMSE} \\
+\midrule
+อ้างอิง: LiDAR ของ iPad (เซนเซอร์) & --- & $\rsLIDARCM \pm \rsLIDARSD$ & \rsLIDARACC & \rsLIDARCOMP & \rsLIDARF & \rsLIDARRten & \rsLIDARABSREL & \rsLIDARDELTAONE & \rsLIDARRMSE \\
+อ้างอิง: \mbox{DA-v2} Large $+$ จุดเบาบาง & --- & $\rsSPARSECM \pm \rsSPARSESD$ & \rsSPARSEACC & \rsSPARSECOMP & \rsSPARSEF & \rsSPARSERten & \rsSPARSEABSREL & \rsSPARSEDELTAONE & \rsSPARSERMSE \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}
+
+\subsection{โมเดลที่ปรับจูนเทียบกับโมเดลเดิม (วัตถุประสงค์ข้อ 1)}\label{sec:main}
+บนห้องทดสอบทั้งหก (ตารางที่~\ref{tab:main}) \ftmain{} ลด Chamfer distance จาก \rsMETRICCM{} เหลือ
+\rsFTLIDARALLCM~ซม. และต่ำกว่าโมเดลเดิมครบทั้งหกห้อง โดยต่ำกว่า $\rsMAINDIFFCM \pm \rsMAINDIFFSD$~ซม.
+($p=\rsMAINP$ ซึ่งเป็นค่า p ที่เล็กที่สุดที่เป็นไปได้เมื่อมีหกห้อง) ความแม่นยำลดจาก \rsMETRICACC{} เหลือ
+\rsFTLIDARALLACC~ซม. ความครบถ้วนลดจาก \rsMETRICCOMP{} เหลือ \rsFTLIDARALLCOMP~ซม.
+และ \fscore{} เพิ่มจาก \rsMETRICF{} เป็น \rsFTLIDARALLF{} ซึ่งสูงกว่าครบทั้งหกห้อง ($p=0.031$)
+ในการวัดรายเฟรม AbsRel ลดจาก \rsMETRICSIXABSREL{} เหลือ \rsFTLIDARALLABSREL{} ซึ่งต่ำกว่าครบทั้งหกห้อง
+($p=0.031$, ตารางที่~\ref{tab:perroom}) และ \wone{} เพิ่มจาก \rsMETRICSIXDELTAONE{} เป็น \rsFTLIDARALLDELTAONE{}
+ซึ่งสูงกว่าในห้าห้อง ($p=0.063$) ส่วนในห้อง 47115299 ค่านี้ลดจาก 0.74 เหลือ 0.60
+
+\begin{table}[t]
+\centering\small
+\caption{การทดลองที่ 7: ตัวชี้วัดรายเฟรมบนห้องอีก \rsVN{} ห้องจากชุด Validation (\rsVFRAMES{} เฟรม)
+ซึ่งไม่ได้ใช้ทำอย่างอื่นเลย ค่าเฉลี่ย $\pm$ ส่วนเบี่ยงเบนมาตรฐานข้ามห้อง}
+\label{tab:exp7}
+\begin{adjustbox}{max width=\columnwidth}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+โมเดล & AbsRel & \wone{} & RMSE (ซม.) \\
+\midrule
+\mbox{DA-v2} Metric-Indoor แบบเดิม & $\rsVMETRICABSREL \pm \rsVMETRICABSRELSD$ & $\rsVMETRICDELTAONE \pm \rsVMETRICDELTAONESD$ & \rsVMETRICRMSE \\
+\textbf{\ftmain{}} & $\mathbf{\rsVFTALLABSREL \pm \rsVFTALLABSRELSD}$ & $\mathbf{\rsVFTALLDELTAONE \pm \rsVFTALLDELTAONESD}$ & \textbf{\rsVFTALLRMSE} \\
+อ้างอิง: LiDAR ของ iPad (เซนเซอร์) & $\rsVLIDARABSREL \pm \rsVLIDARABSRELSD$ & $\rsVLIDARDELTAONE \pm \rsVLIDARDELTAONESD$ & \rsVLIDARRMSE \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.8\columnwidth, height=0.8\columnwidth, xmin=0, xmax=0.95, ymin=0, ymax=0.95,
+  xtick={0,0.2,0.4,0.6,0.8}, ytick={0,0.2,0.4,0.6,0.8}, tick label style={font=\scriptsize},
+  label style={font=\footnotesize}, xlabel={AbsRel ของโมเดลเดิม}, ylabel={AbsRel ของ \ftmain{}},
+  grid=major, grid style={black!8}, legend pos=north west, legend cell align=left,
+  legend style={font=\scriptsize, draw=none, fill=none}]
+\addplot[black!55, dashed, domain=0:0.95, samples=2, forget plot] {x};
+\node[font=\scriptsize, text=black!60, rotate=45, anchor=south] at (axis cs:0.8,0.8) {ไม่เปลี่ยน};
+\addplot[only marks, mark=square*, mark size=1.5pt, blue!75!black] table[x=pre, y=ft] {../figures/data/finetune_absrel_valfold.dat};
+\addlegendentry{ห้องอีก \rsVN{} ห้อง (การทดลองที่ 7)}
+\addplot[only marks, mark=*, mark size=2pt, orange!90!black] table[x=pre, y=ft] {../figures/data/finetune_absrel_test.dat};
+\addlegendentry{ห้องทดสอบ 6 ห้อง (การทดลองที่ 6)}
+\end{axis}
+\end{tikzpicture}
+\caption{AbsRel รายห้องเทียบกับ Faro: \mbox{DA-v2} Metric-Indoor แบบเดิม (แกนนอน) กับ \ftmain{} (แกนตั้ง)
+จุดที่อยู่ใต้เส้นทแยงประคือห้องที่ \ftmain{} มี AbsRel ต่ำกว่า}
+\label{fig:finetuneabsrel}
+\end{figure}
+
+บนห้องอีก \rsVN{} ห้องของการทดลองที่ 7 (ตารางที่~\ref{tab:exp7} และรูปที่~\ref{fig:finetuneabsrel})
+AbsRel ลดจาก \rsVMETRICABSREL{} เหลือ \rsVFTALLABSREL{} ซึ่งต่ำกว่าใน \rsVWINS{} จาก \rsVN{} ห้อง
+($p=\rsVP$) และ \wone{} เพิ่มจาก \rsVMETRICDELTAONE{} เป็น \rsVFTALLDELTAONE{} ซึ่งสูงกว่าใน \rsVWINSDELTA{} ห้อง
+($p=\rsVPDELTA$) ในห้อง \rsVWINS{} ห้องนั้น AbsRel ของ \ftmain{} เท่ากับ 21 ถึง 64\,\% ของโมเดลเดิม
+ส่วนห้องที่เหลือคือ \rsVEXCEPT{} ซึ่ง AbsRel ของโมเดลเดิมต่ำเป็นอันดับห้าจาก \rsVN{} ห้อง
+AbsRel เปลี่ยนจาก \rsVEXCEPTPRE{} เป็น \rsVEXCEPTFT{} และ \wone{} จาก \rsVEXCEPTDPRE{} เป็น \rsVEXCEPTDFT{}
+เพื่อเปรียบเทียบ LiDAR ของ iPad มี AbsRel \rsVLIDARABSREL{} บนห้องเหล่านี้ และมี Chamfer distance
+\rsLIDARCM~ซม. บนห้องทดสอบ ส่วน \mbox{DA-v2} Large ที่ปรับสเกลด้วยจุดเบาบางได้ \rsSPARSECM~ซม.
+ซึ่งต่ำกว่า \ftmain{} อยู่ \rsFTALLGAPSPARSE~ซม. (ตารางที่~\ref{tab:main})
+
+\subsection{แหล่งของข้อมูลสอน (วัตถุประสงค์ข้อ 2)}\label{sec:finetune}
+โมเดลที่ปรับจูนทั้งสามได้ Chamfer distance \rsFTFAROCM~ซม. เมื่อเรียนจาก Faro (\ftfaro{})
+\rsFTLIDARCM~ซม. เมื่อเรียนจาก LiDAR บนห้องชุดเดียวกัน (\ftlidar{}) และ \rsFTLIDARALLCM~ซม.
+เมื่อเรียนจาก LiDAR บน 24 ห้อง (\ftmain{}) ส่วน AbsRel เท่ากับ \rsFTFAROABSREL{}, \rsFTLIDARABSREL{}
+และ \rsFTLIDARALLABSREL{} ตามลำดับ (ตารางที่~\ref{tab:main}) เมื่อดูรายห้อง (ตารางที่~\ref{tab:perroom}) \ftfaro{} มี Chamfer distance
+ต่ำกว่า \ftlidar{} ในสี่ห้อง ($p=0.69$) และ \ftmain{} ต่ำกว่า \ftlidar{} ในห้าห้อง ($p=0.44$)
+ส่วน \ftfaro{} ต่ำกว่า \ftmain{} ในสามห้อง สูงกว่าในสองห้อง และต่างกันไม่เกิน 0.1~ซม. ในหนึ่งห้อง ($p=0.56$)
+ทั้งสามคู่นี้ไม่มีคู่ใดต่างกันอย่างมีนัยสำคัญ ทั้งใน Chamfer distance, \fscore{}, AbsRel และ \wone{}
+(ค่า p ทุกค่า $\geq 0.09$) รูปที่~\ref{fig:exp6} แสดงความคลาดเคลื่อนของทุกจุดบนพื้นผิว ของทุกโมเดลในทุกห้อง
+
+Depth Pro ซึ่งได้รับความยาวโฟกัสจริงของกล้องและไม่ได้ปรับจูน ได้ \rsDEPTHPROCM~ซม. และ AbsRel
+\rsDEPTHPROABSREL{} ซึ่งสูงกว่า \mbox{DA-v2} Metric-Indoor แบบเดิมครบทั้งหกห้องในทั้งสองค่า ($p=0.031$)
+ในการตรวจบนห้าเฟรมของห้อง 47115299 (หัวข้อ~\ref{sec:sources}) มุมมองภาพแนวนอนที่โมเดลประมาณเอง
+อยู่ระหว่าง 48.0 ถึง \SI{48.7}{\degree} ขณะที่ของกล้องจริงคือ \SI{61.6}{\degree}
+และหลังตัดสเกลของแต่ละเฟรมออกแล้ว AbsRel ยังอยู่ระหว่าง 0.24 ถึง 0.54
+เทียบกับ 0.04 ถึง 0.13 ของ \mbox{DA-v2} Metric-Indoor แบบเดิมบนเฟรมชุดเดียวกัน
+
+\begin{figure}[t]
+\centering
+\newlength{\gridw}\setlength{\gridw}{0.92\columnwidth}
+\pgfmathsetlengthmacro{\gpx}{\gridw/1556}
+\begin{tikzpicture}[x=\gpx, y=-\gpx, font=\scriptsize]
+\node[anchor=north west, inner sep=0] at (0,0) {\includegraphics[width=\gridw]{exp6_finetune_topdown_grid}};
+% cover the per-panel titles of the generated image (run names, per-panel Chamfer)
+\foreach \x/\y in {45/12, 366/59, 684/57, 1001/56, 1318/52, 45/331, 366/322, 684/322, 1001/322, 1318/323,
+                   45/635, 366/635, 684/635, 1001/635, 1318/636, 45/966, 366/985, 684/975, 1001/983, 1318/967,
+                   45/1268, 366/1262, 684/1262, 1001/1262, 1318/1263, 45/1576, 366/1576, 684/1576, 1001/1576, 1318/1577}
+  \fill[white] (\x-6,\y-4) rectangle ++(208,36);
+\foreach \x/\t in {143/Depth Pro, 460/\ftfaro, 777/\ftlidar, 1095/\ftmain, 1412/แบบเดิม}
+  \node[anchor=south] at (\x,4) {\t};
+\foreach \y/\t in {150/42444474, 465/42897743, 790/45261556, 1110/47115299, 1420/47333774, 1730/47429736}
+  \node[rotate=90, anchor=south] at (-4,\y) {\t};
+\end{tikzpicture}
+\caption{การทดลองที่ 6 เมื่อมองจากด้านบน: ทุกจุดบนแบบจำลองที่สร้างได้ ถูกระบายสีตามระยะถึงแบบจำลองจาก Faro
+จากน้ำเงินเข้ม (0~ซม.) ผ่านเขียวและเหลือง ไปจนถึงแดงเข้ม (10~ซม. ขึ้นไป) แถวคือห้องตามรหัสการสแกน
+คอลัมน์คือโมเดล}
+\label{fig:exp6}
+\end{figure}
+
+\subsection{ตำแหน่งเทียบกับแหล่งความลึกที่ใช้ได้ขณะใช้งาน (วัตถุประสงค์ข้อ 3)}\label{sec:exp1}
+\begin{table}[t]
+\centering\small
+\caption{การทดลองที่ 1: กระบวนการเดียวกัน เปลี่ยนเฉพาะแหล่งความลึกและวิธีปรับสเกล บนห้องทดสอบหกห้อง
+แถว \ftmain{} มาจากการทดลองที่ 6 recall ที่ 10, 5 และ 2~ซม. แทนงานภาพรวมของห้อง การวางเฟอร์นิเจอร์
+และการวัดเพื่อรีโนเวต สำหรับแถวที่ใช้ได้ขณะใช้งาน \checkmark: รองรับ ($\geq0.9$), $\sim$: รองรับบางส่วน
+(0.75--0.9), $\times$: ไม่รองรับ ($<0.75$)}
+\label{tab:exp1}
+\setlength{\tabcolsep}{3.5pt}
+\begin{adjustbox}{max width=\columnwidth}
+\begin{tabular}{@{}llrrrlll@{}}
+\toprule
+ & & & & & \multicolumn{3}{c}{recall ที่} \\ \cmidrule(l){6-8}
+แหล่งความลึก & การปรับสเกล & Chamfer & F@5 & AbsRel & 10~ซม. & 5~ซม. & 2~ซม. \\
+\midrule
+Faro & ไม่ปรับ & $\rsGTCM \pm \rsGTSD$ & \rsGTF & 0 & \rsGTRten & \rsGTRfive & \rsGTRtwo \\
+LiDAR ของ iPad & ไม่ปรับ & $\rsLIDARCM \pm \rsLIDARSD$ & \rsLIDARF & \rsLIDARABSREL & \checkmark~\rsLIDARRten & \checkmark~\rsLIDARRfive & $\times$~\rsLIDARRtwo \\
+\mbox{DA-v2} Large & oracle รายเฟรม & $\rsORACLECM \pm \rsORACLESD$ & \rsORACLEF & \rsORACLEABSREL & \rsORACLERten & \rsORACLERfive & \rsORACLERtwo \\
+\mbox{DA-v2} Large & จุดเบาบาง & $\rsSPARSECM \pm \rsSPARSESD$ & \rsSPARSEF & \rsSPARSEABSREL & \checkmark~\rsSPARSERten & $\sim$~\rsSPARSERfive & $\times$~\rsSPARSERtwo \\
+\mbox{DA-v2} Large & ครั้งเดียวต่อห้อง & $\rsSCENECM \pm \rsSCENESD$ & \rsSCENEF & \rsSCENEABSREL & $\times$~\rsSCENERten & $\times$~\rsSCENERfive & $\times$~\rsSCENERtwo \\
+\mbox{DA-v2} Metric-Indoor & ไม่ปรับ & $\rsMETRICCM \pm \rsMETRICSD$ & \rsMETRICF & \rsMETRICABSREL & $\times$~\rsMETRICRten & $\times$~\rsMETRICRfive & $\times$~\rsMETRICRtwo \\
+\textbf{\ftmain{}} & ไม่ปรับ & $\rsFTLIDARALLCM \pm \rsFTLIDARALLSD$ & \rsFTLIDARALLF & \rsFTLIDARALLABSREL & $\times$~\rsFTLIDARALLRten & $\times$~\rsFTLIDARALLRfive & $\times$~\rsFTLIDARALLRtwo \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+เมื่อผ่านกระบวนการเดียวกัน (ตารางที่~\ref{tab:exp1}) ความลึกจาก Faro เองได้ \rsGTCM~ซม.
+LiDAR ของ iPad ได้ \rsLIDARCM~ซม. ซึ่งสูงกว่า Faro $\rsLIDARGAPGTCM \pm \rsLIDARGAPGTSD$~ซม. ต่อห้อง
+และสูงกว่าในทุกห้อง โดย recall ที่ 2~ซม. ของ LiDAR เท่ากับ \rsLIDARRtwo{} เทียบกับ \rsGTRtwo{} ของ Faro
+\mbox{DA-v2} Large ที่ใช้ oracle รายเฟรมได้ \rsORACLECM~ซม. ซึ่งสูงกว่า LiDAR
+$\rsORACLEGAPLIDARCM \pm \rsORACLEGAPLIDARSD$~ซม. ต่อห้อง เมื่อปรับสเกลด้วยจุดเบาบางได้ \rsSPARSECM~ซม.
+และเมื่อปรับครั้งเดียวต่อห้องได้ \rsSCENECM~ซม. โดยอยู่ระหว่าง \rsSCENEc{} ถึง \rsSCENEb~ซม. ในทุกห้อง
+\mbox{DA-v2} Metric-Indoor แบบเดิมได้ \rsMETRICCM~ซม. และในห้อง 45261556 โมเดลนี้มี Chamfer distance
+สูงที่สุดของตัวเอง (\rsMETRICf~ซม.) ขณะที่ oracle รายเฟรมต่ำเป็นอันดับสองในห้องเดียวกัน
+(\rsORACLEf~ซม.; ตารางที่~\ref{tab:perroom}) ตามเกณฑ์ในหัวข้อ~\ref{sec:metrics} LiDAR ของ iPad
+รองรับงานภาพรวมและการวางเฟอร์นิเจอร์ จุดเบาบางรองรับงานภาพรวมและรองรับการวางเฟอร์นิเจอร์ได้บางส่วน
+และไม่มีแถวใดเลย รวมถึง \ftmain{} ที่รองรับการวัดเพื่อรีโนเวต
+
+\begin{table}[t]
+\centering\small
+\caption{ผลรายห้องทดสอบ เรียงตามตารางที่~\ref{tab:scenes} (สี่หลักแรกของรหัสการสแกน)
+\mbox{DA-v2} L คือ \mbox{DA-v2} Large}
+\label{tab:perroom}
+\begin{adjustbox}{max width=\columnwidth}
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+ & 4244 & 4733 & 4711 & 4289 & 4742 & 4526 & เฉลี่ย \\
+\midrule
+\multicolumn{8}{@{}l}{Chamfer distance (ซม.)} \\
+Faro & \rsGTa & \rsGTb & \rsGTc & \rsGTd & \rsGTe & \rsGTf & \rsGTCM \\
+LiDAR ของ iPad & \rsLIDARa & \rsLIDARb & \rsLIDARc & \rsLIDARd & \rsLIDARe & \rsLIDARf & \rsLIDARCM \\
+\mbox{DA-v2} L, oracle รายเฟรม & \rsORACLEa & \rsORACLEb & \rsORACLEc & \rsORACLEd & \rsORACLEe & \rsORACLEf & \rsORACLECM \\
+\mbox{DA-v2} L, จุดเบาบาง & \rsSPARSEa & \rsSPARSEb & \rsSPARSEc & \rsSPARSEd & \rsSPARSEe & \rsSPARSEf & \rsSPARSECM \\
+\mbox{DA-v2} L, ครั้งเดียวต่อห้อง & \rsSCENEa & \rsSCENEb & \rsSCENEc & \rsSCENEd & \rsSCENEe & \rsSCENEf & \rsSCENECM \\
+\mbox{DA-v2} Metric แบบเดิม & \rsMETRICa & \rsMETRICb & \rsMETRICc & \rsMETRICd & \rsMETRICe & \rsMETRICf & \rsMETRICCM \\
+Depth Pro & \rsDEPTHPROa & \rsDEPTHPROb & \rsDEPTHPROc & \rsDEPTHPROd & \rsDEPTHPROe & \rsDEPTHPROf & \rsDEPTHPROCM \\
+\ftfaro & \rsFTFAROa & \rsFTFAROb & \rsFTFAROc & \rsFTFAROd & \rsFTFAROe & \rsFTFAROf & \rsFTFAROCM \\
+\ftlidar & \rsFTLIDARa & \rsFTLIDARb & \rsFTLIDARc & \rsFTLIDARd & \rsFTLIDARe & \rsFTLIDARf & \rsFTLIDARCM \\
+\textbf{\ftmain{}} & \rsFTLIDARALLa & \rsFTLIDARALLb & \rsFTLIDARALLc & \rsFTLIDARALLd & \rsFTLIDARALLe & \rsFTLIDARALLf & \rsFTLIDARALLCM \\
+\midrule
+\multicolumn{8}{@{}l}{AbsRel} \\
+\mbox{DA-v2} Metric แบบเดิม & \rsMETRICARa & \rsMETRICARb & \rsMETRICARc & \rsMETRICARd & \rsMETRICARe & \rsMETRICARf & \rsMETRICSIXABSREL \\
+\textbf{\ftmain{}} & \rsFTALLARa & \rsFTALLARb & \rsFTALLARc & \rsFTALLARd & \rsFTALLARe & \rsFTALLARf & \rsFTLIDARALLABSREL \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\subsection{สเกลรายเฟรม (วัตถุประสงค์ข้อ 4)}\label{sec:scale}
+\begin{table}[t]
+\centering\small
+\caption{สเกลรายเฟรมของโมเดลเดิมและ \ftmain{} บนทุกเฟรมที่ห้าของห้องทดสอบทั้งหก (471 เฟรม)
+อัตราส่วน คือความลึกจาก Faro หารด้วยความลึกที่ทำนาย โดยใช้ค่ามัธยฐานบนพิกเซลของเฟรม}
+\label{tab:scale}
+\begin{adjustbox}{max width=\columnwidth}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+ & แบบเดิม & \textbf{\ftmain{}} \\
+\midrule
+อัตราส่วน ค่ามัธยฐานบนเฟรมของห้อง (ช่วงข้ามห้อง) & 0.69--0.85 & \textbf{0.93--1.21} \\
+อัตราส่วน เปอร์เซ็นไทล์ที่ 95 หารด้วยที่ 5 ภายในห้อง (เฉลี่ย) & 1.55 & 1.52 \\
+AbsRel ไม่ช่วยเลย & 0.381 & \textbf{0.134} \\
+AbsRel สเกลและค่าเลื่อนหนึ่งชุดต่อห้องจาก 10 เฟรม & 0.127 & 0.117 \\
+AbsRel สเกลที่ถูกต้องของทุกเฟรม & 0.045 & 0.051 \\
+AbsRel สเกลและค่าเลื่อนแบบ oracle รายเฟรม & 0.035 & 0.042 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+สำหรับโมเดลเดิม ค่ามัธยฐานของอัตราส่วนความลึกจาก Faro ต่อความลึกที่ทำนาย อยู่ระหว่าง 0.69 ถึง 0.85 ในหกห้อง
+นั่นคือความลึกที่ทำนายเป็น 1.18 ถึง 1.45 เท่าของความลึกจาก Faro ส่วนของ \ftmain{} อยู่ระหว่าง 0.93 ถึง 1.21
+(ตารางที่~\ref{tab:scale}) ภายในห้องเดียว เปอร์เซ็นไทล์ที่ 95 ของอัตราส่วนนี้ มีค่าเฉลี่ยเป็น 1.55 เท่า
+ของเปอร์เซ็นไทล์ที่ 5 สำหรับโมเดลเดิม และ 1.52 เท่าสำหรับ \ftmain{} ในห้อง 47115299 อัตราส่วนของโมเดลเดิม
+อยู่ระหว่าง 0.43 ถึง 1.35 เมื่อไม่ช่วยด้านสเกลเลย \ftmain{} มี AbsRel 0.134 เทียบกับ 0.127
+ของโมเดลเดิมที่ได้สเกลและค่าเลื่อนหนึ่งชุดต่อห้องซึ่งหาจากความลึกของ Faro เมื่อให้สเกลที่ถูกต้องทุกเฟรม
+AbsRel ของโมเดลเดิมลดเหลือ 0.045 ซึ่งเท่ากับ 97\,\% ของระยะทางจากกรณีไม่ช่วยเลยไปถึง oracle
+และของ \ftmain{} ลดเหลือ 0.051
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.95\columnwidth, height=0.68\columnwidth, xmode=log, ymode=log, xmin=0.3, xmax=6, ymin=0.2,
+  ymax=5, xtick={0.5,1,2,4}, xticklabels={0.5,1,2,4}, ytick={0.25,0.5,1,2,4}, yticklabels={0.25,0.5,1,2,4},
+  tick label style={font=\scriptsize}, label style={font=\footnotesize}, grid=major, grid style={black!8},
+  xlabel={ค่ามัธยฐานของความลึกจาก Faro ในเฟรม (ม.)}, ylabel={สเกลรายเฟรม / สเกลรายห้อง}]
+\addplot[black!55, dashed, domain=0.3:6, samples=2] {1};
+\addplot[only marks, mark=*, mark size=0.8pt, blue!70!black, fill opacity=0.5, draw opacity=0.5]
+  table[x=depth, y=ratio] {../figures/data/scale_vs_depth.dat};
+\end{axis}
+\end{tikzpicture}
+\caption{โมเดลความลึกสัมพัทธ์ \mbox{DA-v2} Large บนทุกเฟรมที่ห้าของห้องทดสอบทั้งหก: สเกลแบบ oracle รายเฟรม
+หารด้วยสเกลที่ปรับครั้งเดียวต่อห้อง เทียบกับค่ามัธยฐานของความลึกจาก Faro ในเฟรมนั้น (469 เฟรม
+ไม่รวมสองเฟรมที่การหาค่าไม่ได้สเกลที่เป็นบวก) สหสัมพันธ์ของ Pearson ระหว่างลอการิทึมของสองค่าคือ $-0.37$}
+\label{fig:scalevsdepth}
+\end{figure}
+
+สำหรับโมเดลความลึกสัมพัทธ์ \mbox{DA-v2} Large สเกลแบบ oracle รายเฟรมแกว่งภายในห้องเดียว 2.6 ถึง 4.9 เท่า
+ระหว่างเปอร์เซ็นไทล์ที่ 5 กับที่ 95 สหสัมพันธ์ของสเกลนี้กับเวลาของเฟรมในการสแกน อยู่ระหว่าง $-0.40$ ถึง $+0.30$
+โดยเป็นบวกในสามห้องและเป็นลบในสามห้อง ส่วนสหสัมพันธ์กับค่ามัธยฐานของความลึกจาก Faro ในเฟรมนั้น
+อยู่ระหว่าง $-0.75$ ถึง $-0.27$ และเป็นลบครบทั้งหกห้อง (รูปที่~\ref{fig:scalevsdepth})
+
+\subsection{ความไวของกระบวนการ (การทดลองที่ 2--5)}\label{sec:secondary}
+\begin{table}[t]
+\centering\small
+\caption{การทดลองด้านความไวบนห้องทดสอบทั้งหก เปลี่ยนค่าตั้งเพียงค่าเดียว ส่วนอื่นเหมือนบทที่~\ref{sec:method}}
+\label{tab:secondary}
+\begin{tabularx}{\columnwidth}{@{}l>{\raggedright\arraybackslash}X@{}}
+\toprule
+การทดลอง & ผล \\
+\midrule
+2 ขนาด voxel (Faro) & 2 / 4 / 8~ซม.: Chamfer 1.2 / 2.1 / 2.8~ซม. การรวมใช้เวลาไม่เกิน 2~วินาทีต่อห้องในทุกขนาด \\
+3 ระยะห่างของเฟรม (Faro) & ทุกเฟรม / ทุกเฟรมที่ 5 / ทุกเฟรมที่ 10 (4 / 0.8 / 0.4 เฟรมต่อวินาที):
+ความแม่นยำ \rsSTRGTONEACC{} / \rsSTRGTFIVEACC{} / \rsSTRGTTENACC{}~ซม.
+ความครบถ้วน \rsSTRGTONECOMP{} / \rsSTRGTFIVECOMP{} / \rsSTRGTTENCOMP{}~ซม.
+\fscore{} \rsSTRGTONEF{} / \rsSTRGTFIVEF{} / \rsSTRGTTENF{} \\
+4 ขนาดโมเดล (oracle รายเฟรม) & \mbox{DA-v2} Large (335~ล้านพารามิเตอร์) / Small (25~ล้าน) / MiDaS small (21~ล้าน):
+Chamfer \rsDALARGECM{} / \rsDASMALLCM{} / \rsMIDASCM{}~ซม. ใช้เวลา \rsDALARGESCAN{} / \rsDASMALLSCAN{} /
+\rsMIDASSCAN{}~วินาทีต่อห้อง \\
+5 ความเชื่อมั่นของ LiDAR & Chamfer 3.04~ซม. เมื่อใช้ทุกพิกเซล \rsCONFONECM{}~ซม. เมื่อตัดพิกเซลความเชื่อมั่นต่ำ
+\rsCONFTWOCM{}~ซม. เมื่อใช้เฉพาะความเชื่อมั่นสูง (ความครบถ้วน 3.85 $\rightarrow$ \rsCONFTWOCOMP{}~ซม.)
+และ \rsWOTFCM{} กับ \rsWZOTCM{}~ซม. เมื่อถ่วงน้ำหนักพิกเซลตามความเชื่อมั่น \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+ตารางที่~\ref{tab:secondary} แสดงผลการทดลองด้านความไว \mbox{DA-v2} Small ได้ Chamfer distance
+สูงกว่า \mbox{DA-v2} Large 1.0~ซม. และเร็วกว่า 6.4 เท่าต่อห้อง ที่สี่เฟรมต่อวินาที
+การประมวลผลใช้เวลา 3.6 เท่าของความยาววิดีโอเมื่อใช้ \mbox{DA-v2} Large และ 0.6 เท่าเมื่อใช้ \mbox{DA-v2} Small
+โดยการรวมเป็นแบบจำลองใช้เวลาไม่ถึง 3\,\% ของทั้งหมด

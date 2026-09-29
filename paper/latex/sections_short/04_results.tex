@@ -1,0 +1,275 @@
+\section{Results}\label{sec:results}
+% Thai version: 04_results_th.tex (main_short_th.tex); keep the two in step.
+% Facts only: interpretation belongs to Section V. p-values without a macro were computed with the exact
+% two-sided Wilcoxon test on the per-room values of experiments/results/summary.csv (2026-09-29).
+
+This section reports the measurements of the experiments in Table~\ref{tab:exps}, grouped by objective; what they
+mean is discussed in Section~\ref{sec:discussion}. Distances are in centimetres, values are means over rooms, and
+$\pm$ gives the standard deviation over rooms. When two models are compared, we state in how many rooms one is better
+and give the p-value of the exact Wilcoxon signed-rank test on the per-room values (Section~\ref{sec:metrics}).
+
+\begin{table*}[t]
+\centering\small
+\caption{Exp.~6 on the six test rooms: colour images only, no scale alignment, measured against Faro. The last two
+rows need a sensor at run time and are given for reference (Exp.~1). Acc.: accuracy; Compl.: completeness; F@5 and
+R@10: F-score at \SI{5}{cm} and recall at \SI{10}{cm}.}
+\label{tab:main}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}llrrrrrrrr@{}}
+\toprule
+Model & Labels for training & Chamfer & Acc. & Compl. & F@5 & R@10 & AbsRel & \wone{} & RMSE \\
+\midrule
+DA-v2 Metric-Indoor, pretrained & --- (rendered rooms, Hypersim) & $\rsMETRICCM \pm \rsMETRICSD$ & \rsMETRICACC & \rsMETRICCOMP & \rsMETRICF & \rsMETRICRten & \rsMETRICSIXABSREL & \rsMETRICSIXDELTAONE & \rsMETRICSIXRMSE \\
+Depth Pro, true focal length & --- & $\rsDEPTHPROCM \pm \rsDEPTHPROSD$ & \rsDEPTHPROACC & \rsDEPTHPROCOMP & \rsDEPTHPROF & \rsDEPTHPRORten & \rsDEPTHPROABSREL & \rsDEPTHPRODELTAONE & \rsDEPTHPRORMSE \\
+\ftfaro{} & Faro, 10 rooms & $\rsFTFAROCM \pm \rsFTFAROSD$ & \rsFTFAROACC & \rsFTFAROCOMP & \rsFTFAROF & \rsFTFARORten & \rsFTFAROABSREL & \rsFTFARODELTAONE & \rsFTFARORMSE \\
+\ftlidar{} & iPad LiDAR, 10 rooms & $\rsFTLIDARCM \pm \rsFTLIDARSD$ & \rsFTLIDARACC & \rsFTLIDARCOMP & \rsFTLIDARF & \rsFTLIDARRten & \rsFTLIDARABSREL & \rsFTLIDARDELTAONE & \rsFTLIDARRMSE \\
+\textbf{\ftmain{}} & iPad LiDAR, 24 rooms & $\mathbf{\rsFTLIDARALLCM \pm \rsFTLIDARALLSD}$ & \textbf{\rsFTLIDARALLACC} & \textbf{\rsFTLIDARALLCOMP} & \textbf{\rsFTLIDARALLF} & \textbf{\rsFTLIDARALLRten} & \textbf{\rsFTLIDARALLABSREL} & \textbf{\rsFTLIDARALLDELTAONE} & \textbf{\rsFTLIDARALLRMSE} \\
+\midrule
+\emph{ref.:} iPad LiDAR (sensor) & --- & $\rsLIDARCM \pm \rsLIDARSD$ & \rsLIDARACC & \rsLIDARCOMP & \rsLIDARF & \rsLIDARRten & \rsLIDARABSREL & \rsLIDARDELTAONE & \rsLIDARRMSE \\
+\emph{ref.:} DA-v2 Large $+$ sparse points & --- & $\rsSPARSECM \pm \rsSPARSESD$ & \rsSPARSEACC & \rsSPARSECOMP & \rsSPARSEF & \rsSPARSERten & \rsSPARSEABSREL & \rsSPARSEDELTAONE & \rsSPARSERMSE \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}
+
+\subsection{Fine-tuned against pretrained (objective 1)}\label{sec:main}
+On the six test rooms (Table~\ref{tab:main}), \ftmain{} lowered the Chamfer distance from \rsMETRICCM{} to
+\SI{\rsFTLIDARALLCM}{cm}. It was lower in all six rooms, by \SI{\rsMAINDIFFCM \pm \rsMAINDIFFSD}{cm} ($p=\rsMAINP$,
+the smallest p-value attainable with six rooms). Accuracy fell from \rsMETRICACC{} to \SI{\rsFTLIDARALLACC}{cm} and
+completeness from \rsMETRICCOMP{} to \SI{\rsFTLIDARALLCOMP}{cm}, and \fscore{} rose from \rsMETRICF{} to
+\rsFTLIDARALLF{}, higher in all six rooms ($p=0.031$). Per frame, AbsRel fell from \rsMETRICSIXABSREL{} to
+\rsFTLIDARALLABSREL{}, lower in all six rooms ($p=0.031$, Table~\ref{tab:perroom}), and \wone{} rose from
+\rsMETRICSIXDELTAONE{} to \rsFTLIDARALLDELTAONE{}, higher in five rooms ($p=0.063$); in room 47115299 it fell from 0.74
+to 0.60.
+
+\begin{table}[t]
+\centering\small
+\caption{Exp.~7: per-frame metrics on \rsVN{} further rooms of the Validation fold (\rsVFRAMES{} frames), used for
+nothing else; mean $\pm$ std over rooms.}
+\label{tab:exp7}
+\begin{adjustbox}{max width=\columnwidth}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Model & AbsRel & \wone{} & RMSE (cm) \\
+\midrule
+DA-v2 Metric-Indoor, pretrained & $\rsVMETRICABSREL \pm \rsVMETRICABSRELSD$ & $\rsVMETRICDELTAONE \pm \rsVMETRICDELTAONESD$ & \rsVMETRICRMSE \\
+\textbf{\ftmain{}} & $\mathbf{\rsVFTALLABSREL \pm \rsVFTALLABSRELSD}$ & $\mathbf{\rsVFTALLDELTAONE \pm \rsVFTALLDELTAONESD}$ & \textbf{\rsVFTALLRMSE} \\
+\emph{ref.:} iPad LiDAR (sensor) & $\rsVLIDARABSREL \pm \rsVLIDARABSRELSD$ & $\rsVLIDARDELTAONE \pm \rsVLIDARDELTAONESD$ & \rsVLIDARRMSE \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.8\columnwidth, height=0.8\columnwidth, xmin=0, xmax=0.95, ymin=0, ymax=0.95,
+  xtick={0,0.2,0.4,0.6,0.8}, ytick={0,0.2,0.4,0.6,0.8}, tick label style={font=\scriptsize},
+  label style={font=\footnotesize}, xlabel={AbsRel, pretrained}, ylabel={AbsRel, \ftmain{}},
+  grid=major, grid style={black!8}, legend pos=north west, legend cell align=left,
+  legend style={font=\scriptsize, draw=none, fill=none}]
+\addplot[black!55, dashed, domain=0:0.95, samples=2, forget plot] {x};
+\node[font=\scriptsize, text=black!60, rotate=45, anchor=south] at (axis cs:0.8,0.8) {no change};
+\addplot[only marks, mark=square*, mark size=1.5pt, blue!75!black] table[x=pre, y=ft] {../figures/data/finetune_absrel_valfold.dat};
+\addlegendentry{\rsVN{} further rooms (Exp.~7)}
+\addplot[only marks, mark=*, mark size=2pt, orange!90!black] table[x=pre, y=ft] {../figures/data/finetune_absrel_test.dat};
+\addlegendentry{6 test rooms (Exp.~6)}
+\end{axis}
+\end{tikzpicture}
+\caption{Per-room AbsRel against Faro: pretrained DA-v2 Metric-Indoor (x) and \ftmain{} (y). Points below the
+dashed diagonal are rooms where \ftmain{} has the lower AbsRel.}
+\label{fig:finetuneabsrel}
+\end{figure}
+
+On the \rsVN{} further rooms of Exp.~7 (Table~\ref{tab:exp7}, Fig.~\ref{fig:finetuneabsrel}), AbsRel fell from
+\rsVMETRICABSREL{} to \rsVFTALLABSREL{}, lower in \rsVWINS{} of the \rsVN{} rooms ($p=\rsVP$), and \wone{} rose from
+\rsVMETRICDELTAONE{} to \rsVFTALLDELTAONE{}, higher in \rsVWINSDELTA{} rooms ($p=\rsVPDELTA$). In those \rsVWINS{}
+rooms, the AbsRel of \ftmain{} was 21 to 64\,\% of the pretrained model's. In the remaining room, \rsVEXCEPT{}, whose
+pretrained AbsRel was the fifth lowest of the \rsVN{}, AbsRel went from \rsVEXCEPTPRE{} to \rsVEXCEPTFT{} and
+\wone{} from \rsVEXCEPTDPRE{} to \rsVEXCEPTDFT{}. For comparison, iPad LiDAR has AbsRel \rsVLIDARABSREL{} on these rooms
+and a Chamfer distance of \SI{\rsLIDARCM}{cm} on the test rooms, and DA-v2 Large aligned on sparse points has
+\SI{\rsSPARSECM}{cm}, \SI{\rsFTALLGAPSPARSE}{cm} less than \ftmain{} (Table~\ref{tab:main}).
+
+\subsection{Source of the labels (objective 2)}\label{sec:finetune}
+The three fine-tunes reached Chamfer distances of \SI{\rsFTFAROCM}{cm} with Faro labels (\ftfaro{}),
+\SI{\rsFTLIDARCM}{cm} with LiDAR labels on the same rooms (\ftlidar{}) and \SI{\rsFTLIDARALLCM}{cm} with LiDAR labels
+on 24 rooms (\ftmain{}), and AbsRel of \rsFTFAROABSREL{}, \rsFTLIDARABSREL{} and \rsFTLIDARALLABSREL{}
+(Table~\ref{tab:main}). Per room (Table~\ref{tab:perroom}), \ftfaro{} had a lower Chamfer distance than \ftlidar{} in
+four rooms ($p=0.69$) and \ftmain{} lower than \ftlidar{} in five ($p=0.44$); \ftfaro{} was lower than \ftmain{} in
+three rooms, higher in two and within \SI{0.1}{cm} in one ($p=0.56$). For none of these three pairs was the
+difference in Chamfer distance, \fscore{}, AbsRel or \wone{} significant (every $p\geq0.09$). Fig.~\ref{fig:exp6}
+shows the error of each surface point for every row and room.
+
+Depth Pro, given the camera's true focal length and no fine-tuning, reached \SI{\rsDEPTHPROCM}{cm} and AbsRel
+\rsDEPTHPROABSREL{}, both higher than the pretrained DA-v2 Metric-Indoor in all six rooms ($p=0.031$). In the check on
+five frames of room 47115299 (Section~\ref{sec:sources}), its own estimate of the horizontal field of view was 48.0 to
+\SI{48.7}{\degree}, against \SI{61.6}{\degree} for the camera, and after removing the scale of each frame its AbsRel
+was 0.24 to 0.54, against 0.04 to 0.13 for pretrained DA-v2 Metric-Indoor on the same frames.
+
+\begin{figure}[t]
+\centering
+\newlength{\gridw}\setlength{\gridw}{0.92\columnwidth}
+\pgfmathsetlengthmacro{\gpx}{\gridw/1556}
+\begin{tikzpicture}[x=\gpx, y=-\gpx, font=\scriptsize]
+\node[anchor=north west, inner sep=0] at (0,0) {\includegraphics[width=\gridw]{exp6_finetune_topdown_grid}};
+% cover the per-panel titles of the generated image (run names, per-panel Chamfer)
+\foreach \x/\y in {45/12, 366/59, 684/57, 1001/56, 1318/52, 45/331, 366/322, 684/322, 1001/322, 1318/323,
+                   45/635, 366/635, 684/635, 1001/635, 1318/636, 45/966, 366/985, 684/975, 1001/983, 1318/967,
+                   45/1268, 366/1262, 684/1262, 1001/1262, 1318/1263, 45/1576, 366/1576, 684/1576, 1001/1576, 1318/1577}
+  \fill[white] (\x-6,\y-4) rectangle ++(208,36);
+\foreach \x/\t in {143/Depth Pro, 460/\ftfaro, 777/\ftlidar, 1095/\ftmain, 1412/pretrained}
+  \node[anchor=south] at (\x,4) {\t};
+\foreach \y/\t in {150/42444474, 465/42897743, 790/45261556, 1110/47115299, 1420/47333774, 1730/47429736}
+  \node[rotate=90, anchor=south] at (-4,\y) {\t};
+\end{tikzpicture}
+\caption{Exp.~6 seen from above: every point of the reconstructed mesh coloured by its distance to the Faro mesh, from
+dark blue (\SI{0}{cm}) through green and yellow to dark red (\SI{10}{cm} or more). Rows are rooms, by scan ID;
+columns are models.}
+\label{fig:exp6}
+\end{figure}
+
+\subsection{Place among the run-time depth sources (objective 3)}\label{sec:exp1}
+\begin{table}[t]
+\centering\small
+\caption{Exp.~1: the same pipeline with only the depth source and the scale alignment changed, six test rooms;
+\ftmain{} from Exp.~6. Recall at 10, 5 and \SI{2}{cm} stands for a room overview, furniture placement and renovation
+measurement; for the rows usable at run time, \checkmark: served ($\geq0.9$), $\sim$: partly (0.75--0.9),
+$\times$: not ($<0.75$).}
+\label{tab:exp1}
+\setlength{\tabcolsep}{3.5pt}
+\begin{adjustbox}{max width=\columnwidth}
+\begin{tabular}{@{}llrrrlll@{}}
+\toprule
+ & & & & & \multicolumn{3}{c}{Recall at} \\ \cmidrule(l){6-8}
+Source & Alignment & Chamfer & F@5 & AbsRel & \SI{10}{cm} & \SI{5}{cm} & \SI{2}{cm} \\
+\midrule
+Faro & none & $\rsGTCM \pm \rsGTSD$ & \rsGTF & 0 & \rsGTRten & \rsGTRfive & \rsGTRtwo \\
+iPad LiDAR & none & $\rsLIDARCM \pm \rsLIDARSD$ & \rsLIDARF & \rsLIDARABSREL & \checkmark~\rsLIDARRten & \checkmark~\rsLIDARRfive & $\times$~\rsLIDARRtwo \\
+DA-v2 Large & per-frame oracle & $\rsORACLECM \pm \rsORACLESD$ & \rsORACLEF & \rsORACLEABSREL & \rsORACLERten & \rsORACLERfive & \rsORACLERtwo \\
+DA-v2 Large & sparse points & $\rsSPARSECM \pm \rsSPARSESD$ & \rsSPARSEF & \rsSPARSEABSREL & \checkmark~\rsSPARSERten & $\sim$~\rsSPARSERfive & $\times$~\rsSPARSERtwo \\
+DA-v2 Large & once per room & $\rsSCENECM \pm \rsSCENESD$ & \rsSCENEF & \rsSCENEABSREL & $\times$~\rsSCENERten & $\times$~\rsSCENERfive & $\times$~\rsSCENERtwo \\
+DA-v2 Metric-Indoor & none & $\rsMETRICCM \pm \rsMETRICSD$ & \rsMETRICF & \rsMETRICABSREL & $\times$~\rsMETRICRten & $\times$~\rsMETRICRfive & $\times$~\rsMETRICRtwo \\
+\textbf{\ftmain{}} & none & $\rsFTLIDARALLCM \pm \rsFTLIDARALLSD$ & \rsFTLIDARALLF & \rsFTLIDARALLABSREL & $\times$~\rsFTLIDARALLRten & $\times$~\rsFTLIDARALLRfive & $\times$~\rsFTLIDARALLRtwo \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+Through the same pipeline (Table~\ref{tab:exp1}), Faro depth itself gave \SI{\rsGTCM}{cm}. iPad LiDAR gave
+\SI{\rsLIDARCM}{cm}, \SI{\rsLIDARGAPGTCM \pm \rsLIDARGAPGTSD}{cm} above Faro per room and above it in every room; its
+recall at \SI{2}{cm} was \rsLIDARRtwo{}, against \rsGTRtwo{} for Faro. DA-v2 Large with the per-frame oracle gave
+\SI{\rsORACLECM}{cm}, \SI{\rsORACLEGAPLIDARCM \pm \rsORACLEGAPLIDARSD}{cm} above LiDAR per room; aligned on sparse points
+it gave \SI{\rsSPARSECM}{cm}, and aligned once per room \SI{\rsSCENECM}{cm}, between \rsSCENEc{} and
+\SI{\rsSCENEb}{cm} in every room. The pretrained DA-v2 Metric-Indoor gave \SI{\rsMETRICCM}{cm}; in room 45261556 it had
+its highest Chamfer distance (\SI{\rsMETRICf}{cm}) while the per-frame oracle had its second lowest there
+(\SI{\rsORACLEf}{cm}; Table~\ref{tab:perroom}). By the thresholds of Section~\ref{sec:metrics}, iPad LiDAR served the
+overview and furniture placement, sparse points served the overview and partly served furniture placement, and no
+row, \ftmain{} included, served renovation measurement.
+
+\begin{table}[t]
+\centering\small
+\caption{Per test room, in the order of Table~\ref{tab:scenes} (first four digits of the scan ID). DA-v2 L: DA-v2
+Large.}
+\label{tab:perroom}
+\begin{adjustbox}{max width=\columnwidth}
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+ & 4244 & 4733 & 4711 & 4289 & 4742 & 4526 & mean \\
+\midrule
+\multicolumn{8}{@{}l}{\emph{Chamfer distance (cm)}} \\
+Faro & \rsGTa & \rsGTb & \rsGTc & \rsGTd & \rsGTe & \rsGTf & \rsGTCM \\
+iPad LiDAR & \rsLIDARa & \rsLIDARb & \rsLIDARc & \rsLIDARd & \rsLIDARe & \rsLIDARf & \rsLIDARCM \\
+DA-v2 L, per-frame oracle & \rsORACLEa & \rsORACLEb & \rsORACLEc & \rsORACLEd & \rsORACLEe & \rsORACLEf & \rsORACLECM \\
+DA-v2 L, sparse points & \rsSPARSEa & \rsSPARSEb & \rsSPARSEc & \rsSPARSEd & \rsSPARSEe & \rsSPARSEf & \rsSPARSECM \\
+DA-v2 L, once per room & \rsSCENEa & \rsSCENEb & \rsSCENEc & \rsSCENEd & \rsSCENEe & \rsSCENEf & \rsSCENECM \\
+pretrained DA-v2 Metric & \rsMETRICa & \rsMETRICb & \rsMETRICc & \rsMETRICd & \rsMETRICe & \rsMETRICf & \rsMETRICCM \\
+Depth Pro & \rsDEPTHPROa & \rsDEPTHPROb & \rsDEPTHPROc & \rsDEPTHPROd & \rsDEPTHPROe & \rsDEPTHPROf & \rsDEPTHPROCM \\
+\ftfaro & \rsFTFAROa & \rsFTFAROb & \rsFTFAROc & \rsFTFAROd & \rsFTFAROe & \rsFTFAROf & \rsFTFAROCM \\
+\ftlidar & \rsFTLIDARa & \rsFTLIDARb & \rsFTLIDARc & \rsFTLIDARd & \rsFTLIDARe & \rsFTLIDARf & \rsFTLIDARCM \\
+\textbf{\ftmain{}} & \rsFTLIDARALLa & \rsFTLIDARALLb & \rsFTLIDARALLc & \rsFTLIDARALLd & \rsFTLIDARALLe & \rsFTLIDARALLf & \rsFTLIDARALLCM \\
+\midrule
+\multicolumn{8}{@{}l}{\emph{AbsRel}} \\
+pretrained DA-v2 Metric & \rsMETRICARa & \rsMETRICARb & \rsMETRICARc & \rsMETRICARd & \rsMETRICARe & \rsMETRICARf & \rsMETRICSIXABSREL \\
+\textbf{\ftmain{}} & \rsFTALLARa & \rsFTALLARb & \rsFTALLARc & \rsFTALLARd & \rsFTALLARe & \rsFTALLARf & \rsFTLIDARALLABSREL \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\subsection{Per-frame scale (objective 4)}\label{sec:scale}
+\begin{table}[t]
+\centering\small
+\caption{Per-frame scale of the pretrained model and \ftmain{}, every fifth frame of the six test rooms (471 frames).
+Ratio: Faro depth over predicted depth, median over the pixels of a frame.}
+\label{tab:scale}
+\begin{adjustbox}{max width=\columnwidth}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+ & Pretrained & \textbf{\ftmain{}} \\
+\midrule
+ratio, median over the frames of a room (range over rooms) & 0.69--0.85 & \textbf{0.93--1.21} \\
+ratio, 95th over 5th percentile within a room (mean) & 1.55 & 1.52 \\
+AbsRel, no help & 0.381 & \textbf{0.134} \\
+AbsRel, one scale and offset per room from 10 frames & 0.127 & 0.117 \\
+AbsRel, the right scale on every frame & 0.045 & 0.051 \\
+AbsRel, per-frame oracle scale and offset & 0.035 & 0.042 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+For the pretrained model, the median ratio of Faro to predicted depth was 0.69 to 0.85 in the six rooms, so its
+predicted depth was 1.18 to 1.45 times the Faro depth; for \ftmain{} the ratio was 0.93 to 1.21
+(Table~\ref{tab:scale}). Within a room, the 95th percentile of the ratio was on average 1.55 times its 5th percentile
+for the pretrained model and 1.52 times for \ftmain{}; in room 47115299 the pretrained model's ratio ranged from 0.43 to
+1.35. With no help, \ftmain{} had AbsRel 0.134, against 0.127 for the pretrained model with one scale and offset per
+room fitted on Faro depth. With the right scale on every frame, AbsRel fell to 0.045 for the pretrained model, 97\,\%
+of the way from no help to the oracle, and to 0.051 for \ftmain{}.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.95\columnwidth, height=0.68\columnwidth, xmode=log, ymode=log, xmin=0.3, xmax=6, ymin=0.2,
+  ymax=5, xtick={0.5,1,2,4}, xticklabels={0.5,1,2,4}, ytick={0.25,0.5,1,2,4}, yticklabels={0.25,0.5,1,2,4},
+  tick label style={font=\scriptsize}, label style={font=\footnotesize}, grid=major, grid style={black!8},
+  xlabel={median Faro depth of the frame (m)}, ylabel={per-frame scale / per-room scale}]
+\addplot[black!55, dashed, domain=0.3:6, samples=2] {1};
+\addplot[only marks, mark=*, mark size=0.8pt, blue!70!black, fill opacity=0.5, draw opacity=0.5]
+  table[x=depth, y=ratio] {../figures/data/scale_vs_depth.dat};
+\end{axis}
+\end{tikzpicture}
+\caption{Relative model DA-v2 Large, every fifth frame of the six test rooms: the per-frame oracle scale divided by
+the once-per-room scale, against the median Faro depth of the frame (469 frames; two frames whose fit gave no positive
+scale are left out). Pearson correlation of the logarithms: $-0.37$.}
+\label{fig:scalevsdepth}
+\end{figure}
+
+For the relative model DA-v2 Large, the per-frame oracle scale varied within a room by a factor of 2.6 to 4.9 between
+its 5th and 95th percentiles. Its correlation with the frame's time in the scan ranged from $-0.40$ to $+0.30$, positive
+in three rooms and negative in three; its correlation with the frame's median Faro depth ranged from $-0.75$ to
+$-0.27$, negative in all six (Fig.~\ref{fig:scalevsdepth}).
+
+\subsection{Sensitivity of the pipeline (Exp.~2--5)}\label{sec:secondary}
+\begin{table}[t]
+\centering\small
+\caption{Sensitivity experiments on the six test rooms; one setting changes, everything else as in Section~\ref{sec:method}.}
+\label{tab:secondary}
+\begin{tabularx}{\columnwidth}{@{}l>{\raggedright\arraybackslash}X@{}}
+\toprule
+Exp. & Result \\
+\midrule
+2 voxel size (Faro) & 2 / 4 / \SI{8}{cm}: Chamfer 1.2 / 2.1 / \SI{2.8}{cm}; fusion at most \SI{2}{s} per room at every size \\
+3 frame stride (Faro) & every 1st / 5th / 10th frame (4 / 0.8 / 0.4 per second): accuracy \rsSTRGTONEACC{} / \rsSTRGTFIVEACC{} / \SI{\rsSTRGTTENACC}{cm},
+completeness \rsSTRGTONECOMP{} / \rsSTRGTFIVECOMP{} / \SI{\rsSTRGTTENCOMP}{cm}, \fscore{} \rsSTRGTONEF{} / \rsSTRGTFIVEF{} / \rsSTRGTTENF{} \\
+4 model size (per-frame oracle) & DA-v2 Large (335\,M parameters) / Small (25\,M) / MiDaS small (21\,M): Chamfer
+\rsDALARGECM{} / \rsDASMALLCM{} / \SI{\rsMIDASCM}{cm}; \rsDALARGESCAN{} / \rsDASMALLSCAN{} / \SI{\rsMIDASSCAN}{s} per room \\
+5 LiDAR confidence & Chamfer \SI{3.04}{cm} with every pixel, \SI{\rsCONFONECM}{cm} without low-confidence pixels,
+\SI{\rsCONFTWOCM}{cm} with high-confidence pixels only (completeness 3.85 $\rightarrow$ \SI{\rsCONFTWOCOMP}{cm}),
+\rsWOTFCM{} and \SI{\rsWZOTCM}{cm} with pixels weighted by confidence \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Table~\ref{tab:secondary} lists the sensitivity experiments. DA-v2 Small gave a Chamfer distance \SI{1.0}{cm} higher
+than DA-v2 Large and was 6.4 times faster per room; at four frames per second, processing took 3.6 times the length of
+the video with DA-v2 Large and 0.6 times with DA-v2 Small, of which fusion was less than 3\,\%.

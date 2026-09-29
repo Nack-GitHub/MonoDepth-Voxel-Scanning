@@ -1,48 +1,33 @@
 \section{Discussion}\label{sec:discussion}
+% Ch.4 revision (2026-09-29): the per-frame scale table, the scale-vs-depth figure and the use-case table moved to
+% Results (tab:scale, fig:scalevsdepth, tab:exp1); this chapter is revised next (Ch.5).
+
+\subsection{The teacher and the camera}\label{sec:teacher}
+The laser teacher is not measurably better than the LiDAR teacher (Section~\ref{sec:finetune}). Because \ftfaro{} and
+\ftlidar{} also differ in the number of views, the honest claim is that a phone's depth sensor can replace the laser as
+the teacher at no measurable cost on these rooms---not that the two are equal. Fourteen extra LiDAR-only rooms do not
+help measurably either; \ftmain{} is kept as the main model because it was best on validation and is the only recipe
+whose labels scale without a laser. Knowing the camera does not rescue metric depth: Depth Pro with the true focal length is
+far worse than the pretrained DA-v2 Metric, and even with the scale removed per frame its AbsRel stays several times
+higher; the claim is about this model on this low-resolution indoor input, not about intrinsics-conditioned models in
+general.
 
 \subsection{Why fine-tuning works---and why it is not enough}\label{sec:whyft}
-We analysed every fifth frame of the six test rooms (471 frames): per frame, the GT/pred ratio and AbsRel under
-increasing amounts of scale help (Table~\ref{tab:whyft}).
-\begin{table}[t]
-\centering\small
-\caption{Per-frame scale of the pretrained metric model vs.\ \ftmain{} (six test rooms, every fifth frame).}
-\label{tab:whyft}
-\begin{adjustbox}{max width=\columnwidth}
-\begin{tabular}{@{}lrr@{}}
-\toprule
- & Pretrained & \textbf{\ftmain{}} \\
-\midrule
-median(GT/pred) per room & 0.69--0.85 & \textbf{0.93--1.21} \\
-per-frame swing within a room (p95/p5) & 1.55$\times$ & 1.52$\times$ \\
-AbsRel, raw & 0.381 & \textbf{0.134} \\
-AbsRel, one $(S,T)$ per room from 10 GT frames & 0.127 & 0.117 \\
-AbsRel, right scale on every frame & 0.045 & 0.051 \\
-AbsRel, oracle $(s,t)$ per frame & 0.035 & 0.042 \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{table}
-\textbf{Fine-tuning learns the domain's multiplier.} The pretrained model is 15--31\,\% too far in every room; \ftmain{} is
-within $\sim$20\,\% in both directions. \ftmain{} without calibration (0.134) is on par with the pretrained model given a
-per-room scale fitted on ground truth (0.127): what a one-off calibration provides has moved into the head's weights,
-learned from LiDAR in other rooms. With the encoder frozen, shape barely changes (oracle 0.035 vs.\ 0.042).
+\textbf{Fine-tuning learns the domain's multiplier.} The pretrained model places every room too far, by a factor of
+1.18--1.45; \ftmain{} is within $\sim$20\,\% in both directions (Table~\ref{tab:scale}). \ftmain{} without calibration
+(0.134) is on par with the pretrained model given a per-room scale fitted on ground truth (0.127): what a one-off
+calibration provides has moved into the head's weights, learned from LiDAR in other rooms. With the encoder frozen,
+shape barely changes (oracle 0.035 vs.\ 0.042).
 \textbf{The per-frame swing remains.} Within one room, frames at p5 and p95 still need factors $\sim$1.5$\times$ apart,
 as before fine-tuning; with the right scale on every frame \ftmain{}'s AbsRel would drop to 0.051. That information is not in
 a single image and does not come from a better teacher; it must come from metric data at run time. Fine-tuning and
 per-frame metric points are therefore complementary.
 
 \subsection{Scale follows the view, not time}\label{sec:drift}\label{sec:metric}
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.9\columnwidth]{scale_vs_depth}
-\caption{Per-frame oracle scale divided by the per-scene scale (DA-v2 Large, all scenes) against the frame's median
-GT depth: the scale a frame needs depends on how close the camera is to what it sees.}
-\label{fig:scalevsdepth}
-\end{figure}
-Refitting $(s,t)$ on every fifth frame of the relative model shows why one calibration per scene fails. Within one
-scan the central 90\,\% of frames need scales 2.6--4.9$\times$ apart; the correlation of scale with time flips sign
-between scenes ($-0.33$ to $+0.30$), so this is \emph{not cumulative drift}, whereas the correlation with the frame's
-median depth is negative in every scene ($-0.27$ to $-0.75$, Fig.~\ref{fig:scalevsdepth}). The worst frames are
+The relative model shows why one calibration per scene fails (Section~\ref{sec:scale}). Within one scan the central
+90\,\% of frames need scales 2.6--4.9$\times$ apart; the correlation of scale with time flips sign between scenes
+($-0.40$ to $+0.30$), so this is \emph{not cumulative drift}, whereas the correlation with the frame's median depth is
+negative in every scene ($-0.27$ to $-0.75$, Fig.~\ref{fig:scalevsdepth}). The worst frames are
 downward shots of table-tops at 0.5--\SI{0.8}{m} and frame-filling blank walls or cabinets: with no size cue the model
 guesses at ``room scale,'' and a table at \SI{0.5}{m} lands at 1.5--\SI{2}{m} as a phantom surface. The metric model
 behaves the same way: right on average up to a per-room bias, wrong per frame (GT/pred from 0.43 to 1.35 within one
@@ -55,23 +40,7 @@ blank walls gives the model no cue. The mirrored bathroom is hard for every sour
 \rsLIDARd, oracle \rsORACLEd), so a bathroom-renovation product should expect worse than the averages.
 
 \subsection{Implications for a product}\label{sec:business}
-\begin{table}[t]
-\centering\small
-\caption{Use-case fit: recall@$\tau$ over 6 scenes (\checkmark\ $\geq 0.9$, $\sim$ 0.75--0.9, $\times$ $< 0.75$).}
-\label{tab:usecase}
-\begin{adjustbox}{max width=\columnwidth}
-\begin{tabular}{@{}lrrrrr@{}}
-\toprule
-Use case ($\tau$) & LiDAR & sparse points & once per room & \textbf{\ftmain{}} & metric \\
-\midrule
-overview (\SI{10}{cm}) & \checkmark\ \rsLIDARRten & \checkmark\ \rsSPARSERten & $\times$ \rsSCENERten & $\times$ \textbf{\rsFTLIDARALLRten} & $\times$ \rsMETRICRten \\
-furniture (\SI{5}{cm}) & \checkmark\ \rsLIDARRfive & $\sim$ \rsSPARSERfive & $\times$ \rsSCENERfive & $\times$ \textbf{\rsFTLIDARALLRfive} & $\times$ \rsMETRICRfive \\
-renovation (\SI{2}{cm}) & $\times$ \rsLIDARRtwo & $\times$ \rsSPARSERtwo & $\times$ \rsSCENERtwo & $\times$ \textbf{\rsFTLIDARALLRtwo} & $\times$ \rsMETRICRtwo \\
-\bottomrule
-\end{tabular}
-\end{adjustbox}
-\end{table}
-Table~\ref{tab:usecase} translates the results into product tiers. iPad LiDAR suffices for furniture placement but not
+Table~\ref{tab:exp1} translates the results into product tiers. iPad LiDAR suffices for furniture placement but not
 for renovation measurement. On a device without LiDAR, neither one-off calibration nor a raw metric model serves any
 tier; \ftmain{} raises recall@\SI{10}{cm} from \rsMETRICRten{} to \rsFTLIDARALLRten{} with nothing at run time, a large step
 that is still short of the overview tier. With per-frame sparse points the same device reaches \SI{\rsSPARSECM}{cm},
@@ -80,4 +49,4 @@ VIO points, (2) a fine-tuned model to remove the domain bias, (3) model size las
 returns $<$\SI{3}{cm} on a \SI{22}{cm} base. Strategically, an app with Pro-device users can collect its own teacher
 during normal use (RGB, LiDAR depth and pose arrive together from ARKit), replacing a \$20k laser scanner; our data
 show no accuracy case for laser capture for this purpose. At 4~fps DA-v2 Large takes $3.6\times$ the video length on
-a laptop and DA-v2 Small $0.5\times$; fusion is $<3\,\%$ of the time.
+a laptop and DA-v2 Small $0.6\times$; fusion is $<3\,\%$ of the time.

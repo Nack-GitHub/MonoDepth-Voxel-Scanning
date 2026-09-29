@@ -82,7 +82,9 @@ discretisation loss. (2)~The iPad LiDAR depth as recorded by ARKit is what a Pro
 monocular models need the scale alignment of Section~\ref{sec:align}: DA-v2 Large in the main experiments, and DA-v2
 Small and MiDaS small~\cite{midas} when model size is varied. (4)~Metric monocular models are used with no alignment:
 DA-v2 Metric-Indoor Large, pretrained; its three fine-tunes (Section~\ref{sec:ftsetup}); and Depth Pro~\cite{depthpro},
-given the camera's true focal length of 533 pixels, its most favourable setting. ARKitScenes stores the frames of an
+given the camera's true focal length of 533 pixels, its most favourable setting. Its implementation was checked on
+a synthetic room with exact depth; on five frames of room 47115299 it was also run with its own estimate of the field
+of view and scored after removing the scale of each frame. ARKitScenes stores the frames of an
 iPad held upright rotated by a quarter turn, so every monocular model receives the frame rotated upright and its output
 is rotated back. Every source is resampled by nearest pixel to the LiDAR resolution of $256\times192$, so that all
 sources are fused and scored on the same grid.
