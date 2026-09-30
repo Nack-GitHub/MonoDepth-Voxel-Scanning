@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from roomscan.config import load_config
+from roomscan_web.presets import PRESETS, resolve
 
 DEFAULT_PRESET = "configs/depth/lidar.yaml"
 
@@ -33,6 +34,7 @@ class Job:
     id: str
     scene_dir: Path
     overrides: dict[str, str]
+    preset: str | None = None         # key in presets.PRESETS the scan was submitted with (None = raw overrides)
     status: str = "queued"            # queued | running | done | failed
     error: str | None = None
     result: dict[str, Any] | None = None
@@ -44,6 +46,7 @@ class Job:
         d["scene_dir"] = str(self.scene_dir)
         d["mesh_path"] = str(self.mesh_path) if self.mesh_path else None
         d["mesh_url"] = f"/scans/{self.id}/mesh.ply" if self.status == "done" else None
+        d["label"] = PRESETS[self.preset].label if self.preset in PRESETS else "custom overrides"
         return d
 
 
@@ -69,11 +72,14 @@ class JobRunner:
         d.mkdir(parents=True)
         return job_id, d
 
-    def submit(self, job_id: str, scene_dir: Path, overrides: dict[str, str] | None = None) -> Job:
-        bad = set(overrides or {}) - ALLOWED_OVERRIDES
+    def submit(self, job_id: str, scene_dir: Path, overrides: dict[str, str] | None = None,
+               preset: str | None = None) -> Job:
+        """Queue a scan. `preset` (a presets.PRESETS key) supplies overrides; explicit `overrides` win over it."""
+        merged = {**(resolve(preset).overrides if preset else {}), **(overrides or {})}
+        bad = set(merged) - ALLOWED_OVERRIDES
         if bad:
             raise ValueError(f"overrides not allowed: {sorted(bad)}; allowed: {sorted(ALLOWED_OVERRIDES)}")
-        job = Job(id=job_id, scene_dir=scene_dir, overrides=dict(overrides or {}))
+        job = Job(id=job_id, scene_dir=scene_dir, overrides=merged, preset=preset)
         with self._lock:
             self._jobs[job_id] = job
         self._q.put(job_id)

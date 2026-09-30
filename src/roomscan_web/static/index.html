@@ -30,11 +30,8 @@
   <h1>roomscan</h1>
   <form id="up">
     <input type="file" name="file" accept=".zip" required>
-    <select name="source">
-      <option value="lidar">LiDAR depth (depth/ in zip)</option>
-      <option value="mono_sparse">Monocular DA-v2 S + sparse points (sparse/ in zip)</option>
-      <option value="mono_metric">Monocular DA-v2 metric (no calibration)</option>
-    </select>
+    <select name="preset" id="preset"></select>
+    <div class="st" id="preset-note"></div>
     <button type="submit">Upload &amp; reconstruct</button>
   </form>
   <label class="st"><input type="checkbox" id="zup"> capture is Z-up (ARKit/ARCore are Y-up: leave off)</label>
@@ -53,11 +50,15 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
 
-const PRESETS = {
-  lidar: {},
-  mono_sparse: { 'depth.source': 'mono', 'depth.model': 'depth_anything_v2_small', 'depth.aligner': 'sparse_points' },
-  mono_metric: { 'depth.source': 'mono', 'depth.model': 'depth_anything_v2_metric_indoor', 'depth.aligner': 'identity' },
-};
+// presets live on the server (GET /presets) so the labels match the paper in one place
+const presetSel = document.getElementById('preset'), presetNote = document.getElementById('preset-note');
+let presets = [];
+async function loadPresets() {
+  presets = await (await fetch('/presets')).json();
+  for (const p of presets) presetSel.add(new Option(p.label, p.key));
+  presetSel.onchange = () => { presetNote.textContent = presets.find(p => p.key === presetSel.value)?.note ?? ''; };
+  presetSel.onchange();
+}
 
 const view = document.getElementById('view'), hud = document.getElementById('hud');
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -108,7 +109,7 @@ async function refresh() {
   for (const j of jobs.slice().reverse()) {
     const li = document.createElement('li');
     const m = j.result?.metrics_3d;
-    li.innerHTML = `<div>${j.id} <span class="st ${j.status}">${j.status}</span></div>` +
+    li.innerHTML = `<div>${j.label} <span class="st ${j.status}">${j.status}</span></div><div class="st">${j.id}</div>` +
       (m ? `<div class="st">chamfer ${(m.chamfer * 100).toFixed(1)} cm · F@5cm ${m['fscore@0.05'].toFixed(2)}</div>` :
        j.result ? `<div class="st">${j.result.n_frames} frames · ${j.result.timing.total.toFixed(0)} s</div>` :
        j.error ? `<div class="st failed">${j.error}</div>` : '');
@@ -121,14 +122,12 @@ async function refresh() {
 document.getElementById('zup').onchange = () => { if (active) showMesh(active); };
 document.getElementById('up').onsubmit = async (e) => {
   e.preventDefault();
-  const fd = new FormData(e.target);
-  const src = fd.get('source'); fd.delete('source');
-  fd.set('overrides', JSON.stringify(PRESETS[src]));
+  const fd = new FormData(e.target);      // file + preset; the server merges the preset's overrides
   const r = await fetch('/scans', { method: 'POST', body: fd });
   if (!r.ok) { alert(await r.text()); return; }
-  e.target.reset(); refresh();
+  e.target.reset(); presetSel.onchange(); refresh();
 };
-refresh();
+loadPresets(); refresh();
 </script>
 </body>
 </html>

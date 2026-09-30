@@ -3,7 +3,7 @@
 ทุก task: `make test` + `make lint` ผ่าน → commit แยก (ไม่ push)
 
 ## Phase 1: Foundation
-- [ ] **T1** FT-LiDAR-24 preset จาก server ถึง dropdown — `presets.py`, `GET /presets`, `POST /scans preset=` · S–M
+- [x] **T1** FT-LiDAR-24 preset จาก server ถึง dropdown — `presets.py`, `GET /presets`, `POST /scans preset=` · S–M
   - Verify: `test_presets*`, dropdown บน `make web`
 - [ ] **T2** งานไม่หายเมื่อ restart + timestamps + ตัวจับเวลา — `job.json`, งานที่ค้างกลายเป็น failed · S–M · deps T1
   - Verify: `test_persist_across_restart`, `test_interrupted_job`, Ctrl-C แล้วเปิดใหม่ งานยังอยู่

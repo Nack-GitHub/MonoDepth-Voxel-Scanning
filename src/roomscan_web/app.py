@@ -1,6 +1,7 @@
 """FastAPI app: upload a capture, poll the job, fetch the mesh, view it in the browser.
 
-    POST /scans            multipart: file=<capture.zip> [, overrides=<json dict>]
+    GET  /presets          upload presets (key, paper label, overrides) in dropdown order
+    POST /scans            multipart: file=<capture.zip> [, preset=<key>] [, overrides=<json dict>]
     GET  /scans            all jobs
     GET  /scans/{id}       job status + metrics.json when done
     GET  /scans/{id}/mesh.ply
@@ -23,6 +24,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
 
 from roomscan_web.jobs import JobRunner
+from roomscan_web.presets import public_presets, resolve
 
 STATIC = Path(__file__).parent / "static"
 MAX_UPLOAD_BYTES = int(os.environ.get("ROOMSCAN_MAX_UPLOAD_MB", "512")) * 1024 * 1024
@@ -37,20 +39,29 @@ def create_app(work_dir: str | Path | None = None, preset: str | None = None, *,
 
     @app.get("/", response_class=HTMLResponse)
     def index() -> str:
-        return (STATIC / "index.html").read_text()
+        return (STATIC / "index.html").read_text(encoding="utf-8")
+
+    @app.get("/presets")
+    def list_presets() -> list[dict]:
+        return public_presets()
 
     @app.get("/scans")
     def list_scans() -> list[dict]:
         return [j.public() for j in runner.list()]
 
     @app.post("/scans", status_code=202)
-    async def create_scan(file: UploadFile = File(...), overrides: str = Form("{}")) -> dict:  # noqa: B008
+    async def create_scan(file: UploadFile = File(...), overrides: str = Form("{}"),  # noqa: B008
+                          preset: str | None = Form(None)) -> dict:  # noqa: B008
         try:
             ov = json.loads(overrides or "{}")
             if not isinstance(ov, dict):
                 raise ValueError("overrides must be a JSON object")
         except ValueError as e:
             raise HTTPException(400, f"bad overrides: {e}") from None
+        try:
+            preset = resolve(preset).key if preset else None       # reject before anything touches the disk
+        except ValueError as e:
+            raise HTTPException(400, str(e)) from None
         job_id, capture_dir = runner.new_capture_dir()
         zip_path = capture_dir.with_suffix(".zip")
         size = 0
@@ -75,7 +86,7 @@ def create_app(work_dir: str | Path | None = None, preset: str | None = None, *,
             shutil.rmtree(capture_dir, ignore_errors=True)
             raise HTTPException(400, "zip does not contain rgb/ + poses.json + intrinsics.json")
         try:
-            job = runner.submit(job_id, scene_dir, {str(k): str(v) for k, v in ov.items()})
+            job = runner.submit(job_id, scene_dir, {str(k): str(v) for k, v in ov.items()}, preset)
         except ValueError as e:
             shutil.rmtree(capture_dir, ignore_errors=True)
             raise HTTPException(400, str(e)) from None
