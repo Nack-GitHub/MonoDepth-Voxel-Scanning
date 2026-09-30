@@ -12,23 +12,29 @@
   2. fine-tune ด้วย LiDAR ของ iPad เอง (FT-LiDAR-24) ลดเหลือ **15.7 cm** (ดีขึ้น 3.5 เท่า ดีกว่าในทั้ง 6 ห้อง) โดยตอนใช้งานไม่ต้องมี sensor หรือ calibration
   3. แต่ยังห่างจาก iPad LiDAR (**3.0 cm**) เพราะ scale ยังแกว่งตามมุมมองจากเฟรมหนึ่งไปอีกเฟรม ซึ่ง fine-tune แก้ไม่ได้
 - **ภาพที่ช่วยได้มากที่สุด**: mesh 3 ก้อนวางเทียบกัน (pretrained | FT-LiDAR-24 | LiDAR) ที่หมุนกล้องไปพร้อมกัน และระบายสีตาม error เทียบกับ Faro
-- **front-end ตอนนี้ยังทำแบบนั้นไม่ได้** เพราะแสดงได้ทีละ mesh, ไม่มี preset ของ FT-LiDAR-24, ไม่มีสี error, ไม่มีแผง metric เต็ม และงานหายทุกครั้งที่ restart server (รายละเอียดอยู่ในหัวข้อ 1)
+- **front-end ทำแบบนั้นได้แล้ว** (P0 + P1 ตาม `SPEC.md` เสร็จเมื่อ 2026-09-30 บน branch `feat/web-demo`): เทียบ 3 ช่องด้วยกล้องเดียว, สี error เทียบ Faro, Faro overlay, แผง metric พร้อม badge, gallery ของผล Exp1/Exp6 และงานไม่หายเมื่อ restart server (รายละเอียดอยู่ในหัวข้อ 1) สิ่งที่ยังต้องทำบนเครื่อง demo คือซ้อมกับข้อมูลจริง เพราะเครื่องที่พัฒนาไม่มี mesh ของ sweep และไม่มี ARKitScenes ของห้องทดสอบ
 - **อย่ารันโมเดล mono สดบนเวที** เพราะ FT-LiDAR-24 ใช้เวลา 3–7 นาทีต่อห้อง (ห้อง 47429736 ใช้ 438 s ตาม `metrics.json`) ให้รันไว้ก่อน แล้วรันสดเฉพาะงาน LiDAR ที่เสร็จในไม่กี่วินาที เพื่อแสดงว่าระบบทำงานได้จริง
 
 ---
 
 ## 1. Front-end: ตอนนี้มีอะไรแล้ว และต้องเพิ่มอะไร
 
-### 1.1 สิ่งที่มีอยู่แล้ว (`src/roomscan_web/`)
+### 1.1 สิ่งที่มีอยู่แล้ว (`src/roomscan_web/`, สถานะ 2026-09-30)
 
 | ส่วน | ทำอะไรได้ |
 |---|---|
-| `app.py` | `POST /scans` อัปโหลด zip ของ capture, `GET /scans`, `GET /scans/{id}`, `GET /scans/{id}/mesh.ply` |
-| `jobs.py` | คิวงานที่มี worker ตัวเดียว เก็บงานไว้ใน **dict ในหน่วยความจำ** และ override ได้เฉพาะ `depth.source/model/aligner`, `fusion.*`, `dataset.frame_stride/max_frames` |
-| `static/index.html` | ฟอร์มอัปโหลดที่มี preset 3 ตัว (`lidar`, `mono_sparse` = DA-v2 **Small** + sparse, `mono_metric` = pretrained), รายการงานที่โชว์ Chamfer กับ F@5, และ viewer three.js ที่แสดง mesh **ทีละก้อน** |
-| `scripts/export_capture.py` | ส่งออกห้องจาก ARKitScenes เป็น zip พร้อม `reference.ply` (Faro) ซึ่งทำให้งานบนเว็บคำนวณ metric 3D ได้ด้วย |
+| `app.py` | `GET /presets`, `POST /scans` (รับ `preset`), `GET /scans`, `GET /scans/{id}`, `GET /scans/{id}/{mesh,reference,error}.ply`, `GET /gallery`, `GET /gallery/{exp}/{run}/{mesh,reference,error}.ply`, `GET /static/...` |
+| `presets.py` | preset 4 ตัวตามลำดับใน dropdown: iPad LiDAR (sensor), FT-LiDAR-24 (ours, RGB only), DA-v2 Metric-Indoor (pretrained), DA-v2 **Large** + sparse points (upper bound) |
+| `jobs.py` | คิวงานที่มี worker ตัวเดียว เก็บงานเป็นไฟล์ `outputs/web/results/web/<id>/job.json` จึงไม่หายเมื่อ restart งานที่ค้างอยู่ตอนปิด server จะขึ้นว่า `failed: interrupted by server restart` และไม่รันซ้ำเอง |
+| `gallery.py` | เปิด mesh ของ Exp1/Exp6 ที่ sweep ไว้แล้วได้โดยตรง (อ่านอย่างเดียว) |
+| `errorcolor.py`, `refmesh.py` | mesh ที่ระบายสี error เทียบ Faro (turbo 0–10 cm) และสำเนา Faro สำหรับวาดเป็น wireframe |
+| `static/` | แท็บ Scans กับ Gallery, โหมดเทียบ 1–3 ช่องที่ใช้กล้องร่วมกัน, ปุ่ม Color: real / error พร้อม legend, Faro overlay, Z-up, แผง metric พร้อม badge use case, ตัวจับเวลาของงานที่กำลังรัน |
+| `scripts/export_capture.py` | ส่งออกห้องจาก ARKitScenes เป็น zip พร้อม `reference.ply` (Faro) และ `meta.json` (`scene`, `up: "z"`, `stride`) |
+| `scripts/warm_web_cache.py` | สร้างไฟล์สี error กับ reference ล่วงหน้า เพื่อให้การกดครั้งแรกบนเวทีไม่ช้า |
 
 ### 1.2 ช่องว่างเมื่อเทียบกับเรื่องที่เปเปอร์เล่า
+
+สถานะ 2026-09-30: G1–G10 ปิดแล้วตามหัวข้อ 1.3 ส่วน G11 กับ G12 (P2) ยังไม่ได้ทำ ตารางนี้เก็บไว้เป็นบันทึกว่าแต่ละข้อมีไว้เพื่ออะไร
 
 | # | ช่องว่าง | ทำไมสำคัญต่อ demo | ความยาก |
 |---|---|---|---|
@@ -45,39 +51,28 @@
 | G11 | ไม่มีการดูภาพ depth รายเฟรม หรือกราฟ scale รายเฟรม | objective 4 (scale แกว่งตามมุมมอง) เป็นข้อค้นพบที่ลึกที่สุด แต่เห็นใน mesh ได้ยาก | ปานกลาง |
 | G12 | ไม่มีเครื่องมือวัดระยะในฉาก 3D | ช่วยให้คนดูเห็นว่า "ผนังห่างจากที่ควรอยู่กี่ cm" | ปานกลาง |
 
-### 1.3 สิ่งที่ควรทำ เรียงตามลำดับความสำคัญ
+### 1.3 สิ่งที่ทำแล้ว (P0 + P1) และสิ่งที่เหลือ (P2)
 
-ทุกข้อด้านล่างแก้แค่ใน `src/roomscan_web/` (และ `scripts/` ถ้าจำเป็น) **ไม่แตะ `pipeline.py`** ตามกฎใน `CLAUDE.md`
-ถ้าข้อไหนต้องแก้ `pipeline.py` เช่น callback สำหรับรายงานความคืบหน้ารายเฟรม ให้ตัดทิ้งหรือเขียน ADR ก่อน
+ทุกข้อด้านล่างแก้แค่ใน `src/roomscan_web/`, `scripts/` และ `tests/test_web.py` **ไม่แตะ `pipeline.py`** ตามกฎใน `CLAUDE.md`
+รายละเอียดของ endpoint และไฟล์อยู่ใน `docs/architecture/README.md` §7.1 ส่วนข้อกำหนดอยู่ใน `SPEC.md`
 
-#### P0: ต้องมี ไม่อย่างนั้น demo ไม่ตอบโจทย์เปเปอร์
+#### P0: เสร็จแล้ว
 
-1. **Preset `ft_lidar_24`** (G1, G9) ใน `index.html`
-   ```js
-   ft_lidar_24: { 'depth.source': 'mono', 'depth.model': 'depth_anything_v2_ft_lidar_all', 'depth.aligner': 'identity' },
-   ```
-   ตั้งชื่อ option ให้ตรงกับเปเปอร์ เช่น "FT-LiDAR-24 (ของเรา, RGB อย่างเดียว)", "DA-v2 Metric-Indoor pretrained", "iPad LiDAR (sensor)", "DA-v2 Large + sparse points (upper bound)" และแก้ `mono_sparse` ให้ใช้ `depth_anything_v2_large` ให้ตรงกับเปเปอร์ (หรือบอกบนป้ายว่าเป็น Small)
+1. **Preset `ft_lidar_24`** (G1, G9): preset ย้ายไปอยู่ฝั่ง server (`presets.py`, `GET /presets`) ชื่อใน dropdown ตรงกับเปเปอร์ และ `mono_sparse` ใช้ `depth_anything_v2_large` พร้อมคำว่า "upper bound" เสมอ
    - weights อยู่ใน HF repo แบบ private (`NackPanupong/roomscan-dav2-metric-large-ft-lidar-all`) เครื่องที่ใช้ demo ต้อง `huggingface-cli login` แล้วโหลด weights มาเก็บไว้ก่อน วันจริงให้ตั้ง `HF_HUB_OFFLINE=1` เพื่อไม่ให้ไปพึ่งเน็ต
-2. **เก็บงานไว้ถาวร** (G2) ใน `jobs.py`: ตอน `JobRunner.__init__` ให้ไล่อ่าน `results_dir/web/*/metrics.json` แล้วสร้าง `Job(status="done")` คืนกลับมา จะได้ไม่ต้องใช้ DB ตามแนว ADR-006 ที่ว่า "results are files"
-   ทางที่ง่ายกว่านั้นคือเขียนไฟล์ `job.json` ไว้ข้าง `metrics.json` ด้วย เพื่อเก็บ `overrides` ว่ารันด้วย preset ไหน จะได้ติดป้ายชื่อได้ถูก
-3. **โหมดเปรียบเทียบ 2–3 mesh** (G3): ติ๊กเลือกงานจากรายการได้สูงสุด 3 งาน แล้วแบ่งจอเป็น 3 ช่อง ใช้ renderer ตัวเดียวแล้วแบ่ง viewport ด้วย `setScissor`/`setViewport` ทุกช่องใช้ camera และ OrbitControls ตัวเดียวกัน หมุนช่องหนึ่งแล้วช่องอื่นหมุนตาม และแต่ละช่องมีป้ายชื่อกับ Chamfer อยู่ใต้ภาพ
-   - เรื่องที่ต้องระวัง: ต้อง frame กล้องจาก **mesh อ้างอิงก้อนเดียว** (LiDAR หรือ reference) ไม่อย่างนั้น mesh ของ pretrained ที่ใหญ่เกินจริง 1.2–1.45 เท่าจะถูกย่อจนดูพอดีจอ และความผิดที่อยากให้เห็นจะหายไป
-4. **ระบายสีตาม error** (G4): เพิ่ม endpoint `GET /scans/{id}/error.ply` ที่
-   - โหลด `mesh.ply` กับ `reference.ply` (ของ capture) มาด้วย Open3D
-   - หาระยะจาก vertex แต่ละจุดไปยังจุดที่ใกล้ที่สุดบน reference (`compute_point_cloud_distance` บนจุดที่ sample จาก reference)
-   - map สีด้วย colormap เดียวกับ Fig. exp6 คือ 0 cm = น้ำเงินเข้ม ไปจนถึง ≥ 10 cm = แดงเข้ม แล้วเขียนเป็น vertex color และ cache ไฟล์ไว้
-   - ฝั่ง viewer เพิ่มปุ่มสลับ "สีจริง / สี error" พร้อม legend 0–10 cm
-   - ถ้าไม่มี `reference.ply` ให้ปิดปุ่มนี้และขึ้นข้อความว่า "ไม่มี Faro reference"
-5. **แผง metric แบบเต็ม** (G5): เมื่อเลือกงานแล้วให้แสดง Chamfer, Accuracy, Completeness, F@5, Recall@2/5/10 และ badge use case ตามเกณฑ์ในเปเปอร์ คือ recall ≥ 0.9 = ✓, 0.75–0.9 = ~, < 0.75 = ✗ สำหรับ Overview (10 cm), Furniture (5 cm) และ Renovation (2 cm) พร้อมเวลาที่ใช้ต่อขั้น (`timing.depth/fusion/total`)
-6. **ย้าย three.js มาไว้ในเครื่อง** (G7): ใส่ `three.module.js`, `OrbitControls.js`, `PLYLoader.js` ไว้ใน `static/vendor/` แล้ว mount `StaticFiles` ใน `app.py` จากนั้นแก้ importmap ให้ชี้มาที่ไฟล์เหล่านี้
+2. **เก็บงานไว้ถาวร** (G2): ทุกงานมี `job.json` ข้าง `metrics.json` ซึ่งเก็บ preset ไว้ด้วย ป้ายชื่อจึงถูกหลัง restart งานที่ค้างอยู่ตอน server ปิดจะขึ้นว่า `failed: interrupted by server restart` และ**ไม่ถูกรันซ้ำเอง** (กันไม่ให้งาน mono 7 นาทีเริ่มเองตอนเปิดเครื่องบนเวที)
+3. **โหมดเปรียบเทียบ 1–3 mesh** (G3): ติ๊ก "compare" ได้สูงสุด 3 รายการ ทุกช่องใช้กล้องเดียวกัน กล้องถูกตั้งครั้งเดียวจาก Faro reference (ถ้าไม่มีใช้ช่อง LiDAR) จึงเห็นว่า mesh ของ pretrained ใหญ่เกินห้องจริง ใต้แต่ละช่องมีชื่อ, Chamfer และป้ายที่มา ("paper run" หรือ "demo run (stride N, no GT mask)") ถ้าเลือกคนละห้องจะขึ้นแถบ "different rooms — not comparable"
+4. **ระบายสีตาม error** (G4): `GET /scans/{id}/error.ply` และ `GET /gallery/.../error.ply` ใช้ turbo 0–10 cm เท่ากับ Fig. exp6 มีปุ่ม "Color: real / error" กับ legend ถ้าไม่มี reference ปุ่มจะถูกปิดพร้อม tooltip "no Faro reference"
+5. **แผง metric แบบเต็ม** (G5): Chamfer, Accuracy, Completeness, F@5, Recall@2/5/10, เวลา depth / fusion / total และ badge Overview (R@10), Furniture (R@5), Renovation (R@2) ตามเกณฑ์ ≥ 0.9 = ✓, 0.75–0.9 = ~, < 0.75 = ✗ พร้อมหมายเหตุว่าเกณฑ์เป็นตัวอย่างประกอบ แผงนี้แสดงของรายการที่คลิกหรือช่องที่เมาส์ชี้อยู่
+6. **three.js ในเครื่อง** (G7): หน้าเว็บถูกแตกเป็น `app.css` + ES modules ที่เสิร์ฟจาก `/static` แล้ว ส่วนไฟล์ three.js 0.160.0 ต้องวางใน `static/vendor/three/` (ดูสถานะใน `tasks/todo.md` ข้อ T3b)
 
-#### P1: ควรมี เพราะช่วยให้ demo ลื่นและตอบคำถามได้ดีขึ้น
+#### P1: เสร็จแล้ว
 
-7. **แกลเลอรีผลการทดลอง** (G6): เพิ่ม endpoint `GET /gallery` ที่ไล่อ่าน `experiments/results/{exp1_depth_source,exp6_finetune}/<scene>_<run>/` เฉพาะ run ที่มี `mesh.ply` แล้วแสดงเป็นตาราง ห้อง × แหล่ง depth ที่กดเปิดหรือเลือกเทียบได้ทันที reference ของห้องเหล่านี้คือ `reference_mesh.ply` ที่ `make reference` สร้างไว้
-   ทำข้อนี้แล้วจะไม่ต้องอัปโหลดซ้ำ และเปิดได้ครบทั้ง 6 ห้องถ้ากรรมการขอดูห้องอื่น
-8. **ตัวจับเวลาและสถานะ** (G8): นับเวลาตั้งแต่กดอัปโหลดฝั่ง client แล้วแสดงว่า "running 01:23" และบอกเวลาที่คาดไว้ตาม preset (LiDAR ไม่กี่วินาที, mono ประมาณ 1–2 วินาทีต่อเฟรม)
-9. **ตั้ง Z-up อัตโนมัติ** (G10): ให้ `export_capture.py` เขียน `"up": "z"` ลงใน `intrinsics.json` หรือไฟล์ meta แล้วให้ viewer อ่านค่านั้นไปตั้ง ถ้าไม่ทันทำ อย่างน้อยให้ตั้งค่าเริ่มต้นของ checkbox เป็นติ๊กไว้สำหรับ capture ที่มาจาก ARKitScenes
-10. **สลับดู reference แบบโปร่งใส**: เพิ่ม endpoint `GET /scans/{id}/reference.ply` แล้ววาง Faro mesh ซ้อนเป็น wireframe สีเทา จะเห็นทันทีว่า mesh ของ pretrained "พองออก" เกินผนังจริง
+7. **แกลเลอรีผลการทดลอง** (G6): แท็บ Gallery เป็นตาราง source × ห้อง แสดง Chamfer ทุกช่อง กดช่องเพื่อเลือกเทียบ (นับรวมกับงานบนเว็บ สูงสุด 3) และกดเลขห้องเพื่อเทียบ pretrained / FT-LiDAR-24 / iPad LiDAR ของห้องนั้นในคลิกเดียว ใช้ตอบเมื่อกรรมการขอดูห้องอื่น
+   - แกลเลอรีแสดงเฉพาะ run ที่ยังมี `mesh.ply` จึงใช้ได้บนเครื่องที่รัน sweep เท่านั้น และต้องมี `data/arkitscenes` ของห้องนั้นจึงจะมีสี error กับ overlay
+8. **ตัวจับเวลาและสถานะ** (G8): งานที่กำลังรันแสดง `running 01:23` โดยนับจากเวลาของ **server** (`elapsed_s`) ไม่ใช่เวลาที่กดอัปโหลดฝั่ง client เมื่อ reload หน้าจึงยังนับถูก และแสดงเวลาที่คาดไว้จาก preset × จำนวนเฟรม
+9. **ตั้ง Z-up อัตโนมัติ** (G10): `export_capture.py` เขียน `meta.json` (`scene`, `up: "z"`, `stride`) และ viewer ตั้งค่าตามนั้น capture ที่ export ไว้ก่อนวันที่ 2026-09-30 ไม่มีไฟล์นี้ ต้อง `make capture-zip` ใหม่
+10. **Faro overlay**: `GET /scans/{id}/reference.ply` ส่งสำเนา Faro ที่ลดจำนวนสามเหลี่ยมแล้ว หน้าเว็บวาดเฉพาะเส้นขอบมุม (ผนังชนผนัง ผนังชนพื้น ขอบเฟอร์นิเจอร์) และวาดทับ mesh เสมอ จึงเห็นห้องจริงอยู่ข้างใน mesh ของ pretrained ที่พองออก
 
 #### P2: มีแล้วดี ถ้ามีเวลาเหลือ
 
@@ -129,15 +124,19 @@ Chamfer หน่วยเป็น cm ค่าจาก Table perroom ใน m
 ### 2.3 Checklist ก่อนวันจริง
 
 **สัปดาห์ก่อน**
-- [ ] ทำ front-end P0 ให้เสร็จ และให้ `make test` ผ่าน
-- [ ] `make capture-zip SCENE=47429736` และ `SCENE=47333774` จะได้ `outputs/captures/<scene>.zip` พร้อม `reference.ply`
+- [x] ทำ front-end P0 + P1 ให้เสร็จ และให้ `make test` ผ่าน (2026-09-30, branch `feat/web-demo`)
+- [ ] วางไฟล์ three.js 0.160.0 ใน `static/vendor/three/` (`tasks/todo.md` ข้อ T3b) แล้วปิด Wi-Fi ลองเปิดเว็บ
+- [ ] `make capture-zip SCENE=47429736` และ `SCENE=47333774` **ใหม่** จะได้ `outputs/captures/<scene>.zip` พร้อม `reference.ply` และ `meta.json` (zip เก่าไม่มี `meta.json` ห้องจะนอนตะแคงถ้าไม่ติ๊ก Z-up เอง)
 - [ ] รันไว้ก่อนผ่านเว็บ ห้องละ 3 preset (pretrained, FT-LiDAR-24, LiDAR) แล้วปิด-เปิด server ใหม่เพื่อยืนยันว่างานไม่หาย (G2)
+- [ ] เปิดแท็บ Gallery กดเลขห้อง 47429736 แล้วดูว่าใต้ช่องขึ้น Chamfer 54.1 / 12.4 / 3.1 cm และ mesh ของ pretrained ล้นเส้น Faro
+- [ ] `.venv/bin/python scripts/warm_web_cache.py --scenes 47429736 47333774` เพื่อสร้างไฟล์สี error กับ reference ไว้ก่อน (รันซ้ำได้ จะข้ามไฟล์ที่มีแล้ว)
 - [ ] ตรวจว่าตัวเลขที่ได้บนเว็บ**ใกล้เคียง**กับในเปเปอร์ ซึ่งอาจไม่เท่ากันเป๊ะเพราะเว็บรันด้วย stride 5 และ `eval.mask_to_gt=false` ต่างจาก sweep ถ้าต่างกันมากต้องหาเหตุก่อน และเตรียมคำอธิบายว่า "ตัวเลขบนเว็บเป็นการรันเพื่อ demo ตัวเลขอย่างเป็นทางการอยู่ในตาราง"
 - [ ] อัดวิดีโอหน้าจอ demo ทั้งชุด (2–3 นาที) ไว้เป็นแผนสำรอง
 - [ ] แคปภาพหน้าจอโหมดเปรียบเทียบและโหมดสี error ใส่ไว้ในสไลด์สำรอง
 
 **วันก่อน**
-- [ ] ปิด Wi-Fi แล้วลองเปิดเว็บ ต้องใช้ได้ (three.js อยู่ในเครื่อง, `HF_HUB_OFFLINE=1`)
+- [ ] ปิด Wi-Fi แล้วลองเปิดเว็บ ต้องใช้ได้ (three.js อยู่ในเครื่อง, `HF_HUB_OFFLINE=1 make web`)
+- [ ] รัน `scripts/warm_web_cache.py` อีกครั้งหลังรันงานบนเว็บครบ แล้วลองกด "Color: error" ต้องขึ้นทันที
 - [ ] ต่อจอหรือโปรเจกเตอร์ความละเอียดต่ำ (1280×720) แล้วดูว่า 3 ช่องยังอ่านป้ายออก และ legend ไม่ถูกบัง
 - [ ] ปิด notification, sleep และ auto-update ของเครื่อง
 
@@ -153,7 +152,8 @@ Chamfer หน่วยเป็น cm ค่าจาก Table perroom ใน m
 | อัปโหลดสดแล้ว error หรือค้าง | พูดว่า "ผมมีผลที่รันไว้แล้วครับ" แล้วเปิดงานที่รันไว้ก่อนแทน |
 | viewer เป็นจอดำ | ใช้วิดีโอสำรอง |
 | เครื่องใช้การไม่ได้ทั้งเครื่อง | ใช้สไลด์สำรองที่มีภาพหน้าจอกับ Fig. exp6 |
-| กรรมการขอดูห้องอื่น | เปิดจากแกลเลอรี (P1 ข้อ 7) หรือชี้ที่ Fig. exp6 ซึ่งมีครบ 6 ห้อง |
+| กรรมการขอดูห้องอื่น | เปิดแท็บ Gallery แล้วกดเลขห้องนั้น หรือชี้ที่ Fig. exp6 ซึ่งมีครบ 6 ห้อง |
+| เผลอปิด server | เปิดใหม่ด้วย `make web` งานที่เสร็จแล้วยังอยู่ครบ งานที่กำลังรันจะขึ้นว่า interrupted ให้ใช้งานที่รันไว้ก่อนแทน |
 
 ---
 

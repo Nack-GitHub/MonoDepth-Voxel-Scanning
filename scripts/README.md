@@ -15,6 +15,8 @@ One-off helpers ที่ *ไม่ใช่* ส่วนของ pipeline
 | `download_training_scenes.py` | ADR-013 | โหลดฉากใน `splits.yaml` (ไม่มี `color`, ไม่โหลด test) → unzip → ลบ zip; `--verify --md` นับเฟรม + ตรวจว่าไม่มีฉาก test บนดิสก์ |
 | `summarize_training.py` | ADR-013 | `log.jsonl` ของแต่ละ run → `experiments/training/RESULTS.md` (ตัวเลขบน val V เท่านั้น ไม่ใช่ test) |
 | `make_synthetic_scene.py` | — | ห้องสังเคราะห์ใน layout ARKitScenes สำหรับ `make test` / `make smoke` |
+| `export_capture.py` | 6 | ส่งออกห้องจาก ARKitScenes เป็นโฟลเดอร์ capture + zip สำหรับ `roomscan_web` (`make capture-zip SCENE=...`) พร้อม `reference.ply` และ `meta.json` (`scene`, `up`, `stride`) |
+| `warm_web_cache.py` | 6 | สร้างไฟล์ที่ viewer ใช้ (reference, สำเนาสำหรับแสดงผล, mesh สี error) ของ gallery และงานบนเว็บไว้ล่วงหน้า ข้ามไฟล์ที่ cache ยังใหม่ ไม่เขียนลง `experiments/results/` |
 
 ## โหลด ARKitScenes
 

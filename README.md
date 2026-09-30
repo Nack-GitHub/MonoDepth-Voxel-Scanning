@@ -156,6 +156,18 @@ make web
 plus `depth/` and `confidence/` when available). Then open <http://localhost:8765>, upload the zip, pick a depth
 source, and orbit the resulting mesh in the browser.
 
+The viewer can show up to three meshes of a room side by side through one camera, colour each by its distance to
+the Faro reference (turbo, 0–10 cm) and overlay the reference's edges. The **Gallery** tab opens the meshes of
+finished Exp1/Exp6 runs straight from `experiments/results/` (on the machine that ran the sweeps; meshes are not
+committed). Uploaded jobs survive a server restart. Before a demo, build the error meshes ahead of time:
+
+```bash
+.venv/bin/python scripts/warm_web_cache.py --scenes 47429736 47333774
+```
+
+Numbers on the page are labelled by origin: "paper run" for gallery items, "demo run" for uploads, which are fused
+from a thinned capture without the GT mask and are not the paper's numbers.
+
 <details>
 <summary><b>All Makefile targets</b></summary>
 
@@ -181,7 +193,7 @@ sweeps of the same experiment at once, since they overwrite each other's `metric
 ```
 configs/            base.yaml + depth presets + experiments/exp{0..7}_*.yaml (1 table = 1 file) + training/
 src/roomscan/       the package: dataio, depth_sources, models, geometry, evaluation, training
-src/roomscan_web/   FastAPI upload/queue API + three.js viewer (imports roomscan, never the reverse)
+src/roomscan_web/   FastAPI upload/queue API, results gallery + three.js viewer (imports roomscan, never the reverse)
 scripts/            sanity check, reference mesh builder, capture export, figures
 tests/              pure-numpy unit tests (no real data, no torch)
 experiments/        results/<exp>/<scene>_<run>/{config.yaml, metrics.json}  (meshes not committed)

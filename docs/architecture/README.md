@@ -85,7 +85,8 @@ src/roomscan/
 ├── pipeline.py         orchestrator (ห้ามมี Open3D/torch call ตรง ๆ)
 ├── eval2d.py           2D-only evaluate / re-evaluate (ADR-014) — ใช้ `pipeline._to_grid` + `RunResult`, ไม่ fuse
 └── cli.py              run / sweep / report / eval2d / reeval2d
-src/roomscan_web/       Phase 6: FastAPI upload/queue/status + three.js viewer — imports roomscan.pipeline, never the reverse
+src/roomscan_web/       Phase 6: FastAPI upload/queue + gallery ของ run ที่ sweep ไว้ + three.js viewer (เทียบ 3 ช่อง, สี error, Faro overlay)
+                        — imports roomscan.pipeline / evaluation.metrics_3d / dataio, never the reverse (รายละเอียด §7.1)
 ```
 
 กฎ: import ไหลลงล่างเท่านั้น (`cli → pipeline → stages → types`) ไม่มี stage ไหน import `pipeline`
@@ -127,9 +128,43 @@ src/roomscan_web/       Phase 6: FastAPI upload/queue/status + three.js viewer �
 | 3 | `models/midas.py`, `evaluation/report.py` | `make sweep-exp1..4` + `make report` |
 | 4 | `per_point_error()` สำหรับ heatmap (ใน metrics_3d) | figures |
 | 5 | `dataio/sparse_proxy.py` + `SparsePointsAligner` (ADR-011), `TSDFFusion.integrate(weights=)` (ADR-012), `dataio/custom.py` | แถว `mono_sparse` ใน Exp1 + Exp5 บน 6 ฉาก; `make test` ผ่านโดยไม่มีข้อมูลจริง |
-| 6 | `roomscan_web/` (upload zip → job → mesh.ply → three.js viewer) | `make web` แล้ว POST capture.zip ได้ mesh ใน browser |
+| 6 | `roomscan_web/` (upload zip → job → mesh.ply → three.js viewer; ขยายเป็นเครื่องมือ demo เมื่อ 2026-09-30 ดู §7.1) | `make web` แล้ว POST capture.zip ได้ mesh ใน browser |
 
 **ห้ามข้าม gate ของ Phase 1** — ถ้า GT depth ยังได้ mesh เละ ปัญหาอยู่ที่ pipeline ไม่ใช่โมเดล
+
+### 7.1 Phase 6: `roomscan_web/` หลังขยายสำหรับ demo (SPEC.md, 2026-09-30)
+
+เว็บยังเป็นชั้นบาง ๆ บน pipeline เหมือนเดิม คือไม่แก้ `pipeline.py` และไม่มี DB
+สิ่งที่เพิ่มคือการแสดงผลสามอย่างที่เปเปอร์ต้องการให้เห็นด้วยตา ได้แก่ mesh หลายก้อนของห้องเดียวกันในกล้องเดียว สี error เทียบกับ Faro และ Faro wireframe ซ้อนทับ
+
+| ไฟล์ | หน้าที่ |
+|---|---|
+| `app.py` | routes เท่านั้น ตรวจ input แล้วเรียก module อื่น |
+| `presets.py` | preset ของ dropdown (`lidar`, `ft_lidar_24`, `mono_metric`, `mono_sparse`) เป็นแหล่งเดียวของชื่อบนหน้าเว็บ ซึ่งต้องตรงกับชื่อในเปเปอร์ |
+| `jobs.py` | คิวงาน worker เดียว เขียน `results/web/<id>/job.json` ทุกครั้งที่ status เปลี่ยน ตอนเปิด server จะอ่านกลับมา งานที่ค้าง `queued`/`running` กลายเป็น `failed: interrupted by server restart` และไม่ถูกรันซ้ำเอง อ่าน `meta.json` ของ capture (`scene`, `up`, `stride`) |
+| `gallery.py` | อ่าน `experiments/results/<exp>/<scene>_<run>/` แบบอ่านอย่างเดียว ตรวจ `exp` กับ allowlist และ `run` กับ regex ก่อนสร้าง path ทุกครั้ง ไม่แสดง `exp0_synthetic_smoke` |
+| `errorcolor.py` | ระยะจาก vertex ของ mesh ไปยังจุดที่ใกล้ที่สุดบน reference (200k จุด, seed เดียวกับ `per_point_error`) แล้วระบายสี turbo 0–10 cm เท่ากับรูป error ในเปเปอร์ |
+| `refmesh.py` | สำเนา reference สำหรับแสดงผล (vertex clustering 4 cm แล้ว decimate เหลือไม่เกิน 30k สามเหลี่ยม) เพราะ reference 1 cm ที่ใช้วัดผลหนักเกินไปสำหรับ browser สี error คำนวณจาก reference ตัวเต็มเสมอ |
+| `static/` | `index.html` + `app.css` + ES modules (`js/api.js`, `viewer.js`, `panels.js`, `format.js`, `main.js`) ไม่มี build step |
+
+| Endpoint | คืนอะไร |
+|---|---|
+| `GET /presets` | preset ตามลำดับใน dropdown |
+| `POST /scans` (`file`, `preset`, `overrides`) | สร้างงาน |
+| `GET /scans`, `GET /scans/{id}` | งานพร้อม `preset`, `label`, `scene`, `up`, `has_reference`, `created_at`/`started_at`/`finished_at`, `elapsed_s`, `eta_s` |
+| `GET /scans/{id}/mesh.ply`, `reference.ply`, `error.ply` | mesh, สำเนา reference สำหรับแสดงผล, mesh ที่ระบายสี error |
+| `GET /gallery` | run ที่มี `mesh.ply` + `metrics.json` พร้อม label ตามเปเปอร์ |
+| `GET /gallery/{exp}/{run}/mesh.ply`, `reference.ply`, `error.ply` | เหมือนฝั่ง scans |
+| `GET /static/...` | css / js |
+
+ไฟล์ที่เว็บสร้างขึ้นเองมีสองที่เท่านั้น คือ `outputs/web/results/web/<id>/` (`job.json`, `reference_view.ply`, `error.ply` ข้างผลของ pipeline) และ `outputs/web/cache/<exp>/` สำหรับ gallery (`<scene>/reference.ply`, `<scene>/reference_view.ply`, `<scene>_<run>/error.ply`)
+เว็บไม่เขียนอะไรลง `experiments/results/` และ cache จะถูกสร้างใหม่เมื่อ `mesh.ply` หรือ reference ใหม่กว่า
+reference ของ gallery ได้จาก `build_dataset(cfg.dataset).gt_mesh()` ตาม `config.yaml` ของ run นั้น ถ้าเครื่องไม่มี dataset รายการจะมี `has_reference: false` และปุ่มสี error กับ overlay จะถูกปิด
+`scripts/warm_web_cache.py` สร้างไฟล์เหล่านี้ล่วงหน้าด้วยฟังก์ชันชุดเดียวกับ endpoint
+
+ตัวแปรแวดล้อม: `ROOMSCAN_WORK_DIR` (`outputs/web`), `ROOMSCAN_PRESET`, `ROOMSCAN_MAX_UPLOAD_MB`, `ROOMSCAN_GALLERY_ROOT` (`experiments/results`), `ROOMSCAN_GALLERY_EXPS` (`exp1_depth_source,exp6_finetune`)
+
+ตัวเลขบนหน้าเว็บมีป้ายบอกที่มาเสมอ คือ "paper run" สำหรับ gallery และ "demo run (stride N, no GT mask)" สำหรับงานที่อัปโหลด เพราะงานบนเว็บรันด้วย capture ที่ลดเฟรมแล้วและไม่ได้ mask ด้วย GT จึงไม่ใช่ตัวเลขของเปเปอร์
 
 ## 8. ADR index
 
@@ -152,7 +187,7 @@ src/roomscan_web/       Phase 6: FastAPI upload/queue/status + three.js viewer �
 
 ## 9. สิ่งที่ตั้งใจ *ไม่* ทำตอนนี้
 
-- ✅ ~~Web API / queue / three.js viewer~~ — ทำแล้วเป็น `src/roomscan_web/` (thread queue + FastAPI, ไม่มี broker); ยังไม่มี auth/multi-worker
+- ✅ ~~Web API / queue / three.js viewer~~ — ทำแล้วเป็น `src/roomscan_web/` (thread queue + FastAPI, ไม่มี broker; งานเก็บเป็นไฟล์ `job.json`); ยังไม่มี auth/multi-worker และยังไม่มีความคืบหน้ารายเฟรม (ต้องแก้ `pipeline.py` จึงต้องเขียน ADR ก่อน)
 - ❌ Experiment tracker (W&B/MLflow) — 6 ฉาก × ~30 run = JSON ก็พอ
 - ❌ GPU TSDF — เครื่องพัฒนาเป็น Apple Silicon (Open3D CUDA ใช้ไม่ได้) และ fusion < 2 s/ฉาก ไม่ใช่คอขวด; ใส่ได้ทีหลังหลัง interface `TSDFFusion` เดิม
 - ❌ Pose estimation (COLMAP/ARKit) — ARKitScenes ให้ pose (VIO) มาแล้ว; `dataio/custom.py` รับ pose จากแอป (ARKit/ARCore) ใน `poses.json`
