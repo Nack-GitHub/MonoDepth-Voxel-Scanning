@@ -94,7 +94,9 @@ class JobRunner:
 
     # ------------------------------------------------------------------ public
     def new_capture_dir(self) -> tuple[str, Path]:
-        job_id = uuid.uuid4().hex[:12]
+        # "s" first: a bare hex id such as 123456789012 or 1234e5678901 is a number to the config parser,
+        # and the pipeline then fails joining a path with an int/float (about one upload in a hundred)
+        job_id = "s" + uuid.uuid4().hex[:11]
         d = self.captures_dir / job_id
         d.mkdir(parents=True)
         return job_id, d

@@ -192,3 +192,19 @@ def test_meta_json_up_and_scene(tmp_path, capture):
         (with_meta / "meta.json").write_text(bad)           # comes from an upload: anything odd falls back
         j = _upload(client, with_meta, preset="lidar").json()
         assert (j["up"], j["scene"], j["capture_stride"]) == ("y", None, None)
+
+
+def test_job_id_never_parses_as_a_number(tmp_path, capture, monkeypatch):
+    import uuid
+
+    class NumericLooking:
+        hex = "1234e5678901" + "0" * 20                     # float("1234e5678901") parses: inf
+
+    monkeypatch.setattr(uuid, "uuid4", lambda: NumericLooking)
+    app = create_app(tmp_path / "web", autostart=False)
+    client = TestClient(app)
+    job = _upload(client, capture, preset="lidar").json()
+    assert job["id"] == "s1234e567890"
+    app.state.runner.run_pending_sync()
+    j = client.get(f"/scans/{job['id']}").json()
+    assert j["status"] == "done", j.get("error")            # run_name stayed a string all the way to the out dir
