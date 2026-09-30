@@ -203,25 +203,39 @@ def test_meta_json_up_and_scene(tmp_path, capture):
     with_meta = tmp_path / "with_meta" / "room1"
     shutil.copytree(capture, with_meta)
     (with_meta / "meta.json").write_text(json.dumps(
-        {"source": "arkitscenes", "scene": "47429736", "up": "z", "stride": 5}))
+        {"source": "arkitscenes", "scene": "47429736", "up": "z", "stride": 5, "sky_direction": "Down"}))
     app = create_app(tmp_path / "web", autostart=False)
     client = TestClient(app)
 
     plain = _upload(client, capture, preset="lidar").json()
     assert (plain["up"], plain["scene"], plain["capture_stride"], plain["origin"]) == ("y", None, None, "web")
+    assert plain["sky_direction"] == "Up"
     job = _upload(client, with_meta, preset="lidar").json()
     assert (job["up"], job["scene"], job["capture_stride"]) == ("z", "47429736", 5)
+    assert job["sky_direction"] == "Down"
 
     app.state.runner.run_pending_sync()                     # the loader must not trip over the extra file
     for j in (plain, job):
         assert client.get(f"/scans/{j['id']}").json()["status"] == "done"
     restored = TestClient(create_app(tmp_path / "web", autostart=False)).get(f"/scans/{job['id']}").json()
-    assert (restored["up"], restored["scene"]) == ("z", "47429736")
+    assert (restored["up"], restored["scene"], restored["sky_direction"]) == ("z", "47429736", "Down")
 
-    for bad in ('["z"]', "not json", json.dumps({"up": "sideways", "scene": {"a": 1}, "stride": "5"})):
+    for bad in ('["z"]', "not json",
+                json.dumps({"up": "sideways", "scene": {"a": 1}, "stride": "5", "sky_direction": "North"})):
         (with_meta / "meta.json").write_text(bad)           # comes from an upload: anything odd falls back
         j = _upload(client, with_meta, preset="lidar").json()
-        assert (j["up"], j["scene"], j["capture_stride"]) == ("y", None, None)
+        assert (j["up"], j["scene"], j["capture_stride"], j["sky_direction"]) == ("y", None, None, "Up")
+
+
+def test_web_job_tells_the_depth_source_which_way_is_up(capture):
+    from roomscan_web.jobs import capture_dataset
+
+    cfg = load_config("configs/depth/lidar.yaml", [
+        "dataset.name=custom", f"dataset.root={capture.parent}", f"dataset.scene={capture.name}"]).dataset
+    for sky in ("Up", "Down", "Left"):
+        ds = capture_dataset(cfg, sky)
+        assert len(ds) == 10 and ds.intrinsics.width == 256          # the same capture, the same fusion grid ...
+        assert ds.frame(0).extra["sky_direction"] == sky             # ... and monocular.py is told how to turn it
 
 
 def test_job_id_never_parses_as_a_number(tmp_path, capture, monkeypatch):

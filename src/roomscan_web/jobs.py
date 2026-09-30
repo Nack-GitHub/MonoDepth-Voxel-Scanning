@@ -58,6 +58,7 @@ class Job:
     scene: str | None = None          # from the capture's meta.json: which room this is (None = unknown)
     up: str = "y"                     # "y" | "z": world up-axis of the capture
     capture_stride: int | None = None  # frame stride the capture was exported with
+    sky_direction: str = "Up"         # which image edge is the sky (Up = upright images, what an app records)
     has_reference: bool = False       # the capture came with a reference.ply (Faro mesh)
 
     def public(self) -> dict[str, Any]:
@@ -172,7 +173,7 @@ class JobRunner:
                 f"output.root={self.results_dir}", "output.experiment=web", f"output.run_name={job.id}",
                 *[f"{k}={v}" for k, v in job.overrides.items()],
             ])
-            res = ReconstructionPipeline(cfg).run()
+            res = ReconstructionPipeline(cfg, dataset=capture_dataset(cfg.dataset, job.sky_direction)).run()
             job.result = json.loads((res.out_dir / "metrics.json").read_text())
             job.mesh_path = res.out_dir / "mesh.ply"
             job.n_frames = res.n_frames
@@ -210,7 +211,8 @@ def read_jobs(work_dir: str | Path) -> list[Job]:
                       overrides=dict(rec.get("overrides") or {}), preset=rec.get("preset"),
                       status=str(rec["status"]), error=rec.get("error"), created_at=rec.get("created_at"),
                       started_at=rec.get("started_at"), finished_at=rec.get("finished_at"))
-            job.scene, job.up, job.capture_stride = read_meta(job.scene_dir).values()
+            for key, value in read_meta(job.scene_dir).items():
+                setattr(job, key, value)
         except (OSError, ValueError, KeyError, TypeError):
             continue
         if job.id != path.parent.name:
@@ -237,11 +239,12 @@ def _portable(path: Path, base: Path) -> str:
 
 
 def read_meta(scene_dir: Path) -> dict[str, Any]:
-    """`meta.json` of a capture -> {scene, up, capture_stride}. Missing or malformed: unknown room, Y-up.
+    """`meta.json` of a capture -> {scene, up, capture_stride, sky_direction}.
 
-    The file comes out of an uploaded zip, so nothing in it is trusted beyond these three checked fields.
+    Missing or malformed: unknown room, Y-up, upright images. The file comes out of an uploaded zip, so
+    nothing in it is trusted beyond these checked fields.
     """
-    meta: dict[str, Any] = {"scene": None, "up": "y", "capture_stride": None}
+    meta: dict[str, Any] = {"scene": None, "up": "y", "capture_stride": None, "sky_direction": "Up"}
     try:
         raw = json.loads((scene_dir / "meta.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -254,7 +257,28 @@ def read_meta(scene_dir: Path) -> dict[str, Any]:
         meta["up"] = raw["up"]
     if isinstance(raw.get("stride"), int) and not isinstance(raw["stride"], bool) and raw["stride"] > 0:
         meta["capture_stride"] = raw["stride"]
+    if raw.get("sky_direction") in ("Up", "Down", "Left", "Right"):
+        meta["sky_direction"] = raw["sky_direction"]
     return meta
+
+
+def capture_dataset(cfg, sky_direction: str):
+    """The job's capture as a dataset whose frames say which image edge is the sky (`cfg` = the dataset block).
+
+    dataio/custom.py takes images as upright, which is what a phone app records. A capture exported from
+    ARKitScenes keeps the dataset's landscape-stored frames, and a monocular model shown a sideways or
+    upside-down room predicts another depth: on 47429736 (sky = Down) FT-LiDAR-24 came out at 16.6 cm
+    instead of 12.9 cm until the web job passed the direction on. LiDAR depth is not affected.
+    """
+    from roomscan.dataio.custom import CustomCaptureScene
+
+    class OrientedCapture(CustomCaptureScene):
+        def frame(self, idx: int):
+            f = super().frame(idx)
+            f.extra["sky_direction"] = sky_direction      # read by depth_sources/monocular.py
+            return f
+
+    return OrientedCapture(root=cfg.root, scene_id=str(cfg.scene), **dict(cfg.get("options") or {}))
 
 
 def derived_files(work_dir: Path, job: Job) -> dict[str, Path]:

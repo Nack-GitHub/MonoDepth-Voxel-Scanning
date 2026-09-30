@@ -7,7 +7,8 @@ Writes <out>/<scene>/{intrinsics.json, poses.json, meta.json, rgb/, depth/, conf
 and <out>/<scene>.zip ready for `POST /scans`. `depth/` is the ARKit LiDAR frame (metres -> uint16 mm),
 `sparse/` is the VIO proxy (ADR-011) when --sparse-points > 0, `reference.ply` the Faro reference mesh
 (or the ARKit 3DOD mesh with --reference arkit_mesh) so the web job also reports metrics.
-`meta.json` tells the web viewer which room this is and that its world is Z-up; the loader ignores it.
+`meta.json` tells the web front which room this is, that its world is Z-up, and which image edge is the
+sky (ARKitScenes stores frames landscape however the iPad was held); dataio/custom.py ignores the file.
 """
 
 from __future__ import annotations
@@ -69,9 +70,11 @@ def main() -> None:
     (out / "poses.json").write_text(json.dumps(poses))
     (out / "intrinsics.json").write_text(json.dumps(
         {"fx": intr.fx, "fy": intr.fy, "cx": intr.cx, "cy": intr.cy, "width": intr.width, "height": intr.height}))
-    # ARKitScenes worlds are Z-up (app captures through ARKit/ARCore are Y-up and ship no meta.json)
+    # ARKitScenes worlds are Z-up (app captures through ARKit/ARCore are Y-up and ship no meta.json).
+    # sky_direction: the frames are exported as stored, not turned upright, so a monocular model has to be told.
     (out / "meta.json").write_text(json.dumps(
-        {"source": "arkitscenes", "scene": args.scene, "up": "z", "stride": args.stride}))
+        {"source": "arkitscenes", "scene": args.scene, "up": "z", "stride": args.stride,
+         "sky_direction": ds.sky_direction}))
 
     if args.reference != "none":
         src = ds.reference_mesh_path if args.reference == "faro_fused" else ds.scene_dir / f"{args.scene}_3dod_mesh.ply"
