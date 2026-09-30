@@ -64,7 +64,7 @@
 3. **โหมดเปรียบเทียบ 1–3 mesh** (G3): ติ๊ก "compare" ได้สูงสุด 3 รายการ ทุกช่องใช้กล้องเดียวกัน กล้องถูกตั้งครั้งเดียวจาก Faro reference (ถ้าไม่มีใช้ช่อง LiDAR) จึงเห็นว่า mesh ของ pretrained ใหญ่เกินห้องจริง ใต้แต่ละช่องมีชื่อ, Chamfer และป้ายที่มา ("paper run" หรือ "demo run (stride N, no GT mask)") ถ้าเลือกคนละห้องจะขึ้นแถบ "different rooms — not comparable"
 4. **ระบายสีตาม error** (G4): `GET /scans/{id}/error.ply` และ `GET /gallery/.../error.ply` ใช้ turbo 0–10 cm เท่ากับ Fig. exp6 มีปุ่ม "Color: real / error" กับ legend ถ้าไม่มี reference ปุ่มจะถูกปิดพร้อม tooltip "no Faro reference"
 5. **แผง metric แบบเต็ม** (G5): Chamfer, Accuracy, Completeness, F@5, Recall@2/5/10, เวลา depth / fusion / total และ badge Overview (R@10), Furniture (R@5), Renovation (R@2) ตามเกณฑ์ ≥ 0.9 = ✓, 0.75–0.9 = ~, < 0.75 = ✗ พร้อมหมายเหตุว่าเกณฑ์เป็นตัวอย่างประกอบ แผงนี้แสดงของรายการที่คลิกหรือช่องที่เมาส์ชี้อยู่
-6. **three.js ในเครื่อง** (G7): หน้าเว็บถูกแตกเป็น `app.css` + ES modules ที่เสิร์ฟจาก `/static` แล้ว ส่วนไฟล์ three.js 0.160.0 ต้องวางใน `static/vendor/three/` (ดูสถานะใน `tasks/todo.md` ข้อ T3b)
+6. **three.js ในเครื่อง** (G7): หน้าเว็บถูกแตกเป็น `app.css` + ES modules ที่เสิร์ฟจาก `/static` และ three.js 0.160.0 อยู่ใน `static/vendor/three/` แล้ว หน้าเว็บจึงไม่มี request ออกนอกเครื่อง
 
 #### P1: เสร็จแล้ว
 
@@ -125,7 +125,7 @@ Chamfer หน่วยเป็น cm ค่าจาก Table perroom ใน m
 
 **สัปดาห์ก่อน**
 - [x] ทำ front-end P0 + P1 ให้เสร็จ และให้ `make test` ผ่าน (2026-09-30, branch `feat/web-demo`)
-- [ ] วางไฟล์ three.js 0.160.0 ใน `static/vendor/three/` (`tasks/todo.md` ข้อ T3b) แล้วปิด Wi-Fi ลองเปิดเว็บ
+- [x] วางไฟล์ three.js 0.160.0 ใน `static/vendor/three/` (2026-09-30)
 - [ ] `make capture-zip SCENE=47429736` และ `SCENE=47333774` **ใหม่** จะได้ `outputs/captures/<scene>.zip` พร้อม `reference.ply` และ `meta.json` (zip เก่าไม่มี `meta.json` ห้องจะนอนตะแคงถ้าไม่ติ๊ก Z-up เอง)
 - [ ] รันไว้ก่อนผ่านเว็บ ห้องละ 3 preset (pretrained, FT-LiDAR-24, LiDAR) แล้วปิด-เปิด server ใหม่เพื่อยืนยันว่างานไม่หาย (G2)
 - [ ] เปิดแท็บ Gallery กดเลขห้อง 47429736 แล้วดูว่าใต้ช่องขึ้น Chamfer 54.1 / 12.4 / 3.1 cm และ mesh ของ pretrained ล้นเส้น Faro

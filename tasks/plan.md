@@ -1,7 +1,8 @@
 # Implementation Plan: roomscan_web สำหรับ demo วันนำเสนอ IS
 
 อ้างอิง: [`SPEC.md`](../SPEC.md) (2026-09-30), `docs/notes/demo_presentation_plan.md` §1–2
-สถานะ: **draft รอ approve**
+สถานะ: **ทำแล้วบน branch `feat/web-demo` (2026-09-30)** ยกเว้นการซ้อมกับข้อมูลจริงใน Checkpoint 3 และ T12 · ความคืบหน้ารายข้ออยู่ใน [`todo.md`](todo.md) และผลการตรวจอยู่ใน `SPEC.md` §10
+ช่อง `[ ]` ใต้แต่ละ task ด้านล่างคงไว้ตามแผนเดิม ไม่ได้ติ๊กทีละข้อ
 
 ## Overview
 

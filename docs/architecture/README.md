@@ -145,7 +145,7 @@ src/roomscan_web/       Phase 6: FastAPI upload/queue + gallery ของ run �
 | `gallery.py` | อ่าน `experiments/results/<exp>/<scene>_<run>/` แบบอ่านอย่างเดียว ตรวจ `exp` กับ allowlist และ `run` กับ regex ก่อนสร้าง path ทุกครั้ง ไม่แสดง `exp0_synthetic_smoke` |
 | `errorcolor.py` | ระยะจาก vertex ของ mesh ไปยังจุดที่ใกล้ที่สุดบน reference (200k จุด, seed เดียวกับ `per_point_error`) แล้วระบายสี turbo 0–10 cm เท่ากับรูป error ในเปเปอร์ |
 | `refmesh.py` | สำเนา reference สำหรับแสดงผล (vertex clustering 4 cm แล้ว decimate เหลือไม่เกิน 30k สามเหลี่ยม) เพราะ reference 1 cm ที่ใช้วัดผลหนักเกินไปสำหรับ browser สี error คำนวณจาก reference ตัวเต็มเสมอ |
-| `static/` | `index.html` + `app.css` + ES modules (`js/api.js`, `viewer.js`, `panels.js`, `format.js`, `main.js`) ไม่มี build step |
+| `static/` | `index.html` + `app.css` + ES modules (`js/api.js`, `viewer.js`, `panels.js`, `format.js`, `main.js`) ไม่มี build step และ three.js 0.160.0 อยู่ใน `vendor/three/` (ดู `VERSION`) หน้าเว็บจึงไม่โหลดอะไรจากอินเทอร์เน็ต |
 
 | Endpoint | คืนอะไร |
 |---|---|
@@ -155,7 +155,7 @@ src/roomscan_web/       Phase 6: FastAPI upload/queue + gallery ของ run �
 | `GET /scans/{id}/mesh.ply`, `reference.ply`, `error.ply` | mesh, สำเนา reference สำหรับแสดงผล, mesh ที่ระบายสี error |
 | `GET /gallery` | run ที่มี `mesh.ply` + `metrics.json` พร้อม label ตามเปเปอร์ |
 | `GET /gallery/{exp}/{run}/mesh.ply`, `reference.ply`, `error.ply` | เหมือนฝั่ง scans |
-| `GET /static/...` | css / js |
+| `GET /static/...` | css / js / three.js ที่ vendor ไว้ |
 
 ไฟล์ที่เว็บสร้างขึ้นเองมีสองที่เท่านั้น คือ `outputs/web/results/web/<id>/` (`job.json`, `reference_view.ply`, `error.ply` ข้างผลของ pipeline) และ `outputs/web/cache/<exp>/` สำหรับ gallery (`<scene>/reference.ply`, `<scene>/reference_view.ply`, `<scene>_<run>/error.ply`)
 เว็บไม่เขียนอะไรลง `experiments/results/` และ cache จะถูกสร้างใหม่เมื่อ `mesh.ply` หรือ reference ใหม่กว่า

@@ -1,6 +1,6 @@
 # Spec: roomscan_web สำหรับ demo วันนำเสนอ IS (P0 + P1)
 
-สถานะ: **draft รอ approve** (2026-09-30) · เขียนตาม `agent-skills:spec-driven-development`
+สถานะ: **ทำแล้วบน branch `feat/web-demo` (2026-09-30, ยังไม่ push)** ดูผลและสิ่งที่ยังค้างใน §10 · เขียนตาม `agent-skills:spec-driven-development`
 ที่มา: `docs/notes/demo_presentation_plan.md` §1 (gap G1–G10, งานข้อ 1–10) และ §2.1 (ลำดับ demo A–E)
 ขอบเขต: งาน P0 (ข้อ 1–6) + P1 (ข้อ 7–10) · **ไม่รวม** P2 (กราฟ scale รายเฟรม, ภาพ depth รายเฟรม, เครื่องมือวัดระยะ)
 
@@ -260,6 +260,52 @@ export const badge = (recall) => (recall >= 0.9 ? '✓' : recall >= 0.75 ? '~' :
 ## 9. Open Questions
 
 1. **`mono_sparse` บนเว็บ:** จะเปลี่ยนเป็น Large ให้ตรงกับเปเปอร์ (ช้ากว่า ~6×) หรือคง Small แล้วเขียนบนป้ายว่า "Small"? spec นี้ใช้ Large ไปก่อน
+   - ที่ทำไป: ใช้ Large ตามค่าตั้งต้น (`presets.py`) ถ้าจะกลับเป็น Small ให้แก้ model กับ label ในไฟล์นั้นที่เดียว
 2. **ตัวเลขของ web ต่างจากเปเปอร์ได้แค่ไหน** ก่อนต้องหาสาเหตุ (เพราะ stride 5 และไม่ได้ mask ด้วย GT)? เสนอให้ยอมรับได้ถ้าต่างไม่เกิน ±20% ของ Chamfer
+   - ที่ทำไป: **ยังไม่ได้ตรวจ** เพราะต้องรันบนข้อมูลจริง (§10) ป้าย "demo run (stride N, no GT mask)" ติดอยู่ใต้ทุกช่องของงานบนเว็บแล้ว
 3. **Gallery ควรโชว์ทุก run หรือไม่:** รวม `gt` / `mono_oracle` ที่ใช้ GT ด้วยไหม หรือซ่อนไว้หลังตัวเลือก "show oracle rows" เพื่อไม่ให้สับสนตอน demo? spec นี้โชว์ทั้งหมดแต่ติดป้ายว่า "uses GT"
+   - ที่ทำไป: โชว์ทั้งหมดตามค่าตั้งต้น แถว oracle มีคำว่า "(uses GT)" และแถว Faro มีคำว่า "(pipeline ceiling)"
 4. จะอัปเดตข้อ 1.3 ใน `docs/notes/demo_presentation_plan.md` ให้ตรงกับ spec นี้ด้วยไหม เช่นเรื่อง timer ที่ใช้เวลาจาก server แทน client
+   - ที่ทำไป: อัปเดตแล้ว (หัวข้อ 0, 1.1–1.3, 2.3, 2.4 ของไฟล์นั้น)
+
+---
+
+## 10. ผลการทำงาน (2026-09-30)
+
+งานอยู่บน branch `feat/web-demo` commit แยกตาม task และยังไม่ push
+เครื่องที่ใช้ทำงานเป็น Windows ที่ไม่มี `make`, ไม่มี torch, ไม่มี `data/arkitscenes` ของห้องทดสอบ และไม่มี `mesh.ply` ของ sweep (mesh ไม่ได้ commit)
+การตรวจทั้งหมดจึงทำกับ synthetic scene ซึ่งใช้ยืนยันได้แค่ว่าระบบต่อกันถูก ไม่ใช่ผลการทดลอง
+
+### 10.1 Success criteria (§8)
+
+| ข้อ | สถานะ | ตรวจอย่างไร |
+|---|---|---|
+| 1 test + lint | ผ่าน | `pytest -q` 61 passed, 1 skipped และ `ruff check src tests scripts` ผ่าน (รันตรง ๆ เพราะเครื่องไม่มี `make`) test ใหม่ครอบทุกแถวของ §6 |
+| 2 dropdown 4 preset | ผ่าน | test + ดูบน browser |
+| 3 restart แล้วงานยังอยู่ | ผ่าน | test + ปิด-เปิด server จริง |
+| 4 Gallery 47429736 สามช่อง 54.1 / 12.4 / 3.1 cm | **ยังไม่ได้ตรวจบนข้อมูลจริง** | ตรวจกับ gallery สังเคราะห์แล้วว่าสามช่องหมุนพร้อมกัน กรอบกล้องมาจาก reference และตัวเลขใต้ช่องมาจาก `metrics.json` ค่าใน `metrics.json` ที่ commit ไว้ปัดได้ 54.1 / 12.4 / 3.1 cm |
+| 5 สี error + legend, ≤ 3 วินาทีหลัง warm | ผ่านบน synthetic | mesh 35 MB กับ reference 1.4 ล้านสามเหลี่ยม: คำนวณครั้งแรก 0.7 วินาที, หลัง warm 0.05 วินาที, โหลดใน browser 0.25 วินาที ยังไม่ได้จับเวลากับ Faro reference จริง |
+| 6 Faro overlay ทั้ง gallery และ web job | ผ่านบน synthetic | ดูบน browser ทั้งสองทาง |
+| 7 แผง metric 8 ค่า + badge, FT-LiDAR-24 ได้ Overview ✗ | ผ่านบน synthetic | เกณฑ์ badge ตรวจแล้ว (0.584 → ✗, 0.8 → ~, 0.91 → ✓) ค่า R@10 ของ FT-LiDAR-24 ห้อง 47429736 ใน `metrics.json` คือ 0.584 จึงจะขึ้น ✗ |
+| 8 อัปโหลด `47429736.zip` ด้วย iPad LiDAR ตั้งตรงเอง + ตัวจับเวลา | **ยังไม่ได้ตรวจบนข้อมูลจริง** | ตรวจกับ capture สังเคราะห์ที่ export ด้วย `export_capture.py` ตัวใหม่ (มี `meta.json`) ผ่านฟอร์มอัปโหลดจริงแล้ว |
+| 9 offline | ผ่านบางส่วน | three.js 0.160.0 อยู่ใน `static/vendor/three/` แล้ว และ network log ของ browser ไม่มี request ออกนอก localhost ตลอดการใช้ข้อ 2–7 ยังไม่ได้ปิด Wi-Fi จริง และยังไม่ได้ลองงาน mono กับ `HF_HUB_OFFLINE=1` |
+| 10 อ่านออกที่ 1280×720 ไม่มี horizontal scroll | ผ่าน | ตรวจใน browser pane ที่ 1280×720 ทั้ง light และ dark ยังไม่ได้ดูบนโปรเจกเตอร์จริงและจอ Retina |
+
+### 10.2 สิ่งที่ยังค้าง
+
+1. **ซ้อมกับข้อมูลจริงบนเครื่องที่มี mesh ของ sweep** (ข้อ 4, 8, 9 ข้างบน และ Checkpoint 3 ของ `tasks/plan.md`) รวมถึงตรวจว่าตัวเลขของงานบนเว็บต่างจาก gallery ไม่เกิน ±20%
+2. **รัน FT-LiDAR-24 / pretrained ผ่านเว็บบนห้องจริง** ยังไม่ได้ทำ (ต้องถามก่อนตาม §7 และเครื่องนี้ไม่มีข้อมูลห้องทดสอบ)
+3. **Retina**: viewport คำนวณเป็น CSS px แล้วให้ three.js คูณ pixel ratio เอง แต่เครื่องที่ตรวจมี pixel ratio 1 จึงยังไม่ได้เห็นบนจอ Retina
+
+### 10.3 ส่วนที่ต่างจาก spec และเหตุผล
+
+- **`reference.ply` ที่ส่งให้ browser เป็นสำเนาที่ลดสามเหลี่ยมแล้ว** (`refmesh.py`: vertex clustering 4 cm แล้ว decimate เหลือไม่เกิน 30k) เพราะ reference ที่ fuse ที่ 1 cm มีสามเหลี่ยมหลักล้าน สี error ยังคำนวณจาก reference ตัวเต็ม
+- **Faro overlay วาดเฉพาะเส้นขอบมุม ไม่ใช่ขอบของทุกสามเหลี่ยม และวาดทับ mesh เสมอ** เพราะ wireframe เต็มของ mesh ที่ fuse มาเป็นหมอกสีเทาทั้งก้อน และถ้าใช้ depth test เส้นของห้องจริงจะถูก mesh ที่พองออกบังหมด
+- **ตาราง Gallery วาง source เป็นแถวและห้องเป็นคอลัมน์** และ sidebar กว้างขึ้นเป็น 420 px เมื่อเปิดแท็บนี้ เพื่อให้ชื่อเต็มตามเปเปอร์อ่านได้และตารางไม่ล้น ช่องในตารางทำหน้าที่เป็น checkbox "compare" (กดช่องเดียวก็คือเปิดดูเดี่ยว) และกดเลขห้องเพื่อเทียบ pretrained / FT-LiDAR-24 / iPad LiDAR ในคลิกเดียว
+- **`has_reference` ของ gallery ในรายการ** ตอบจากการที่ cache มี reference แล้วหรือ dataset ของ run นั้นเปิดได้บนเครื่อง ไม่ได้โหลด mesh จริงตอน list เพราะช้า ถ้า dataset มีแต่ยังไม่ได้ `make reference` ปุ่มจะกดได้แต่ช่องนั้นจะขึ้น "error colours failed"
+- **mesh สี error มีแสงเงาอ่อน ๆ** (ambient 80%) เพื่อให้ยังเห็นรูปทรงของผนัง สีบนจอจึงมืดกว่า legend ได้ไม่เกิน 20% แต่โทนสีไม่เปลี่ยน
+- **job id ขึ้นต้นด้วยตัวอักษร `s`** แก้ bug เดิมที่ id ฐานสิบหกบางค่า (เช่น `1234e5678901`) ถูก OmegaConf อ่านเป็นตัวเลขแล้ว pipeline ล้ม ประมาณ 1 ใน 100 ของการอัปโหลด
+- **ไฟล์ใน `/static` และไฟล์ PLY ส่งพร้อม `Cache-Control: no-cache`** เพื่อไม่ให้ browser ใช้ module เก่าปนกับ module ใหม่
+- **three.js ที่ vendor มี 4 ไฟล์** คือสามไฟล์ตาม §2 กับ `LICENSE` (MIT) และมี `VERSION` ที่บันทึก sha256 ไว้ ดาวน์โหลดหลังได้รับอนุญาตเมื่อ 2026-09-30
+- **โมดูลที่เพิ่มจากรายการใน §4:** `refmesh.py` (สำเนา reference สำหรับแสดงผล) และ `_fs.py` (rename แบบ atomic ที่ลองซ้ำเมื่อ Windows ล็อกไฟล์, ตรวจอายุ cache)
+- **`public()` มี field เพิ่ม:** `elapsed_s` (เวลาที่ผ่านไปตามนาฬิกาของ server ใช้กับตัวจับเวลา), `eta_s`, `n_frames`, `capture_stride`
