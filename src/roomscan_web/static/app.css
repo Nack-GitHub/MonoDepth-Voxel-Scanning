@@ -3,6 +3,7 @@
 * { box-sizing:border-box }
 [hidden] { display:none !important }
 body { margin:0; font:14px/1.45 system-ui,sans-serif; color:var(--ink); background:var(--bg); display:grid; grid-template-columns:320px 1fr; height:100vh; overflow:hidden }
+body.wide { grid-template-columns:420px 1fr }
 aside { border-right:1px solid var(--line); padding:16px; overflow:auto }
 h1 { font-size:16px; margin:0 0 12px }
 form { display:grid; grid-template-columns:minmax(0,1fr); gap:8px; margin-bottom:16px }
@@ -10,6 +11,20 @@ input,select,button { font:inherit; padding:6px 8px; border:1px solid var(--line
 input[type=checkbox] { padding:0; margin:0 4px 0 0; vertical-align:-2px }
 button { background:var(--accent); color:#fff; border:0; cursor:pointer }
 ul { list-style:none; padding:0; margin:12px 0 0 }
+.tabs { display:flex; align-items:center; gap:4px; margin-bottom:12px }
+.tabs button { background:transparent; color:var(--muted); border:1px solid var(--line); padding:4px 12px }
+.tabs button.on { color:var(--ink); border-color:var(--accent) }
+.tabs #clear { margin-left:auto; border:0; padding:4px 0; text-decoration:underline; font-size:12px }
+#gallery table { width:100%; border-collapse:collapse; table-layout:fixed; font-size:12px }
+#gallery thead th { vertical-align:bottom; padding-bottom:4px; font-weight:400 }
+#gallery th.src { width:152px; padding:3px 6px 3px 0; text-align:left; font-weight:500; line-height:1.25 }
+#gallery .room { writing-mode:vertical-rl; transform:rotate(180deg); background:transparent; color:var(--ink); border:0; padding:4px 0; font-size:11px; font-variant-numeric:tabular-nums }
+#gallery .room:hover { color:var(--accent) }
+#gallery td { padding:1px; text-align:center; color:var(--muted) }
+#gallery td button { width:100%; padding:4px 0; background:transparent; color:var(--ink); border:1px solid var(--line); border-radius:4px; font-size:11px; font-variant-numeric:tabular-nums }
+#gallery td button.on { background:var(--accent); border-color:var(--accent); color:#fff }
+#gallery td button:disabled { color:var(--muted); cursor:not-allowed }
+.g-note { font-size:11px; color:var(--muted); margin:0 0 8px }
 li { padding:8px; border:1px solid var(--line); border-radius:6px; margin-bottom:6px; cursor:pointer }
 li.active { border-color:var(--accent) }
 li .row { display:flex; justify-content:space-between; align-items:baseline; gap:8px }

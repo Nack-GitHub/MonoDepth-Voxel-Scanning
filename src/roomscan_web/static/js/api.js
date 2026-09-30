@@ -7,6 +7,7 @@ async function getJSON(url) {
 
 export const listPresets = () => getJSON('/presets');
 export const listScans = () => getJSON('/scans');
+export const listGallery = () => getJSON('/gallery');
 
 // FormData with `file` and `preset`; the server merges the preset's overrides.
 export async function createScan(formData) {
@@ -32,6 +33,26 @@ export function itemFromJob(j) {
       mesh: `/scans/${j.id}/mesh.ply`,
       reference: j.has_reference ? `/scans/${j.id}/reference.ply` : null,
       error: j.has_reference ? `/scans/${j.id}/error.ply` : null,
+    },
+  };
+}
+
+// A finished run of the paper's experiments (GET /gallery); `g.id` is "<exp>/<scene>_<run>".
+export function itemFromGallery(g) {
+  const base = `/gallery/${g.id}`;
+  return {
+    key: `paper:${g.id}`,
+    origin: 'paper',
+    label: g.label,
+    originNote: null,
+    scene: g.scene,
+    up: g.up,
+    metrics: g.metrics,
+    isLidar: g.run === 'lidar',
+    urls: {
+      mesh: `${base}/mesh.ply`,
+      reference: g.has_reference ? `${base}/reference.ply` : null,
+      error: g.has_reference ? `${base}/error.ply` : null,
     },
   };
 }

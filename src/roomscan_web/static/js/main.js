@@ -1,15 +1,16 @@
 // Page state and wiring. The only module that touches both the API and the DOM.
 import * as api from './api.js';
 import {
-  MAX_COMPARE, fillPresets, markColorMode, markFocus, needsReference, renderCells, renderJobs, renderLegend,
-  renderMetrics, setCellNote, tickTimers,
+  MAX_COMPARE, fillPresets, markColorMode, markFocus, needsReference, renderCells, renderGallery, renderJobs,
+  renderLegend, renderMetrics, setCellNote, tickTimers,
 } from './panels.js';
 import { Viewer } from './viewer.js';
 
 const $ = (id) => document.getElementById(id);
 const state = {
-  jobs: [],
-  items: new Map(),        // key -> item, for everything that can be shown right now
+  jobs: [],                // web jobs, as GET /scans returns them
+  gallery: [],             // paper runs, as GET /gallery returns them
+  items: new Map(),        // key -> item, for everything that can be shown right now (finished jobs + gallery)
   compare: [],             // keys ticked "compare" (max MAX_COMPARE), in the order they were ticked
   solo: null,              // key opened by clicking a row while nothing is ticked
   focus: null,             // key the metric panel talks about: clicked row or hovered cell
@@ -18,6 +19,7 @@ const state = {
   notes: new Map(),        // key -> { count, color }: what the small print under a cell says
   cellKeys: '',            // keys the cells were last built for
   fetchedAt: performance.now(),
+  poll: 0,                 // timer of the next GET /scans while a job is queued or running
 };
 const viewer = new Viewer($('view'));
 
@@ -51,23 +53,31 @@ function setFocus(key) {
   renderMetrics($('metrics'), state.items.get(key) ?? null);
 }
 
+// open one item alone (a click on a row); a row that is already being compared just takes the focus
+function pick(key) {
+  if (!state.compare.includes(key)) { state.compare = []; state.solo = key; }
+  state.focus = key;
+  update();
+}
+
+// tick / untick "compare"; web jobs and gallery runs count towards the same MAX_COMPARE
+function compare(key, on) {
+  if (on && state.compare.length >= MAX_COMPARE) return;
+  state.compare = on ? [...state.compare.filter((k) => k !== key), key] : state.compare.filter((k) => k !== key);
+  state.solo = null;
+  state.focus = on ? key : state.compare.at(-1) ?? null;
+  update();
+}
+
 function renderSidebar() {
-  renderJobs($('jobs'), state.jobs, {
-    shown: shownItems().map((it) => it.key),
+  const shown = shownItems().map((it) => it.key);
+  renderJobs($('jobs'), state.jobs, { shown, compare: state.compare, onPick: pick, onCompare: compare });
+  renderGallery($('gallery'), state.gallery, {
     compare: state.compare,
-    onPick: (key) => {
-      if (!state.compare.includes(key)) { state.compare = []; state.solo = key; }
-      state.focus = key;
-      update();
-    },
-    onCompare: (key, on) => {
-      if (on && state.compare.length >= MAX_COMPARE) return;
-      state.compare = on ? [...state.compare, key] : state.compare.filter((k) => k !== key);
-      state.solo = null;
-      state.focus = on ? key : state.compare.at(-1) ?? null;
-      update();
-    },
+    onCompare: compare,
+    onRoom: (keys) => { state.compare = keys.slice(0, MAX_COMPARE); state.solo = null; state.focus = keys[0] ?? null; update(); },
   });
+  $('clear').hidden = state.compare.length === 0 && !state.solo;
   tickTimers(state.fetchedAt);
 }
 
@@ -98,13 +108,38 @@ function update() {
   setFocus(state.focus);
 }
 
-async function refresh() {
-  state.jobs = await api.listScans();
-  state.fetchedAt = performance.now();
-  state.items = new Map(state.jobs.filter((j) => j.status === 'done').map((j) => [`web:${j.id}`, api.itemFromJob(j)]));
+function rebuildItems() {
+  state.items = new Map([
+    ...state.jobs.filter((j) => j.status === 'done').map((j) => api.itemFromJob(j)),
+    ...state.gallery.map((g) => api.itemFromGallery(g)),
+  ].map((item) => [item.key, item]));
   state.compare = state.compare.filter((k) => state.items.has(k));
   update();
-  if (state.jobs.some((j) => j.status === 'queued' || j.status === 'running')) setTimeout(refresh, 2000);
+}
+
+async function refresh() {
+  clearTimeout(state.poll);
+  state.jobs = await api.listScans();
+  state.fetchedAt = performance.now();
+  rebuildItems();
+  if (state.jobs.some((j) => j.status === 'queued' || j.status === 'running')) state.poll = setTimeout(refresh, 2000);
+}
+
+async function loadGallery() {
+  try {
+    state.gallery = await api.listGallery();
+  } catch (err) {
+    console.error(err);
+    state.gallery = [];
+  }
+  rebuildItems();
+}
+
+function showTab(name) {
+  for (const b of document.querySelectorAll('.tabs [data-tab]')) b.classList.toggle('on', b.dataset.tab === name);
+  $('tab-scans').hidden = name !== 'scans';
+  $('tab-gallery').hidden = name !== 'gallery';
+  document.body.classList.toggle('wide', name === 'gallery');     // the room x source table needs the width
 }
 
 viewer.onColorState = (i, colorState) => {
@@ -119,6 +154,8 @@ $('zup').onchange = () => {
   for (const item of shownItems()) state.zUp.set(item.key, $('zup').checked);
   viewer.setZUp($('zup').checked);
 };
+for (const b of document.querySelectorAll('.tabs [data-tab]')) b.onclick = () => showTab(b.dataset.tab);
+$('clear').onclick = () => { state.compare = []; state.solo = null; update(); };
 $('up').onsubmit = async (e) => {
   e.preventDefault();
   try {
@@ -131,4 +168,5 @@ $('up').onsubmit = async (e) => {
 };
 setInterval(() => tickTimers(state.fetchedAt), 500);
 fillPresets($('preset'), $('preset-note'), await api.listPresets());
-refresh();
+await refresh();
+loadGallery();

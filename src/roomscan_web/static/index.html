@@ -9,13 +9,23 @@
 <body>
 <aside>
   <h1>roomscan</h1>
-  <form id="up">
-    <input type="file" name="file" accept=".zip" required>
-    <select name="preset" id="preset"></select>
-    <div class="st" id="preset-note"></div>
-    <button type="submit">Upload &amp; reconstruct</button>
-  </form>
-  <ul id="jobs"></ul>
+  <div class="tabs">
+    <button type="button" data-tab="scans" class="on">Scans</button>
+    <button type="button" data-tab="gallery">Gallery</button>
+    <button type="button" id="clear" hidden>clear selection</button>
+  </div>
+  <section id="tab-scans">
+    <form id="up">
+      <input type="file" name="file" accept=".zip" required>
+      <select name="preset" id="preset"></select>
+      <div class="st" id="preset-note"></div>
+      <button type="submit">Upload &amp; reconstruct</button>
+    </form>
+    <ul id="jobs"></ul>
+  </section>
+  <section id="tab-gallery" hidden>
+    <div id="gallery"></div>
+  </section>
 </aside>
 <main>
   <div id="toolbar">
@@ -29,7 +39,7 @@
   <div id="banner" hidden>different rooms — not comparable</div>
   <div id="view">
     <div id="cells"></div>
-    <div id="hud">select a finished scan, or tick “compare” on up to 3</div>
+    <div id="hud">open a scan or a gallery run, or compare up to 3 side by side</div>
   </div>
   <div id="metrics" hidden></div>
 </main>

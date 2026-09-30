@@ -71,6 +71,63 @@ export function renderJobs(ul, jobs, { shown, compare, onPick, onCompare }) {
   }
 }
 
+// The three sources the demo compares; a click on a room's header ticks them in this order.
+const DEMO_TRIO = ['mono_metric', 'mono_ft_lidar_all', 'lidar'];
+
+// Gallery tab: sources down, rooms across, Chamfer (cm) in each cell. A cell is a "compare" toggle that
+// counts towards the same MAX_COMPARE as the web jobs; `onRoom(keys)` compares the demo trio of one room.
+export function renderGallery(box, runs, { compare, onCompare, onRoom }) {
+  box.replaceChildren();
+  if (!runs.length) {
+    box.append(el('p', 'g-note', 'No paper runs found: the gallery lists experiment runs that still have their mesh.ply (meshes are not committed; they exist on the machine that ran the sweeps).'));
+    return;
+  }
+  const scenes = [...new Set(runs.map((r) => r.scene))];
+  const names = [...new Map(runs.map((r) => [r.run, r.label]))];          // [run, label], server order
+  const at = new Map(runs.map((r) => [`${r.scene}/${r.run}`, r]));
+  const full = compare.length >= MAX_COMPARE;
+  const table = el('table');
+  const head = el('tr');
+  head.append(el('th', 'src', 'Chamfer, cm'));
+  for (const scene of scenes) {
+    const room = el('button', 'room', scene);
+    room.type = 'button';
+    room.title = 'compare pretrained / FT-LiDAR-24 / iPad LiDAR of this room';
+    room.onclick = () => onRoom(DEMO_TRIO.map((run) => at.get(`${scene}/${run}`)).filter(Boolean).map((r) => `paper:${r.id}`));
+    const th = el('th');
+    th.append(room);
+    head.append(th);
+  }
+  table.append(el('thead'), el('tbody'));
+  table.tHead.append(head);
+  for (const [run, label] of names) {
+    const tr = el('tr');
+    tr.append(el('th', 'src', label));
+    for (const scene of scenes) {
+      const r = at.get(`${scene}/${run}`), td = el('td');
+      const chamfer = r?.metrics?.metrics_3d?.chamfer;
+      if (!r) td.textContent = '—';
+      else {
+        const key = `paper:${r.id}`, on = compare.includes(key);
+        const b = el('button', on ? 'on' : '', chamfer != null ? (chamfer * 100).toFixed(1) : '·');
+        b.type = 'button';
+        b.setAttribute('role', 'checkbox');
+        b.setAttribute('aria-checked', String(on));
+        b.disabled = !on && full;
+        b.title = b.disabled ? `up to ${MAX_COMPARE} at once` : `${label} — room ${scene}`;
+        b.onclick = () => onCompare(key, !on);
+        td.append(b);
+      }
+      tr.append(td);
+    }
+    table.tBodies[0].append(tr);
+  }
+  box.append(
+    el('p', 'g-note', 'Runs of the paper’s experiments. Click a cell to show it (up to 3 side by side), a room number for pretrained / FT-LiDAR-24 / LiDAR.'),
+    table,
+  );
+}
+
 // running timers count from the server's elapsed_s (+ time since that answer), so a reload does not reset them
 export function tickTimers(fetchedAt) {
   const dt = (performance.now() - fetchedAt) / 1000;

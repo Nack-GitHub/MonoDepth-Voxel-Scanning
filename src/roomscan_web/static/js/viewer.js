@@ -6,9 +6,38 @@ import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
 const loader = new PLYLoader();
 const EDGE_ANGLE_DEG = 30;      // faces meeting at more than this are drawn as an edge of the Faro overlay
 
-// robust bounds: median vertex as centre, 90th-percentile radius as size (floaters would blow up a bbox)
-function robustSphere(geo, matrixWorld) {
-  const pos = geo.attributes.position, step = Math.max(1, Math.floor(pos.count / 20000));
+// ~n points spread evenly over a mesh's surface (area-weighted; fixed seed, so a reload frames the same way).
+// The thinned reference has few vertices on a flat wall and many on furniture: its vertices alone would
+// pull the framing towards the clutter.
+function surfacePoints(geo, n = 4000) {
+  const pos = geo.attributes.position, index = geo.index, tris = (index ? index.count : pos.count) / 3;
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+  const corners = (t) => {
+    a.fromBufferAttribute(pos, index ? index.getX(3 * t) : 3 * t);
+    b.fromBufferAttribute(pos, index ? index.getX(3 * t + 1) : 3 * t + 1).sub(a);
+    c.fromBufferAttribute(pos, index ? index.getX(3 * t + 2) : 3 * t + 2).sub(a);
+  };
+  const cum = new Float64Array(tris), n1 = new THREE.Vector3();
+  let total = 0;
+  for (let t = 0; t < tris; t++) { corners(t); total += n1.crossVectors(b, c).length(); cum[t] = total; }
+  let seed = 1;
+  const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+  const out = new Float32Array(3 * n);
+  for (let i = 0; i < n; i++) {
+    const r = rnd() * total;
+    let lo = 0, hi = tris - 1;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (cum[mid] < r) lo = mid + 1; else hi = mid; }
+    corners(lo);
+    let u = rnd(), v = rnd();
+    if (u + v > 1) { u = 1 - u; v = 1 - v; }
+    a.addScaledVector(b, u).addScaledVector(c, v).toArray(out, 3 * i);
+  }
+  return new THREE.BufferAttribute(out, 3);
+}
+
+// robust bounds: median point as centre, 90th-percentile radius as size (floaters would blow up a bbox)
+function robustSphere(pos, matrixWorld) {
+  const step = Math.max(1, Math.floor(pos.count / 20000));
   const xs = [], ys = [], zs = [], v = new THREE.Vector3();
   for (let i = 0; i < pos.count; i += step) { v.fromBufferAttribute(pos, i).applyMatrix4(matrixWorld); xs.push(v.x); ys.push(v.y); zs.push(v.z); }
   const med = (a) => { const b = a.slice().sort((p, q) => p - q); return b[b.length >> 1]; };
@@ -37,6 +66,7 @@ class Cell {
     this.scene.add(this.group);
     this.mesh = null;                 // the reconstruction, in its own colours
     this.reference = null;            // Faro reference as a grey wireframe (hidden until the overlay is on)
+    this.referencePoints = null;      // points on the reference's surface, for framing the camera
     this.errorMesh = null;            // the same mesh coloured by distance to the reference, fetched on demand
     this.errorReady = null;
     this.wantError = false;
@@ -65,6 +95,7 @@ class Cell {
     // Only the creases (corners of walls, floor, furniture): every triangle edge of a fused scan is a grey fog.
     // No depth test: the true walls must stay visible inside a reconstruction that came out too big.
     const edges = new THREE.EdgesGeometry(geo, EDGE_ANGLE_DEG);
+    this.referencePoints = surfacePoints(geo);
     geo.dispose();
     const mat = new THREE.LineBasicMaterial({ color: 0xa8adb5, transparent: true, opacity: 0.85, depthTest: false, depthWrite: false });
     this.reference = new THREE.LineSegments(edges, mat);
@@ -215,13 +246,14 @@ export class Viewer {
     const src = withRef ?? this.cells.find((c) => c.mesh && c.item.isLidar) ?? this.cells.find((c) => c.mesh);
     if (!src) return;
     src.group.updateMatrixWorld(true);
-    const target = withRef ? src.reference : src.mesh;
-    const { center, radius } = robustSphere(target.geometry, target.matrixWorld);
+    const points = withRef ? src.referencePoints : src.mesh.geometry.attributes.position;
+    const { center, radius } = robustSphere(points, src.group.matrixWorld);
     const { camera, controls } = this;
     // far enough that the sphere fits the narrower of the two view angles (cells are portrait in compare mode)
     const b = src.pane.getBoundingClientRect(), aspect = b.height > 0 ? b.width / b.height : 1;
     const half = Math.atan(Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * Math.min(1, aspect));
-    const dist = Math.max(2.4, 1.15 / Math.sin(half)) * radius;
+    const margin = aspect < 1 ? 1.35 : 1.15;     // a room is wider than tall: narrow cells crop it first
+    const dist = Math.max(2.4, margin / Math.sin(half)) * radius;
     controls.target.copy(center);
     camera.position.copy(center).add(new THREE.Vector3(0.7, 0.6, 0.8).normalize().multiplyScalar(dist));
     camera.near = radius / 100; camera.far = radius * 60; camera.updateProjectionMatrix();
