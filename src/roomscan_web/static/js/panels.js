@@ -3,6 +3,10 @@ import { cm, eta, mmss } from './format.js';
 
 export const MAX_COMPARE = 3;
 const ORIGIN = { web: 'demo run', paper: 'paper run' };      // where a number comes from is always on screen
+// errorcolor.TURBO sampled every 10 % (tests/test_web.py keeps the two in step)
+const TURBO_STOPS = [
+  '#30123b', '#455ccf', '#3e9bfe', '#19d5cd', '#46f884', '#a4fc3c', '#e1dd37', '#fea732', '#f05b12', '#c32503', '#7a0403',
+];
 
 function el(tag, cls, text) {
   const e = document.createElement(tag);
@@ -94,11 +98,21 @@ export function renderCells(container, items) {
 }
 
 // A toolbar control that needs the Faro reference: greyed out, with the reason as tooltip, when no shown item has one.
-export function needsReference(label, input, available) {
-  input.disabled = !available;
-  if (!available) input.checked = false;
+export function needsReference(label, inputs, available) {
+  for (const input of inputs) input.disabled = !available;
   label.classList.toggle('off', !available);
   label.title = available ? '' : 'no Faro reference';
+}
+
+// The colour scale of the error mode: turbo, 0 to 10 cm, everything beyond in the last colour.
+export function renderLegend(box) {
+  const bar = el('div', 'bar');
+  bar.style.background = `linear-gradient(to right, ${TURBO_STOPS.join(', ')})`;
+  box.replaceChildren(el('span', '', 'error vs Faro'), el('span', '', '0'), bar, el('span', '', '≥ 10 cm'));
+}
+
+export function markColorMode(seg, mode) {
+  for (const b of seg.querySelectorAll('button')) b.classList.toggle('on', b.dataset.mode === mode);
 }
 
 export function setCellNote(container, index, text) {

@@ -23,12 +23,23 @@ class Cell {
     this.item = item;
     this.pane = pane;                 // DOM element whose rectangle this cell is drawn into
     this.scene = new THREE.Scene();
-    this.scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.1));
-    const dir = new THREE.DirectionalLight(0xffffff, 0.6); dir.position.set(2, 3, 4); this.scene.add(dir);
+    this.lights = new THREE.Group();        // for the mesh in its own colours
+    const dir = new THREE.DirectionalLight(0xffffff, 0.6); dir.position.set(2, 3, 4);
+    this.lights.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.1), dir);
+    // Error colours get a nearly flat rig: 80 % ambient + a little direction, so walls still read as walls
+    // while a colour on screen stays within 20 % of the legend's brightness and keeps its hue.
+    this.errorLights = new THREE.Group();
+    const soft = new THREE.DirectionalLight(0xffffff, Math.PI * 0.25); soft.position.set(2, 3, 4);
+    this.errorLights.add(new THREE.AmbientLight(0xffffff, Math.PI * 0.8), soft);
+    this.errorLights.visible = false;
+    this.scene.add(this.lights, this.errorLights);
     this.group = new THREE.Group();   // carries the z-up -> y-up rotation for everything in the cell
     this.scene.add(this.group);
     this.mesh = null;                 // the reconstruction, in its own colours
     this.reference = null;            // Faro reference as a grey wireframe (hidden until the overlay is on)
+    this.errorMesh = null;            // the same mesh coloured by distance to the reference, fetched on demand
+    this.errorReady = null;
+    this.wantError = false;
     this.disposed = false;
     // resolves to the vertex count, or null when the mesh could not be loaded
     this.ready = Promise.all([
@@ -62,6 +73,34 @@ class Cell {
     this.group.add(this.reference);
   }
 
+  async loadError() {
+    const geo = await loader.loadAsync(this.item.urls.error);
+    if (this.disposed) { geo.dispose(); return; }
+    geo.computeVertexNormals();
+    this.errorMesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+    this.errorMesh.visible = false;
+    this.group.add(this.errorMesh);
+  }
+
+  // Swap between the mesh's own colours and its error colours. Resolves to what the cell ended up as:
+  // 'real' | 'error' | 'none' (nothing to compare against) | 'failed'.
+  async setErrorColors(on) {
+    this.wantError = on;
+    let result = 'real';
+    if (on && !this.item.urls.error) result = 'none';
+    else if (on) {
+      this.errorReady ??= this.loadError().then(() => true, (err) => { console.error(err); return false; });
+      if (!(await this.errorReady)) this.errorReady = null;        // let the next toggle try again
+      result = this.errorMesh ? 'error' : 'failed';
+    }
+    const showError = this.wantError && this.errorMesh != null;     // the toggle may have moved on while loading
+    if (this.errorMesh) this.errorMesh.visible = showError;
+    if (this.mesh) this.mesh.visible = !showError;
+    this.errorLights.visible = showError;
+    this.lights.visible = !showError;
+    return this.wantError === on ? result : 'real';
+  }
+
   setZUp(zUp) {
     this.group.rotation.x = zUp ? -Math.PI / 2 : 0;
     this.group.updateMatrixWorld(true);
@@ -83,7 +122,9 @@ export class Viewer {
     this.cells = [];
     this.generation = 0;
     this.overlay = false;
+    this.colorMode = 'real';
     this.onHover = null;                          // (cell index) => void
+    this.onColorState = null;                     // (cell index, 'loading' | 'real' | 'error' | 'none' | 'failed') => void
     this.bg = new THREE.Color();
     const scheme = matchMedia('(prefers-color-scheme: dark)');
     const readBg = () => this.bg.set(getComputedStyle(document.body).getPropertyValue('--bg').trim());
@@ -141,6 +182,18 @@ export class Viewer {
     if (gen !== this.generation) return;
     this.setOverlay(this.overlay);
     this.frame();
+    this.setColorMode(this.colorMode);
+  }
+
+  // 'real' or 'error' (distance to the Faro reference, fetched per cell the first time it is asked for).
+  async setColorMode(mode) {
+    this.colorMode = mode;
+    const gen = this.generation, report = (i, s) => { if (this.onColorState) this.onColorState(i, s); };
+    await Promise.all(this.cells.map(async (cell, i) => {
+      if (mode === 'error' && cell.item.urls.error && !cell.errorMesh) report(i, 'loading');
+      const result = await cell.setErrorColors(mode === 'error');
+      if (gen === this.generation && this.colorMode === mode) report(i, result);
+    }));
   }
 
   setZUp(zUp) {

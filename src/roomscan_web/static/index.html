@@ -19,8 +19,12 @@
 </aside>
 <main>
   <div id="toolbar">
+    <span id="color-label">Color:
+      <span class="seg" id="color"><button type="button" data-mode="real" class="on">real</button><button type="button" data-mode="error">error</button></span>
+    </span>
     <label id="overlay-label"><input type="checkbox" id="overlay"> Faro overlay</label>
     <label title="rotate a Z-up capture (ARKitScenes) upright; ARKit/ARCore app captures are Y-up"><input type="checkbox" id="zup"> Z-up</label>
+    <div id="legend" hidden></div>
   </div>
   <div id="banner" hidden>different rooms — not comparable</div>
   <div id="view">

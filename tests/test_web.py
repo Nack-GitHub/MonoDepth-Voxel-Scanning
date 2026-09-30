@@ -5,6 +5,7 @@ import json
 import shutil
 import zipfile
 
+import numpy as np
 import pytest
 
 pytest.importorskip("open3d")
@@ -248,3 +249,90 @@ def test_reference_view_thins_a_dense_reference(tmp_path):
     assert not view.has_vertex_colors() and not view.has_vertex_normals()
     size = view.get_max_bound() - view.get_min_bound()
     assert abs(size - 2.0).max() < 0.1                                              # same sphere, fewer triangles
+
+
+def _plane(z=0.0, size=0.5, n=40):
+    """A size x size square at height z, as an n x n grid of vertices."""
+    import open3d as o3d
+
+    g = np.linspace(0.0, size, n)
+    xs, ys = np.meshgrid(g, g)
+    verts = np.stack([xs.ravel(), ys.ravel(), np.full(xs.size, z)], axis=1)
+    i = np.arange((n - 1) * n).reshape(n - 1, n)[:, :-1].ravel()
+    tris = np.concatenate([np.stack([i, i + 1, i + n], 1), np.stack([i + 1, i + n + 1, i + n], 1)])
+    return o3d.geometry.TriangleMesh(o3d.utility.Vector3dVector(verts), o3d.utility.Vector3iVector(tris))
+
+
+def test_errorcolor_zero_and_5cm():
+    from roomscan_web import errorcolor
+
+    def packed(rgb01):
+        return (np.round(np.asarray(rgb01) * 255).astype(np.int64) * [65536, 256, 1]).sum(axis=1)
+
+    ref = _plane()
+    same = errorcolor.colorize(_plane(), ref)
+    d0 = errorcolor.vertex_error(_plane(), ref)
+    assert d0.max() < 0.003                                  # only the spacing of the 200k reference samples
+    # error ~ 0 -> the dark-blue end of the scale (turbo(0) and its first few neighbours)
+    assert np.isin(packed(same.vertex_colors), packed(errorcolor.TURBO[:8] / 255.0)).all()
+
+    shifted = errorcolor.colorize(_plane(z=0.05), ref)       # 5 cm off on a 0-10 cm scale -> the middle colour
+    assert np.abs(errorcolor.vertex_error(_plane(z=0.05), ref) - 0.05).max() < 0.002
+    green = errorcolor.turbo(np.array([0.5]))[0]
+    assert np.abs(np.asarray(shifted.vertex_colors) - green).max() < 0.03
+    assert len(shifted.vertices) == len(ref.vertices) and len(shifted.triangles) == len(ref.triangles)
+
+    far = errorcolor.colorize(_plane(z=0.5), ref)            # beyond the scale: clipped to the last colour
+    assert np.allclose(np.asarray(far.vertex_colors), errorcolor.turbo(np.ones(1))[0])
+
+
+def test_errorcolor_turbo_table():
+    from roomscan_web import errorcolor
+
+    assert errorcolor.TURBO.shape == (256, 3)
+    x = np.array([-1.0, 0.0, 0.5, 1.0, 2.0])
+    assert np.allclose(errorcolor.turbo(x), errorcolor.TURBO[[0, 0, 128, 255, 255]] / 255.0)
+    cm = pytest.importorskip("matplotlib").colormaps["turbo"]          # the figures use matplotlib's turbo
+    grid = np.linspace(0.0, 1.0, 1001)
+    assert np.abs(errorcolor.turbo(grid) - cm(grid)[:, :3]).max() <= 0.5 / 255 + 1e-9
+
+
+def test_error_endpoint(tmp_path, capture):
+    bare = tmp_path / "bare" / "room1"
+    shutil.copytree(capture, bare)
+    (bare / "reference.ply").unlink()
+    app = create_app(tmp_path / "web", autostart=False)
+    client = TestClient(app)
+    job, no_ref = _upload(client, capture, preset="lidar").json(), _upload(client, bare, preset="lidar").json()
+    assert client.get(f"/scans/{job['id']}/error.ply").status_code == 409        # not done yet
+    app.state.runner.run_pending_sync()
+
+    r = client.get(f"/scans/{job['id']}/error.ply")
+    assert r.status_code == 200 and r.content[:3] == b"ply"
+    header = r.content[:r.content.index(b"end_header")]
+    assert b"property uchar red" in header                                        # vertex colours
+    assert _n_vertices(r.content) == _n_vertices(client.get(f"/scans/{job['id']}/mesh.ply").content)
+    cached = tmp_path / "web" / "results" / "web" / job["id"] / "error.ply"
+    mtime = cached.stat().st_mtime_ns
+    assert client.get(f"/scans/{job['id']}/error.ply").content == r.content
+    assert cached.stat().st_mtime_ns == mtime                                     # not recomputed
+
+    mesh = tmp_path / "web" / "results" / "web" / job["id"] / "mesh.ply"
+    import os
+    os.utime(mesh, ns=(mtime + 5_000_000_000, mtime + 5_000_000_000))             # a newer mesh drops the cache
+    assert client.get(f"/scans/{job['id']}/error.ply").status_code == 200
+    assert cached.stat().st_mtime_ns != mtime
+
+    assert client.get(f"/scans/{no_ref['id']}/error.ply").status_code == 404      # done, but nothing to compare to
+    assert client.get("/scans/nope/error.ply").status_code == 404
+
+
+def test_legend_stops_match_turbo():
+    import re
+
+    from roomscan_web import errorcolor
+    from roomscan_web.app import STATIC
+
+    js = (STATIC / "js" / "panels.js").read_text(encoding="utf-8")
+    stops = re.findall(r"#[0-9a-f]{6}", re.search(r"TURBO_STOPS = \[(.*?)\]", js, re.S).group(1))
+    assert stops == ["#{:02x}{:02x}{:02x}".format(*errorcolor.TURBO[round(i * 25.5)]) for i in range(11)]

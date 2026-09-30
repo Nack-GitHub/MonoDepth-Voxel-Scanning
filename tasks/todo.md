@@ -21,7 +21,7 @@
   - Verify: `test_meta_json_up_and_scene`, `make capture-zip SCENE=47429736` แล้วใน zip มี `meta.json`
 - [x] **T6** `GET /scans/{id}/reference.ply` + Faro wireframe overlay + framing จาก reference · M · deps T4
   - Verify: `test_reference_endpoint`, screenshot overlay
-- [ ] **T7** `errorcolor.py` (turbo 0–10 cm, cache) + `GET /scans/{id}/error.ply` + toggle + legend · M · deps T6
+- [x] **T7** `errorcolor.py` (turbo 0–10 cm, cache) + `GET /scans/{id}/error.ply` + toggle + legend · M · deps T6
   - Verify: `test_errorcolor_*` (0 cm → turbo(0), 5 cm → turbo(0.5)), `test_error_endpoint` (409/404/cache)
 - [ ] **T8** แผง metric 8 ค่า + badge Overview/Furniture/Renovation · S · deps T4
   - Verify: 0.584 → ✗, 0.8 → ~, 0.91 → ✓; ค่าตรงกับ metrics.json

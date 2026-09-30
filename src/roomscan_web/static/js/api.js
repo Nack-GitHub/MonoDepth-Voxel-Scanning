@@ -31,6 +31,7 @@ export function itemFromJob(j) {
     urls: {
       mesh: `/scans/${j.id}/mesh.ply`,
       reference: j.has_reference ? `/scans/${j.id}/reference.ply` : null,
+      error: j.has_reference ? `/scans/${j.id}/error.ply` : null,
     },
   };
 }
