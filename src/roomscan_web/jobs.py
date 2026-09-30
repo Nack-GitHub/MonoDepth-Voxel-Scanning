@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from roomscan.config import load_config
+from roomscan_web._fs import replace_atomic
 from roomscan_web.presets import PRESETS, resolve
 
 DEFAULT_PRESET = "configs/depth/lidar.yaml"
@@ -134,7 +135,7 @@ class JobRunner:
         rec["scene_dir"] = _portable(job.scene_dir, self.work_dir)
         tmp = d / "job.json.tmp"
         tmp.write_text(json.dumps(rec, indent=2), encoding="utf-8")
-        tmp.replace(d / "job.json")                      # atomic: a crash never leaves half a record
+        replace_atomic(tmp, d / "job.json")              # a crash never leaves half a record
 
     def _restore(self) -> None:
         jobs = []
