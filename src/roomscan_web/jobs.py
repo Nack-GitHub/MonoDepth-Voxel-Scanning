@@ -202,7 +202,7 @@ def read_jobs(work_dir: str | Path) -> list[Job]:
     Finished jobs come back with their metrics and mesh path; a record that cannot be read is skipped.
     """
     work_dir, jobs = Path(work_dir), []
-    for path in run_dir(work_dir, "*").parent.glob("*/job.json"):
+    for path in (work_dir / "results" / "web").glob("*/job.json"):
         try:
             rec = json.loads(path.read_text(encoding="utf-8"))
             scene_dir = Path(rec["scene_dir"])
