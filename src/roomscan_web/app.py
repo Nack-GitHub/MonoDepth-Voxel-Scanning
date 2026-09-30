@@ -10,7 +10,7 @@
     GET  /gallery                                  finished experiment runs (read-only, see gallery.py)
     GET  /gallery/{exp}/{run}/mesh.ply | reference.ply | error.ply
     GET  /                 three.js viewer (static/index.html)
-    GET  /static/...       css / js modules of the viewer
+    GET  /static/...       css / js modules of the viewer, vendored three.js (nothing is loaded from a CDN)
 
 The zip must contain the folder format of `roomscan.dataio.custom` (rgb/, poses.json,
 intrinsics.json, optional depth/ confidence/ sparse/), either at the root or in one

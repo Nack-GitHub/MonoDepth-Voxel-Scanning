@@ -172,6 +172,33 @@ def test_static_modules_served(tmp_path):
     assert client.get("/static/../app.py").status_code == 404
 
 
+def test_static_vendor_served(tmp_path):
+    client = TestClient(create_app(tmp_path / "web", autostart=False))
+    three = client.get("/static/vendor/three/three.module.js")
+    assert three.status_code == 200 and "javascript" in three.headers["content-type"]
+    assert "const REVISION = '160'" in three.text                       # the version the viewer was written for
+    for name in ("OrbitControls.js", "PLYLoader.js"):
+        r = client.get(f"/static/vendor/three/{name}")
+        assert r.status_code == 200 and "from 'three'" in r.text, name    # resolved by the importmap
+    assert "0.160.0" in client.get("/static/vendor/three/VERSION").text
+
+
+def test_no_cdn_in_index(tmp_path):
+    import re
+
+    from roomscan_web.app import STATIC
+
+    index = TestClient(create_app(tmp_path / "web", autostart=False)).get("/").text
+    importmap = json.loads(re.search(r'<script type="importmap">(.*?)</script>', index, re.S).group(1))["imports"]
+    assert set(importmap) == {"three", "three/addons/controls/OrbitControls.js", "three/addons/loaders/PLYLoader.js"}
+    assert all(url.startswith("/static/vendor/three/") for url in importmap.values())
+    own = [STATIC / "index.html", STATIC / "app.css", *sorted((STATIC / "js").glob("*.js"))]
+    for path in own:                                 # nothing the page itself loads may point off this server
+        assert not re.search(r"cdn\.|https?://", path.read_text(encoding="utf-8")), path
+    imports = re.findall(r"from '([^']+)'", "".join(p.read_text(encoding="utf-8") for p in own[2:]))
+    assert all(spec.startswith("./") or spec in importmap for spec in imports), imports
+
+
 def test_meta_json_up_and_scene(tmp_path, capture):
     with_meta = tmp_path / "with_meta" / "room1"
     shutil.copytree(capture, with_meta)
