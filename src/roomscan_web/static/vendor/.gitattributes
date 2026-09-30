@@ -1,0 +1,2 @@
+# vendored third-party files stay byte-identical to upstream on every platform (VERSION records their sha256)
+* -text
