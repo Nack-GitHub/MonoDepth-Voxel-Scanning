@@ -5,6 +5,7 @@ import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
 
 const loader = new PLYLoader();
 const EDGE_ANGLE_DEG = 30;      // faces meeting at more than this are drawn as an edge of the Faro overlay
+const MAX_CREASE_EDGES = 4000;  // more crease edges than this: the reference is too rough for lines to help
 
 // ~n points spread evenly over a mesh's surface (area-weighted; fixed seed, so a reload frames the same way).
 // The thinned reference has few vertices on a flat wall and many on furniture: its vertices alone would
@@ -65,7 +66,7 @@ class Cell {
     this.group = new THREE.Group();   // carries the z-up -> y-up rotation for everything in the cell
     this.scene.add(this.group);
     this.mesh = null;                 // the reconstruction, in its own colours
-    this.reference = null;            // Faro reference as a grey wireframe (hidden until the overlay is on)
+    this.reference = null;            // Faro reference as a see-through shell (hidden until the overlay is on)
     this.referencePoints = null;      // points on the reference's surface, for framing the camera
     this.errorMesh = null;            // the same mesh coloured by distance to the reference, fetched on demand
     this.errorReady = null;
@@ -92,14 +93,31 @@ class Cell {
     if (!this.item.urls.reference) return;
     const geo = await loader.loadAsync(this.item.urls.reference);
     if (this.disposed) { geo.dispose(); return; }
-    // Only the creases (corners of walls, floor, furniture): every triangle edge of a fused scan is a grey fog.
-    // No depth test: the true walls must stay visible inside a reconstruction that came out too big.
-    const edges = new THREE.EdgesGeometry(geo, EDGE_ANGLE_DEG);
+    geo.computeVertexNormals();
     this.referencePoints = surfacePoints(geo);
-    geo.dispose();
-    const mat = new THREE.LineBasicMaterial({ color: 0xa8adb5, transparent: true, opacity: 0.85, depthTest: false, depthWrite: false });
-    this.reference = new THREE.LineSegments(edges, mat);
-    this.reference.renderOrder = 1;
+    // The true room as a see-through shell that is drawn over the reconstruction wherever it is: the
+    // depth buffer is cleared, the shell's own nearest surface is laid down, and only that surface is
+    // tinted. The room stays visible inside a reconstruction that came out too big, as one clean layer
+    // rather than a pile of overlapping ones, and whatever sticks out of the shell is the error.
+    const depthOnly = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ colorWrite: false, side: THREE.DoubleSide }));
+    depthOnly.renderOrder = 1;                                   // after the (opaque) reconstruction
+    depthOnly.onBeforeRender = (renderer) => renderer.clearDepth();
+    const shell = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({
+      color: 0xd5d9de, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false,
+    }));
+    shell.renderOrder = 2;
+    this.reference = new THREE.Group();
+    this.reference.add(depthOnly, shell);
+    // creases (corners of walls, floor, furniture) make a clean reference read as a wireframe; a real scan
+    // of a cluttered room is creased everywhere and the lines would only be noise
+    const creases = new THREE.EdgesGeometry(geo, EDGE_ANGLE_DEG);
+    if (creases.attributes.position.count / 2 <= MAX_CREASE_EDGES) {
+      const lines = new THREE.LineSegments(creases, new THREE.LineBasicMaterial({
+        color: 0xf2f4f6, transparent: true, opacity: 0.9, depthTest: false, depthWrite: false,
+      }));
+      lines.renderOrder = 3;
+      this.reference.add(lines);
+    } else creases.dispose();
     this.reference.visible = false;
     this.group.add(this.reference);
   }
