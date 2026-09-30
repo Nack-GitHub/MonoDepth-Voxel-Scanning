@@ -196,7 +196,9 @@ def create_app(work_dir: str | Path | None = None, preset: str | None = None, *,
 
 
 def _ply(path: Path, filename: str) -> FileResponse:
-    return FileResponse(path, media_type="application/octet-stream", filename=filename)
+    # no-cache = revalidate: an error mesh is rebuilt under the same URL when its sources change
+    return FileResponse(path, media_type="application/octet-stream", filename=filename,
+                        headers={"Cache-Control": "no-cache"})
 
 
 def _safe_extract(zip_path: Path, dest: Path) -> None:
