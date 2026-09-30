@@ -262,7 +262,7 @@ export const badge = (recall) => (recall >= 0.9 ? '✓' : recall >= 0.75 ? '~' :
 1. **`mono_sparse` บนเว็บ:** จะเปลี่ยนเป็น Large ให้ตรงกับเปเปอร์ (ช้ากว่า ~6×) หรือคง Small แล้วเขียนบนป้ายว่า "Small"? spec นี้ใช้ Large ไปก่อน
    - ที่ทำไป: ใช้ Large ตามค่าตั้งต้น (`presets.py`) ถ้าจะกลับเป็น Small ให้แก้ model กับ label ในไฟล์นั้นที่เดียว
 2. **ตัวเลขของ web ต่างจากเปเปอร์ได้แค่ไหน** ก่อนต้องหาสาเหตุ (เพราะ stride 5 และไม่ได้ mask ด้วย GT)? เสนอให้ยอมรับได้ถ้าต่างไม่เกิน ±20% ของ Chamfer
-   - ที่ทำไป: **ยังไม่ได้ตรวจ** เพราะต้องรันบนข้อมูลจริง (§10) ป้าย "demo run (stride N, no GT mask)" ติดอยู่ใต้ทุกช่องของงานบนเว็บแล้ว
+   - ที่ทำไป: ตรวจกับห้อง 47429736 แล้ว (§10.3): ที่ stride 5 LiDAR ต่าง +53% เพราะเฟรมน้อย ส่วนที่ stride 3 ทั้งสามแถวต่างไม่เกิน 3% จึงแนะนำให้ export capture ด้วย `--stride 3` ป้าย "demo run (stride N, no GT mask)" ติดอยู่ใต้ทุกช่องของงานบนเว็บ
 3. **Gallery ควรโชว์ทุก run หรือไม่:** รวม `gt` / `mono_oracle` ที่ใช้ GT ด้วยไหม หรือซ่อนไว้หลังตัวเลือก "show oracle rows" เพื่อไม่ให้สับสนตอน demo? spec นี้โชว์ทั้งหมดแต่ติดป้ายว่า "uses GT"
    - ที่ทำไป: โชว์ทั้งหมดตามค่าตั้งต้น แถว oracle มีคำว่า "(uses GT)" และแถว Faro มีคำว่า "(pipeline ceiling)"
 4. จะอัปเดตข้อ 1.3 ใน `docs/notes/demo_presentation_plan.md` ให้ตรงกับ spec นี้ด้วยไหม เช่นเรื่อง timer ที่ใช้เวลาจาก server แทน client
@@ -273,40 +273,69 @@ export const badge = (recall) => (recall >= 0.9 ? '✓' : recall >= 0.75 ? '~' :
 ## 10. ผลการทำงาน (2026-09-30)
 
 งานอยู่บน branch `feat/web-demo` commit แยกตาม task และยังไม่ push
-เครื่องที่ใช้ทำงานเป็น Windows ที่ไม่มี `make`, ไม่มี torch, ไม่มี `data/arkitscenes` ของห้องทดสอบ และไม่มี `mesh.ply` ของ sweep (mesh ไม่ได้ commit)
-การตรวจทั้งหมดจึงทำกับ synthetic scene ซึ่งใช้ยืนยันได้แค่ว่าระบบต่อกันถูก ไม่ใช่ผลการทดลอง
+เครื่องที่ใช้ทำงานเป็น Windows ที่ไม่มี `make` และไม่มี `mesh.ply` ของ sweep (mesh ไม่ได้ commit) ส่วน torch กับ GPU อยู่ใน WSL
+การตรวจรอบแรกทำกับ synthetic scene ซึ่งยืนยันได้แค่ว่าระบบต่อกันถูก
+รอบที่สองซ้อมกับ**ข้อมูลจริงของห้อง 47429736** หลังได้รับอนุญาตให้ดาวน์โหลด (2.3 GB จาก CDN ของ Apple ไว้ที่ `~/data/roomscan_rehearsal/` ใน WSL ซึ่งแยกจากโฟลเดอร์ข้อมูลเทรน) แล้วสร้าง reference ใหม่และรัน LiDAR / pretrained / FT-LiDAR-24 ซ้ำด้วยโค้ดของ branch นี้ ผลเก็บไว้ที่ `outputs/rehearsal/` และ `outputs/web/` ซึ่งไม่ถูก commit และไม่มีอะไรถูกเขียนลง `experiments/results/`
 
-### 10.1 Success criteria (§8)
+### 10.1 การรันซ้ำบนเครื่องนี้เทียบกับ `metrics.json` ที่ commit ไว้ (ห้อง 47429736, 504 เฟรม)
+
+| run | Chamfer ที่รันซ้ำ | ที่ commit ไว้ |
+|---|---|---|
+| iPad LiDAR | 3.14 cm | 3.14 cm |
+| DA-v2 Metric-Indoor (pretrained) | 54.25 cm | 54.08 cm |
+| FT-LiDAR-24 | 12.44 cm | 12.41 cm |
+
+ความต่างเล็กน้อยมาจากการรันบน CUDA แทน MPS และ reference ที่สร้างใหม่ ทั้งสองแถว mono โหลด weights จาก cache ด้วย `HF_HUB_OFFLINE=1` ได้ และใช้เวลาประมาณ 108 วินาทีต่อห้องบน RTX 3070 Ti
+gallery ของการซ้อมจึงแสดง 54.3 / 12.4 / 3.1 cm ส่วนบนเครื่องที่มี mesh ของ sweep จริงจะแสดงค่าที่ commit ไว้คือ 54.1 / 12.4 / 3.1 cm
+
+### 10.2 Success criteria (§8)
 
 | ข้อ | สถานะ | ตรวจอย่างไร |
 |---|---|---|
-| 1 test + lint | ผ่าน | `pytest -q` 61 passed, 1 skipped และ `ruff check src tests scripts` ผ่าน (รันตรง ๆ เพราะเครื่องไม่มี `make`) test ใหม่ครอบทุกแถวของ §6 |
+| 1 test + lint | ผ่าน | `pytest -q` 62 passed, 1 skipped และ `ruff check src tests scripts` ผ่าน (รันตรง ๆ เพราะเครื่องไม่มี `make`) test ใหม่ครอบทุกแถวของ §6 |
 | 2 dropdown 4 preset | ผ่าน | test + ดูบน browser |
-| 3 restart แล้วงานยังอยู่ | ผ่าน | test + ปิด-เปิด server จริง |
-| 4 Gallery 47429736 สามช่อง 54.1 / 12.4 / 3.1 cm | **ยังไม่ได้ตรวจบนข้อมูลจริง** | ตรวจกับ gallery สังเคราะห์แล้วว่าสามช่องหมุนพร้อมกัน กรอบกล้องมาจาก reference และตัวเลขใต้ช่องมาจาก `metrics.json` ค่าใน `metrics.json` ที่ commit ไว้ปัดได้ 54.1 / 12.4 / 3.1 cm |
-| 5 สี error + legend, ≤ 3 วินาทีหลัง warm | ผ่านบน synthetic | mesh 35 MB กับ reference 1.4 ล้านสามเหลี่ยม: คำนวณครั้งแรก 0.7 วินาที, หลัง warm 0.05 วินาที, โหลดใน browser 0.25 วินาที ยังไม่ได้จับเวลากับ Faro reference จริง |
-| 6 Faro overlay ทั้ง gallery และ web job | ผ่านบน synthetic | ดูบน browser ทั้งสองทาง |
-| 7 แผง metric 8 ค่า + badge, FT-LiDAR-24 ได้ Overview ✗ | ผ่านบน synthetic | เกณฑ์ badge ตรวจแล้ว (0.584 → ✗, 0.8 → ~, 0.91 → ✓) ค่า R@10 ของ FT-LiDAR-24 ห้อง 47429736 ใน `metrics.json` คือ 0.584 จึงจะขึ้น ✗ |
-| 8 อัปโหลด `47429736.zip` ด้วย iPad LiDAR ตั้งตรงเอง + ตัวจับเวลา | **ยังไม่ได้ตรวจบนข้อมูลจริง** | ตรวจกับ capture สังเคราะห์ที่ export ด้วย `export_capture.py` ตัวใหม่ (มี `meta.json`) ผ่านฟอร์มอัปโหลดจริงแล้ว |
-| 9 offline | ผ่านบางส่วน | three.js 0.160.0 อยู่ใน `static/vendor/three/` แล้ว และ network log ของ browser ไม่มี request ออกนอก localhost ตลอดการใช้ข้อ 2–7 ยังไม่ได้ปิด Wi-Fi จริง และยังไม่ได้ลองงาน mono กับ `HF_HUB_OFFLINE=1` |
-| 10 อ่านออกที่ 1280×720 ไม่มี horizontal scroll | ผ่าน | ตรวจใน browser pane ที่ 1280×720 ทั้ง light และ dark ยังไม่ได้ดูบนโปรเจกเตอร์จริงและจอ Retina |
+| 3 restart แล้วงานยังอยู่ | ผ่าน | test + ปิด-เปิด server ระหว่างซ้อมกับข้อมูลจริง งานทั้งสามยังอยู่พร้อมป้ายของ preset |
+| 4 Gallery 47429736 สามช่อง | ผ่านบนข้อมูลจริง | สามช่องหมุนพร้อมกัน กรอบกล้องมาจาก reference และ mesh ของ pretrained ใหญ่กว่าอีกสองช่องชัดเจน ตัวเลขใต้ช่องคือ 54.3 / 12.4 / 3.1 cm ตามผลที่รันซ้ำ (§10.1) |
+| 5 สี error + legend, ≤ 3 วินาทีหลัง warm | ผ่านบนข้อมูลจริง | หลัง `warm_web_cache.py` ไฟล์ error ตอบใน 0.3 วินาที และสามช่องเปลี่ยนสีครบใน 0.6 วินาที ถ้าไม่ warm การกดครั้งแรกใช้ 2–9 วินาที (reference 65 MB) |
+| 6 Faro overlay ทั้ง gallery และ web job | ผ่านบนข้อมูลจริง | ดูบน browser ทั้งสองทาง (รูปแบบ overlay เปลี่ยนจาก wireframe เป็น shell ดู §10.4) |
+| 7 แผง metric 8 ค่า + badge | ผ่านบนข้อมูลจริง | FT-LiDAR-24 ได้ R@10 = 0.59 จากการรันซ้ำ (ที่ commit ไว้ 0.584) และขึ้น Overview ✗ |
+| 8 อัปโหลด `47429736.zip` ด้วย iPad LiDAR | ผ่านบนข้อมูลจริง | อัปโหลดผ่านฟอร์มจริง ตัวจับเวลาเดิน งานเสร็จใน 10–15 วินาที และ mesh ตั้งตรงโดยไม่ต้องติ๊ก Z-up |
+| 9 offline | ผ่านบางส่วน | ไม่มี request ออกนอก localhost ตลอดการซ้อม และงาน mono รันได้ด้วย `HF_HUB_OFFLINE=1` แต่**ยังไม่ได้ปิด Wi-Fi จริง** |
+| 10 อ่านออกที่ 1280×720 ไม่มี horizontal scroll | ผ่าน | ตรวจใน browser pane ที่ 1280×720 ทั้ง light และ dark **ยังไม่ได้ดูบนโปรเจกเตอร์จริงและจอ Retina** |
 
-### 10.2 สิ่งที่ยังค้าง
+### 10.3 ตัวเลขของงานบนเว็บเทียบกับเปเปอร์ (Open Question 2)
 
-1. **ซ้อมกับข้อมูลจริงบนเครื่องที่มี mesh ของ sweep** (ข้อ 4, 8, 9 ข้างบน และ Checkpoint 3 ของ `tasks/plan.md`) รวมถึงตรวจว่าตัวเลขของงานบนเว็บต่างจาก gallery ไม่เกิน ±20%
-2. **รัน FT-LiDAR-24 / pretrained ผ่านเว็บบนห้องจริง** ยังไม่ได้ทำ (ต้องถามก่อนตาม §7 และเครื่องนี้ไม่มีข้อมูลห้องทดสอบ)
-3. **Retina**: viewport คำนวณเป็น CSS px แล้วให้ three.js คูณ pixel ratio เอง แต่เครื่องที่ตรวจมี pixel ratio 1 จึงยังไม่ได้เห็นบนจอ Retina
-4. **ขนาด cache ของ gallery** ยังไม่ได้วัดกับข้อมูลจริง: `outputs/web/cache/<exp>/<scene>/reference.ply` เก็บ reference ตัวเต็ม (เฉพาะ vertex กับ face) หนึ่งไฟล์ต่อห้องต่อ experiment คาดว่าหลักสิบ MB ต่อไฟล์ ถ้า reference ถูกสร้างใหม่ให้ลบโฟลเดอร์ cache ทิ้ง เพราะไฟล์นี้ไม่ถูกสร้างซ้ำเอง
+งานบนเว็บรันจาก capture ที่ลดเฟรมแล้วและไม่ได้ mask ด้วย GT จึงไม่เท่ากับเปเปอร์ การซ้อมพบสาเหตุของความต่างสองข้อ
 
-### 10.3 ส่วนที่ต่างจาก spec และเหตุผล
+| capture | iPad LiDAR | pretrained | FT-LiDAR-24 |
+|---|---|---|---|
+| เปเปอร์ (504 เฟรม, mask ด้วย GT) | 3.1 cm | 54.1 cm | 12.4 cm |
+| เว็บ stride 5 (101 เฟรม, ค่าของ `make capture-zip`) | 4.8 cm (+53%) | 49.2 cm (−9%) | 13.2 cm (+6%) |
+| เว็บ stride 3 (168 เฟรม) | 3.1 cm (0%) | 53.1 cm (−2%) | 12.8 cm (+3%) |
 
-- **`reference.ply` ที่ส่งให้ browser เป็นสำเนาที่ลดสามเหลี่ยมแล้ว** (`refmesh.py`: vertex clustering 4 cm แล้ว decimate เหลือไม่เกิน 30k) เพราะ reference ที่ fuse ที่ 1 cm มีสามเหลี่ยมหลักล้าน สี error ยังคำนวณจาก reference ตัวเต็ม
-- **Faro overlay วาดเฉพาะเส้นขอบมุม ไม่ใช่ขอบของทุกสามเหลี่ยม และวาดทับ mesh เสมอ** เพราะ wireframe เต็มของ mesh ที่ fuse มาเป็นหมอกสีเทาทั้งก้อน และถ้าใช้ depth test เส้นของห้องจริงจะถูก mesh ที่พองออกบังหมด
+1. **stride 5 เก็บผิวห้องไม่ครบ** Completeness ของ LiDAR แย่ลงจาก 4.2 เป็น 7.4 cm จึงเกินเกณฑ์ ±20% ถ้า export ด้วย stride 3 ทั้งสามแถวอยู่ในเกณฑ์ **แนะนำให้ export capture สำหรับ demo ด้วย `--stride 3`** (`.venv/bin/python scripts/export_capture.py --scene 47429736 --stride 3`) งาน mono จะใช้เวลาเพิ่มขึ้นตามจำนวนเฟรม
+2. **ภาพของ capture ไม่ได้ตั้งตรง** (bug ที่แก้แล้ว) ห้องนี้มี `sky_direction = Down` แต่เส้นทางของ capture ถือว่าภาพตั้งตรงเสมอ โมเดล mono จึงเห็นห้องกลับหัว ก่อนแก้ FT-LiDAR-24 บนเว็บได้ 16.6 cm และ pretrained ได้ 35.8 cm ตอนนี้ `export_capture.py` เขียน `sky_direction` ลง `meta.json` และงานบนเว็บส่งค่านี้ต่อให้ `depth_sources/monocular.py` **zip ที่ export ไว้ก่อนการแก้นี้ต้อง export ใหม่**
+
+`scripts/warm_web_cache.py` พิมพ์ตารางเทียบนี้ให้ทุกครั้งที่รัน และติดป้ายแถวที่ต่างเกิน ±20%
+
+### 10.4 ส่วนที่ต่างจาก spec และเหตุผล
+
+- **`reference.ply` ที่ส่งให้ browser เป็นสำเนาที่ลดสามเหลี่ยมแล้ว** (`refmesh.py`: vertex clustering 4 cm แล้ว decimate เหลือไม่เกิน 30k) เพราะ reference ของห้อง 47429736 มี 1.6 ล้านสามเหลี่ยม (65 MB) สี error ยังคำนวณจาก reference ตัวเต็ม
+- **Faro overlay เป็น shell โปร่งแสงชั้นเดียว ไม่ใช่ wireframe** บน Faro mesh จริงเกือบทุกขอบของสามเหลี่ยมเป็นรอยหัก wireframe จึงเป็นเส้นขาวพันกันจนอ่านไม่ออก overlay ตอนนี้ล้าง depth buffer แล้ววาดผิวหน้าสุดของ reference ทับ mesh จึงเห็นห้องจริงอยู่ข้างใน mesh ที่พองออก เส้นขอบมุมจะถูกวาดเพิ่มเฉพาะเมื่อ reference เรียบ (มีเส้นไม่เกิน 4,000 เส้น)
 - **ตาราง Gallery วาง source เป็นแถวและห้องเป็นคอลัมน์** และ sidebar กว้างขึ้นเป็น 420 px เมื่อเปิดแท็บนี้ เพื่อให้ชื่อเต็มตามเปเปอร์อ่านได้และตารางไม่ล้น ช่องในตารางทำหน้าที่เป็น checkbox "compare" (กดช่องเดียวก็คือเปิดดูเดี่ยว) และกดเลขห้องเพื่อเทียบ pretrained / FT-LiDAR-24 / iPad LiDAR ในคลิกเดียว
 - **`has_reference` ของ gallery ในรายการ** ตอบจากการที่ cache มี reference แล้วหรือ dataset ของ run นั้นเปิดได้บนเครื่อง ไม่ได้โหลด mesh จริงตอน list เพราะช้า ถ้า dataset มีแต่ยังไม่ได้ `make reference` ปุ่มจะกดได้แต่ช่องนั้นจะขึ้น "error colours failed"
 - **mesh สี error มีแสงเงาอ่อน ๆ** (ambient 80%) เพื่อให้ยังเห็นรูปทรงของผนัง สีบนจอจึงมืดกว่า legend ได้ไม่เกิน 20% แต่โทนสีไม่เปลี่ยน
 - **job id ขึ้นต้นด้วยตัวอักษร `s`** แก้ bug เดิมที่ id ฐานสิบหกบางค่า (เช่น `1234e5678901`) ถูก OmegaConf อ่านเป็นตัวเลขแล้ว pipeline ล้ม ประมาณ 1 ใน 100 ของการอัปโหลด
+- **`meta.json` มี field `sky_direction` เพิ่ม** และงานบนเว็บสร้าง dataset ของ capture เองแล้วส่งให้ pipeline ผ่าน injection point ที่มีอยู่ (`ReconstructionPipeline(cfg, dataset=...)`) ไม่ได้แก้ `pipeline.py` หรือ `dataio/custom.py`
 - **ไฟล์ใน `/static` และไฟล์ PLY ส่งพร้อม `Cache-Control: no-cache`** เพื่อไม่ให้ browser ใช้ module เก่าปนกับ module ใหม่
 - **three.js ที่ vendor มี 4 ไฟล์** คือสามไฟล์ตาม §2 กับ `LICENSE` (MIT) และมี `VERSION` ที่บันทึก sha256 ไว้ ดาวน์โหลดหลังได้รับอนุญาตเมื่อ 2026-09-30
 - **โมดูลที่เพิ่มจากรายการใน §4:** `refmesh.py` (สำเนา reference สำหรับแสดงผล) และ `_fs.py` (rename แบบ atomic ที่ลองซ้ำเมื่อ Windows ล็อกไฟล์, ตรวจอายุ cache)
-- **`public()` มี field เพิ่ม:** `elapsed_s` (เวลาที่ผ่านไปตามนาฬิกาของ server ใช้กับตัวจับเวลา), `eta_s`, `n_frames`, `capture_stride`
+- **`public()` มี field เพิ่ม:** `elapsed_s` (เวลาที่ผ่านไปตามนาฬิกาของ server ใช้กับตัวจับเวลา), `eta_s`, `n_frames`, `capture_stride`, `sky_direction`
+- **`warm_web_cache.py` พิมพ์ตารางเทียบงานบนเว็บกับ paper run** เพิ่มจากที่ spec กำหนด
+
+### 10.5 สิ่งที่ยังค้าง
+
+1. **ปิด Wi-Fi จริง, จอ Retina และโปรเจกเตอร์** ต้องทำบนเครื่องที่จะใช้ demo viewport คำนวณเป็น CSS px แล้วให้ three.js คูณ pixel ratio เอง แต่เครื่องที่ตรวจมี pixel ratio 1
+2. **ห้องอื่นอีก 5 ห้อง** ซ้อมจริงแค่ 47429736 ห้องสำรอง 47333774 มี `sky_direction = Left` ซึ่งใช้โค้ดเส้นทางเดียวกัน แต่ยังไม่ได้ลองกับข้อมูลจริง
+3. **ขนาด cache ของ gallery** วัดได้ 42 MB ต่อห้องต่อ experiment สำหรับ `reference.ply` (เฉพาะ vertex กับ face) ถ้า reference ถูกสร้างใหม่ให้ลบ `outputs/web/cache/` ทิ้ง เพราะไฟล์นี้ไม่ถูกสร้างซ้ำเอง
+4. **ข้อมูลที่ดาวน์โหลดมาซ้อม** ยังอยู่ที่ `~/data/roomscan_rehearsal/` ใน WSL (2.3 GB + ผลของการไล่หาสาเหตุ) ลบได้เมื่อไม่ใช้แล้ว

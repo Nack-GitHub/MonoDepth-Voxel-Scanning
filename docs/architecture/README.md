@@ -141,10 +141,10 @@ src/roomscan_web/       Phase 6: FastAPI upload/queue + gallery ของ run �
 |---|---|
 | `app.py` | routes เท่านั้น ตรวจ input แล้วเรียก module อื่น |
 | `presets.py` | preset ของ dropdown (`lidar`, `ft_lidar_24`, `mono_metric`, `mono_sparse`) เป็นแหล่งเดียวของชื่อบนหน้าเว็บ ซึ่งต้องตรงกับชื่อในเปเปอร์ |
-| `jobs.py` | คิวงาน worker เดียว เขียน `results/web/<id>/job.json` ทุกครั้งที่ status เปลี่ยน ตอนเปิด server จะอ่านกลับมา งานที่ค้าง `queued`/`running` กลายเป็น `failed: interrupted by server restart` และไม่ถูกรันซ้ำเอง อ่าน `meta.json` ของ capture (`scene`, `up`, `stride`) |
+| `jobs.py` | คิวงาน worker เดียว เขียน `results/web/<id>/job.json` ทุกครั้งที่ status เปลี่ยน ตอนเปิด server จะอ่านกลับมา งานที่ค้าง `queued`/`running` กลายเป็น `failed: interrupted by server restart` และไม่ถูกรันซ้ำเอง อ่าน `meta.json` ของ capture (`scene`, `up`, `stride`, `sky_direction`) และส่ง `sky_direction` ต่อให้ `depth_sources/monocular.py` ผ่าน dataset ที่ inject เข้า pipeline เพราะ capture ที่ export จาก ARKitScenes เก็บภาพไม่ตั้งตรง |
 | `gallery.py` | อ่าน `experiments/results/<exp>/<scene>_<run>/` แบบอ่านอย่างเดียว ตรวจ `exp` กับ allowlist และ `run` กับ regex ก่อนสร้าง path ทุกครั้ง ไม่แสดง `exp0_synthetic_smoke` |
 | `errorcolor.py` | ระยะจาก vertex ของ mesh ไปยังจุดที่ใกล้ที่สุดบน reference (200k จุด, seed เดียวกับ `per_point_error`) แล้วระบายสี turbo 0–10 cm เท่ากับรูป error ในเปเปอร์ |
-| `refmesh.py` | สำเนา reference สำหรับแสดงผล (vertex clustering 4 cm แล้ว decimate เหลือไม่เกิน 30k สามเหลี่ยม) เพราะ reference 1 cm ที่ใช้วัดผลหนักเกินไปสำหรับ browser สี error คำนวณจาก reference ตัวเต็มเสมอ |
+| `refmesh.py` | สำเนา reference สำหรับแสดงผล (vertex clustering 4 cm แล้ว decimate เหลือไม่เกิน 30k สามเหลี่ยม) เพราะ reference 1 cm ที่ใช้วัดผลหนักเกินไปสำหรับ browser (ห้อง 47429736: 1.6 ล้านสามเหลี่ยม) สี error คำนวณจาก reference ตัวเต็มเสมอ viewer วาดสำเนานี้เป็น shell โปร่งแสงชั้นเดียวทับ mesh |
 | `static/` | `index.html` + `app.css` + ES modules (`js/api.js`, `viewer.js`, `panels.js`, `format.js`, `main.js`) ไม่มี build step และ three.js 0.160.0 อยู่ใน `vendor/three/` (ดู `VERSION`) หน้าเว็บจึงไม่โหลดอะไรจากอินเทอร์เน็ต |
 
 | Endpoint | คืนอะไร |

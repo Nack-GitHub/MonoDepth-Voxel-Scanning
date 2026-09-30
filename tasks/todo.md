@@ -36,14 +36,15 @@
 - [x] **T11** `scripts/warm_web_cache.py` · S · deps T9
   - Verify: error เปิดได้ภายใน 3 วินาทีหลัง warm, รันซ้ำแล้วข้าม
 
-### ☐ Checkpoint 3: SPEC §8 ข้อ 4–7 ผ่านบนข้อมูลจริง — **ยังไม่ได้ทำ**: เครื่องที่ใช้ทำงานไม่มี mesh ของ sweep และไม่มี ARKitScenes ของห้องทดสอบ ตรวจได้แค่กับ gallery สังเคราะห์ (SPEC §10)
+### ☑ Checkpoint 3: SPEC §8 ข้อ 4–7 ผ่านบนข้อมูลจริงของห้อง 47429736 (ดาวน์โหลดมาซ้อมหลังได้รับอนุญาต แล้วรัน LiDAR / pretrained / FT-LiDAR-24 ซ้ำ ดู SPEC §10)
 
 ## Phase 4: Demo readiness
-- [ ] **T12** อัปเดต docs (architecture README, demo plan §1.3/§2.3) + ซ้อม offline 1280×720 + เช็คว่าตัวเลขของ web ต่างจาก gallery ไม่เกิน ±20% · S · deps ทั้งหมด · ⚠️ ถามก่อนรัน mono บนห้องจริง
+- [x] **T12** อัปเดต docs (architecture README, demo plan §1.3/§2.3) + ซ้อม offline 1280×720 + เช็คว่าตัวเลขของ web ต่างจาก gallery ไม่เกิน ±20% · S · deps ทั้งหมด · ⚠️ ถามก่อนรัน mono บนห้องจริง
   - Verify: SPEC §8 ครบ 1–10
   - [x] docs: `docs/architecture/README.md` §7.1, `docs/notes/demo_presentation_plan.md` หัวข้อ 0 / 1 / 2.3 / 2.4, `README.md`, `scripts/README.md`, `SPEC.md` §9–§10
   - [x] ตรวจที่ 1280×720 (light + dark) และตรวจว่าไม่มี request ออกนอก localhost ด้วย synthetic
-  - [ ] ซ้อมกับข้อมูลจริงบนเครื่องที่มี mesh ของ sweep + `data/arkitscenes`: SPEC §8 ข้อ 4, 8, 9 (ปิด Wi-Fi จริง), จอ Retina และโปรเจกเตอร์
-  - [ ] รัน pretrained / FT-LiDAR-24 ผ่านเว็บบนห้องจริง แล้วเช็คว่า Chamfer ต่างจาก gallery ไม่เกิน ±20% (ต้องถามก่อนรัน)
+  - [x] ซ้อมกับข้อมูลจริงของห้อง 47429736 บนเครื่องนี้ (WSL + GPU, `HF_HUB_OFFLINE=1`): SPEC §8 ข้อ 3–8 ผ่าน
+  - [x] รัน pretrained / FT-LiDAR-24 / LiDAR ผ่านเว็บบนห้องจริง แล้วเทียบกับ paper run: stride 5 ได้ +53% / −9% / +6% (LiDAR เกินเกณฑ์เพราะเฟรมน้อย), stride 3 ได้ 0% / −2% / +3% และเจอกับแก้ bug ภาพกลับหัวของงาน mono (SPEC §10.3)
+  - [ ] เหลือที่ต้องทำบนเครื่อง demo เอง: ปิด Wi-Fi จริง, จอ Retina, โปรเจกเตอร์ และ export capture ใหม่ด้วย `--stride 3`
 
-### ☐ Complete: SPEC §8 ครบ · commit แยก ไม่ push · ผู้ใช้ review — โค้ดกับ test ครบแล้วบน branch `feat/web-demo` เหลือสองข้อย่อยของ T12 ที่ต้องทำบนเครื่อง demo
+### ☐ Complete: SPEC §8 ข้อ 1–8 และ 10 ผ่าน ข้อ 9 ผ่านยกเว้นการปิด Wi-Fi จริง · commit แยก ไม่ push · รอผู้ใช้ review
