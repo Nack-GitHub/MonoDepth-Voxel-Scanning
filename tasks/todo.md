@@ -9,6 +9,8 @@
   - Verify: `test_persist_across_restart`, `test_interrupted_job`, Ctrl-C แล้วเปิดใหม่ งานยังอยู่
 - [ ] **T3** three.js 0.160.0 ในเครื่อง + แตก index.html เป็น ES modules (ไม่เปลี่ยนพฤติกรรม) · M · deps T1,T2 · ⚠️ ถามก่อนดาวน์โหลด
   - Verify: `test_static_vendor_served`, `test_no_cdn_in_index`, network log ไม่มี request ออกนอก localhost
+  - [x] T3a แตก `index.html` เป็น `app.css` + `js/{api,viewer,panels,format,main}.js`, mount `/static` (importmap ยังชี้ CDN)
+  - [ ] T3b vendor three.js 0.160.0 ลง `static/vendor/three/` + importmap ในเครื่อง + test 2 ตัวข้างบน — **รออนุญาตดาวน์โหลด**
 
 ### ☐ Checkpoint 1: synthetic upload → mesh → restart → ยังอยู่ (offline) · review กับผู้ใช้
 

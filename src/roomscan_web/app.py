@@ -6,6 +6,7 @@
     GET  /scans/{id}       job status + metrics.json when done
     GET  /scans/{id}/mesh.ply
     GET  /                 three.js viewer (static/index.html)
+    GET  /static/...       css / js modules of the viewer
 
 The zip must contain the folder format of `roomscan.dataio.custom` (rgb/, poses.json,
 intrinsics.json, optional depth/ confidence/ sparse/), either at the root or in one
@@ -15,6 +16,7 @@ top-level folder.
 from __future__ import annotations
 
 import json
+import mimetypes
 import os
 import shutil
 import zipfile
@@ -22,11 +24,14 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
 from roomscan_web.jobs import JobRunner
 from roomscan_web.presets import public_presets, resolve
 
 STATIC = Path(__file__).parent / "static"
+# Windows may map .js to text/plain in the registry; browsers refuse module scripts served that way.
+mimetypes.add_type("text/javascript", ".js")
 MAX_UPLOAD_BYTES = int(os.environ.get("ROOMSCAN_MAX_UPLOAD_MB", "512")) * 1024 * 1024
 
 
@@ -36,6 +41,7 @@ def create_app(work_dir: str | Path | None = None, preset: str | None = None, *,
                        autostart=autostart)
     app = FastAPI(title="roomscan", version="0.1.0")
     app.state.runner = runner
+    app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
     @app.get("/", response_class=HTMLResponse)
     def index() -> str:

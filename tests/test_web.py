@@ -154,3 +154,14 @@ def test_interrupted_job(tmp_path, capture):
     # and the failure is what a third start reads back, not "queued" again
     app3 = create_app(tmp_path / "web", autostart=False)
     assert TestClient(app3).get(f"/scans/{job['id']}").json()["error"] == "interrupted by server restart"
+
+
+def test_static_modules_served(tmp_path):
+    client = TestClient(create_app(tmp_path / "web", autostart=False))
+    index = client.get("/").text
+    assert '<script type="module" src="/static/js/main.js">' in index and "/static/app.css" in index
+    for name in ("api", "viewer", "panels", "format", "main"):
+        r = client.get(f"/static/js/{name}.js")
+        assert r.status_code == 200 and "javascript" in r.headers["content-type"], name   # module scripts need it
+    assert client.get("/static/app.css").status_code == 200
+    assert client.get("/static/../app.py").status_code == 404
