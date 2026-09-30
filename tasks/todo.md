@@ -23,7 +23,7 @@
   - Verify: `test_reference_endpoint`, screenshot overlay
 - [x] **T7** `errorcolor.py` (turbo 0–10 cm, cache) + `GET /scans/{id}/error.ply` + toggle + legend · M · deps T6
   - Verify: `test_errorcolor_*` (0 cm → turbo(0), 5 cm → turbo(0.5)), `test_error_endpoint` (409/404/cache)
-- [ ] **T8** แผง metric 8 ค่า + badge Overview/Furniture/Renovation · S · deps T4
+- [x] **T8** แผง metric 8 ค่า + badge Overview/Furniture/Renovation · S · deps T4
   - Verify: 0.584 → ✗, 0.8 → ~, 0.91 → ✓; ค่าตรงกับ metrics.json
 
 ### ☐ Checkpoint 2: demo ช่วง A–D ครบบน synthetic · review screenshot · ตัดสินใจว่าจะทำ Phase 3 ไหม

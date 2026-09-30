@@ -38,13 +38,22 @@ mimetypes.add_type("text/javascript", ".js")
 MAX_UPLOAD_BYTES = int(os.environ.get("ROOMSCAN_MAX_UPLOAD_MB", "512")) * 1024 * 1024
 
 
+class _Static(StaticFiles):
+    """Static files the browser must revalidate: one stale cached module next to fresh ones breaks the page."""
+
+    def file_response(self, *args, **kwargs):
+        response = super().file_response(*args, **kwargs)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
 def create_app(work_dir: str | Path | None = None, preset: str | None = None, *, autostart: bool = True) -> FastAPI:
     runner = JobRunner(work_dir or os.environ.get("ROOMSCAN_WORK_DIR", "outputs/web"),
                        preset or os.environ.get("ROOMSCAN_PRESET", "configs/depth/lidar.yaml"),
                        autostart=autostart)
     app = FastAPI(title="roomscan", version="0.1.0")
     app.state.runner = runner
-    app.mount("/static", StaticFiles(directory=STATIC), name="static")
+    app.mount("/static", _Static(directory=STATIC), name="static")
 
     @app.get("/", response_class=HTMLResponse)
     def index() -> str:

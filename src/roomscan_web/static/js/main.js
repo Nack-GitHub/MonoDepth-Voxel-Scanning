@@ -2,7 +2,7 @@
 import * as api from './api.js';
 import {
   MAX_COMPARE, fillPresets, markColorMode, markFocus, needsReference, renderCells, renderJobs, renderLegend,
-  setCellNote, tickTimers,
+  renderMetrics, setCellNote, tickTimers,
 } from './panels.js';
 import { Viewer } from './viewer.js';
 
@@ -48,6 +48,7 @@ function setColorMode(mode) {
 function setFocus(key) {
   state.focus = key;
   markFocus($('cells'), key);
+  renderMetrics($('metrics'), state.items.get(key) ?? null);
 }
 
 function renderSidebar() {

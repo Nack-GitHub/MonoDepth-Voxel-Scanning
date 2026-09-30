@@ -1,8 +1,12 @@
 // DOM for everything around the canvas: preset dropdown, job list, cell captions. No fetches, no three.js.
-import { cm, eta, mmss } from './format.js';
+import { badge, cm, eta, mmss } from './format.js';
 
 export const MAX_COMPARE = 3;
 const ORIGIN = { web: 'demo run', paper: 'paper run' };      // where a number comes from is always on screen
+// Use cases of the paper and the recall each one is judged by. The thresholds are the paper's illustration
+// of what a number means, not an industry standard — the panel says so.
+const USE_CASES = [['Overview', 'recall@0.1', 10], ['Furniture', 'recall@0.05', 5], ['Renovation', 'recall@0.02', 2]];
+const VERDICT = { '✓': 'ok', '~': 'mid', '✗': 'no' };
 // errorcolor.TURBO sampled every 10 % (tests/test_web.py keeps the two in step)
 const TURBO_STOPS = [
   '#30123b', '#455ccf', '#3e9bfe', '#19d5cd', '#46f884', '#a4fc3c', '#e1dd37', '#fea732', '#f05b12', '#c32503', '#7a0403',
@@ -89,12 +93,55 @@ export function renderCells(container, items) {
       el('div', 'cap-num', chamfer != null ? `Chamfer ${cm(chamfer)}` : 'no 3D metrics'),
       el('div', 'st', ''),
     );
-    const origin = ORIGIN[item.origin] + (item.originNote ? ` (${item.originNote})` : '');
-    cap.lastChild.append(el('span', `origin ${item.origin}`, origin), el('span', 'cap-note', ' loading…'));
+    cap.lastChild.append(originBadge(item), el('span', 'cap-note', ' loading…'));
     cell.append(pane, cap);
     container.appendChild(cell);
     return pane;
   });
+}
+
+function originBadge(item) {
+  return el('span', `origin ${item.origin}`, ORIGIN[item.origin] + (item.originNote ? ` (${item.originNote})` : ''));
+}
+
+function tile(key, value) {
+  const t = el('div', 'tile');
+  t.append(el('div', 'k', key), el('div', 'v', value));
+  return t;
+}
+
+// Every number of the focused item (`null` hides the panel): geometry metrics in cm, F-score and recalls,
+// stage timings, and the three use-case verdicts.
+export function renderMetrics(box, item) {
+  box.replaceChildren();
+  box.hidden = !item;
+  if (!item) return;
+  const head = el('div', 'm-head');
+  head.append(el('span', 'm-title', item.label), originBadge(item));
+  const m = item.metrics?.metrics_3d, t = item.metrics?.timing;
+  const time = t ? `${t.depth.toFixed(0)} / ${t.fusion.toFixed(1)} / ${t.total.toFixed(0)} s` : '—';
+  if (!m) {
+    head.append(el('span', 'st', 'no Faro reference — no 3D metrics'));
+    box.append(head, tile('Time: depth / fusion / total', time));
+    return;
+  }
+  const badges = el('div', 'badges');
+  for (const [name, key, cmAt] of USE_CASES) {
+    const verdict = badge(m[key]);
+    const chip = el('span', `uc ${VERDICT[verdict]}`, `${name} ${verdict}`);
+    chip.title = `recall@${cmAt} cm = ${m[key].toFixed(2)} (✓ ≥ 0.90, ~ 0.75–0.90, ✗ < 0.75)`;
+    badges.append(chip);
+  }
+  badges.append(el('div', 'm-note', 'thresholds are illustrative, not a standard'));
+  head.append(badges);
+  const tiles = el('div', 'tiles');
+  tiles.append(
+    tile('Chamfer', cm(m.chamfer)), tile('Accuracy', cm(m.accuracy)), tile('Completeness', cm(m.completeness)),
+    tile('F@5 cm', m['fscore@0.05'].toFixed(2)), tile('Recall@2 cm', m['recall@0.02'].toFixed(2)),
+    tile('Recall@5 cm', m['recall@0.05'].toFixed(2)), tile('Recall@10 cm', m['recall@0.1'].toFixed(2)),
+    tile('Time: depth / fusion / total', time),
+  );
+  box.append(head, tiles);
 }
 
 // A toolbar control that needs the Faro reference: greyed out, with the reason as tooltip, when no shown item has one.

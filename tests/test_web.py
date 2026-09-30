@@ -165,6 +165,7 @@ def test_static_modules_served(tmp_path):
     for name in ("api", "viewer", "panels", "format", "main"):
         r = client.get(f"/static/js/{name}.js")
         assert r.status_code == 200 and "javascript" in r.headers["content-type"], name   # module scripts need it
+        assert r.headers["cache-control"] == "no-cache"          # never a stale module beside a fresh one
     assert client.get("/static/app.css").status_code == 200
     assert client.get("/static/../app.py").status_code == 404
 
