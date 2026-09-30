@@ -5,6 +5,7 @@
     GET  /scans            all jobs
     GET  /scans/{id}       job status + metrics.json when done
     GET  /scans/{id}/mesh.ply
+    GET  /scans/{id}/reference.ply   the capture's Faro reference, thinned for display (404 without one)
     GET  /                 three.js viewer (static/index.html)
     GET  /static/...       css / js modules of the viewer
 
@@ -26,7 +27,8 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from roomscan_web.jobs import JobRunner
+from roomscan_web import refmesh
+from roomscan_web.jobs import Job, JobRunner
 from roomscan_web.presets import public_presets, resolve
 
 STATIC = Path(__file__).parent / "static"
@@ -98,23 +100,40 @@ def create_app(work_dir: str | Path | None = None, preset: str | None = None, *,
             raise HTTPException(400, str(e)) from None
         return job.public()
 
-    @app.get("/scans/{job_id}")
-    def get_scan(job_id: str) -> dict:
-        job = runner.get(job_id)
+    def job_or_404(job_id: str) -> Job:
+        job = runner.get(job_id)                 # a dict lookup: the id never becomes a path
         if job is None:
             raise HTTPException(404, "no such scan")
-        return job.public()
+        return job
+
+    @app.get("/scans/{job_id}")
+    def get_scan(job_id: str) -> dict:
+        return job_or_404(job_id).public()
 
     @app.get("/scans/{job_id}/mesh.ply")
     def get_mesh(job_id: str) -> FileResponse:
-        job = runner.get(job_id)
-        if job is None:
-            raise HTTPException(404, "no such scan")
+        job = job_or_404(job_id)
         if job.status != "done" or job.mesh_path is None or not job.mesh_path.is_file():
             raise HTTPException(409, f"scan is {job.status}")
-        return FileResponse(job.mesh_path, media_type="application/octet-stream", filename=f"{job_id}.ply")
+        return _ply(job.mesh_path, f"{job_id}.ply")
+
+    @app.get("/scans/{job_id}/reference.ply")
+    def get_reference(job_id: str) -> FileResponse:
+        job = job_or_404(job_id)
+        ref = runner.reference_path(job)
+        if ref is None:
+            raise HTTPException(404, "no Faro reference")
+        try:
+            view = refmesh.write_view(ref, runner.run_dir(job.id) / "reference_view.ply")
+        except ValueError as e:
+            raise HTTPException(404, f"no Faro reference: {e}") from None
+        return _ply(view, f"{job_id}_reference.ply")
 
     return app
+
+
+def _ply(path: Path, filename: str) -> FileResponse:
+    return FileResponse(path, media_type="application/octet-stream", filename=filename)
 
 
 def _safe_extract(zip_path: Path, dest: Path) -> None:

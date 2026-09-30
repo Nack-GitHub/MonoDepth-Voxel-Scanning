@@ -28,6 +28,9 @@ export function itemFromJob(j) {
     up: j.up ?? 'y',
     metrics: j.result ?? null,                          // the run's metrics.json
     isLidar: j.result?.depth_source === 'lidar',
-    urls: { mesh: `/scans/${j.id}/mesh.ply` },
+    urls: {
+      mesh: `/scans/${j.id}/mesh.ply`,
+      reference: j.has_reference ? `/scans/${j.id}/reference.ply` : null,
+    },
   };
 }

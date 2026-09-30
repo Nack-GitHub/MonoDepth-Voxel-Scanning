@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { PLYLoader } from 'three/addons/loaders/PLYLoader.js';
 
 const loader = new PLYLoader();
+const EDGE_ANGLE_DEG = 30;      // faces meeting at more than this are drawn as an edge of the Faro overlay
 
 // robust bounds: median vertex as centre, 90th-percentile radius as size (floaters would blow up a bbox)
 function robustSphere(geo, matrixWorld) {
@@ -26,13 +27,17 @@ class Cell {
     const dir = new THREE.DirectionalLight(0xffffff, 0.6); dir.position.set(2, 3, 4); this.scene.add(dir);
     this.group = new THREE.Group();   // carries the z-up -> y-up rotation for everything in the cell
     this.scene.add(this.group);
-    this.mesh = null;
+    this.mesh = null;                 // the reconstruction, in its own colours
+    this.reference = null;            // Faro reference as a grey wireframe (hidden until the overlay is on)
     this.disposed = false;
     // resolves to the vertex count, or null when the mesh could not be loaded
-    this.ready = this.load().catch((err) => { console.error(err); return null; });
+    this.ready = Promise.all([
+      this.loadMesh().catch((err) => { console.error(err); return null; }),
+      this.loadReference().catch((err) => { console.warn(err); }),      // a missing reference is not fatal
+    ]).then(([count]) => count);
   }
 
-  async load() {
+  async loadMesh() {
     const geo = await loader.loadAsync(this.item.urls.mesh);
     if (this.disposed) { geo.dispose(); return null; }      // deselected while the file was on its way
     geo.computeVertexNormals();
@@ -42,6 +47,21 @@ class Cell {
     return geo.attributes.position.count;
   }
 
+  async loadReference() {
+    if (!this.item.urls.reference) return;
+    const geo = await loader.loadAsync(this.item.urls.reference);
+    if (this.disposed) { geo.dispose(); return; }
+    // Only the creases (corners of walls, floor, furniture): every triangle edge of a fused scan is a grey fog.
+    // No depth test: the true walls must stay visible inside a reconstruction that came out too big.
+    const edges = new THREE.EdgesGeometry(geo, EDGE_ANGLE_DEG);
+    geo.dispose();
+    const mat = new THREE.LineBasicMaterial({ color: 0xa8adb5, transparent: true, opacity: 0.85, depthTest: false, depthWrite: false });
+    this.reference = new THREE.LineSegments(edges, mat);
+    this.reference.renderOrder = 1;
+    this.reference.visible = false;
+    this.group.add(this.reference);
+  }
+
   setZUp(zUp) {
     this.group.rotation.x = zUp ? -Math.PI / 2 : 0;
     this.group.updateMatrixWorld(true);
@@ -49,7 +69,7 @@ class Cell {
 
   dispose() {
     this.disposed = true;
-    this.group.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } });
+    this.group.traverse((o) => { if (o.geometry) { o.geometry.dispose(); o.material.dispose(); } });
   }
 }
 
@@ -62,6 +82,7 @@ export class Viewer {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.cells = [];
     this.generation = 0;
+    this.overlay = false;
     this.onHover = null;                          // (cell index) => void
     this.bg = new THREE.Color();
     const scheme = matchMedia('(prefers-color-scheme: dark)');
@@ -117,7 +138,9 @@ export class Viewer {
       const count = await cell.ready;
       if (gen === this.generation && onLoaded) onLoaded(i, count);
     }));
-    if (gen === this.generation) this.frame();
+    if (gen !== this.generation) return;
+    this.setOverlay(this.overlay);
+    this.frame();
   }
 
   setZUp(zUp) {
@@ -125,13 +148,22 @@ export class Viewer {
     this.frame();
   }
 
-  // One framing for every cell, taken from a single mesh (the LiDAR cell, else the first). Fitting each
-  // cell to its own mesh would shrink an inflated room until it looked right — the error this page shows.
+  // Faro reference as a wireframe in every cell that has one.
+  setOverlay(on) {
+    this.overlay = on;
+    for (const cell of this.cells) if (cell.reference) cell.reference.visible = on;
+  }
+
+  // One framing for every cell, taken from a single mesh: the Faro reference when there is one, else the
+  // LiDAR cell, else the first. Fitting each cell to its own mesh would shrink an inflated room until it
+  // looked right — which is exactly the error this page is meant to show.
   frame() {
-    const src = this.cells.find((c) => c.mesh && c.item.isLidar) ?? this.cells.find((c) => c.mesh);
+    const withRef = this.cells.find((c) => c.reference);
+    const src = withRef ?? this.cells.find((c) => c.mesh && c.item.isLidar) ?? this.cells.find((c) => c.mesh);
     if (!src) return;
     src.group.updateMatrixWorld(true);
-    const { center, radius } = robustSphere(src.mesh.geometry, src.mesh.matrixWorld);
+    const target = withRef ? src.reference : src.mesh;
+    const { center, radius } = robustSphere(target.geometry, target.matrixWorld);
     const { camera, controls } = this;
     // far enough that the sphere fits the narrower of the two view angles (cells are portrait in compare mode)
     const b = src.pane.getBoundingClientRect(), aspect = b.height > 0 ? b.width / b.height : 1;

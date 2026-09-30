@@ -93,6 +93,14 @@ export function renderCells(container, items) {
   });
 }
 
+// A toolbar control that needs the Faro reference: greyed out, with the reason as tooltip, when no shown item has one.
+export function needsReference(label, input, available) {
+  input.disabled = !available;
+  if (!available) input.checked = false;
+  label.classList.toggle('off', !available);
+  label.title = available ? '' : 'no Faro reference';
+}
+
 export function setCellNote(container, index, text) {
   const note = container.children[index]?.querySelector('.cap-note');
   if (note) note.textContent = ` ${text}`;

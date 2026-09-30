@@ -2,6 +2,7 @@
 
 import io
 import json
+import shutil
 import zipfile
 
 import pytest
@@ -168,8 +169,6 @@ def test_static_modules_served(tmp_path):
 
 
 def test_meta_json_up_and_scene(tmp_path, capture):
-    import shutil
-
     with_meta = tmp_path / "with_meta" / "room1"
     shutil.copytree(capture, with_meta)
     (with_meta / "meta.json").write_text(json.dumps(
@@ -208,3 +207,44 @@ def test_job_id_never_parses_as_a_number(tmp_path, capture, monkeypatch):
     app.state.runner.run_pending_sync()
     j = client.get(f"/scans/{job['id']}").json()
     assert j["status"] == "done", j.get("error")            # run_name stayed a string all the way to the out dir
+
+
+def _n_vertices(ply_bytes):
+    header = ply_bytes[:ply_bytes.index(b"end_header")].decode("ascii")
+    return int(next(ln for ln in header.splitlines() if ln.startswith("element vertex")).split()[-1])
+
+
+def test_reference_endpoint(tmp_path, capture):
+    bare = tmp_path / "bare" / "room1"                      # the same capture, uploaded without a reference
+    shutil.copytree(capture, bare)
+    (bare / "reference.ply").unlink()
+    app = create_app(tmp_path / "web", autostart=False)
+    client = TestClient(app)
+    job, no_ref = _upload(client, capture, preset="lidar").json(), _upload(client, bare, preset="lidar").json()
+    assert job["has_reference"] is True and no_ref["has_reference"] is False
+
+    r = client.get(f"/scans/{job['id']}/reference.ply")     # there before the job runs: it came with the upload
+    assert r.status_code == 200 and r.content[:3] == b"ply" and _n_vertices(r.content) > 0
+    view = tmp_path / "web" / "results" / "web" / job["id"] / "reference_view.ply"
+    mtime = view.stat().st_mtime_ns
+    assert client.get(f"/scans/{job['id']}/reference.ply").status_code == 200
+    assert view.stat().st_mtime_ns == mtime                 # second call is served from the cache
+
+    assert client.get(f"/scans/{no_ref['id']}/reference.ply").status_code == 404
+    assert client.get("/scans/nope/reference.ply").status_code == 404
+    assert client.get("/scans/..%2F..%2Fapp/reference.ply").status_code == 404
+
+
+def test_reference_view_thins_a_dense_reference(tmp_path):
+    import open3d as o3d
+
+    from roomscan_web import refmesh
+
+    dense = o3d.geometry.TriangleMesh.create_sphere(radius=1.0, resolution=400)     # ~640k triangles
+    assert len(dense.triangles) > refmesh.MAX_TRIANGLES
+    o3d.io.write_triangle_mesh(str(tmp_path / "ref.ply"), dense)
+    view = o3d.io.read_triangle_mesh(str(refmesh.write_view(tmp_path / "ref.ply", tmp_path / "out" / "view.ply")))
+    assert 0 < len(view.triangles) < len(dense.triangles) / 4
+    assert not view.has_vertex_colors() and not view.has_vertex_normals()
+    size = view.get_max_bound() - view.get_min_bound()
+    assert abs(size - 2.0).max() < 0.1                                              # same sphere, fewer triangles

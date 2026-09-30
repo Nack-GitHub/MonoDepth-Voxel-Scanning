@@ -19,7 +19,7 @@
   - Verify: screenshot 3 ช่องที่หมุนพร้อมกัน, resize/Retina ไม่เพี้ยน
 - [x] **T5** `meta.json` (export_capture) → `up`/`scene` ใน public() → Z-up อัตโนมัติ · S · deps T4,T2
   - Verify: `test_meta_json_up_and_scene`, `make capture-zip SCENE=47429736` แล้วใน zip มี `meta.json`
-- [ ] **T6** `GET /scans/{id}/reference.ply` + Faro wireframe overlay + framing จาก reference · M · deps T4
+- [x] **T6** `GET /scans/{id}/reference.ply` + Faro wireframe overlay + framing จาก reference · M · deps T4
   - Verify: `test_reference_endpoint`, screenshot overlay
 - [ ] **T7** `errorcolor.py` (turbo 0–10 cm, cache) + `GET /scans/{id}/error.ply` + toggle + legend · M · deps T6
   - Verify: `test_errorcolor_*` (0 cm → turbo(0), 5 cm → turbo(0.5)), `test_error_endpoint` (409/404/cache)

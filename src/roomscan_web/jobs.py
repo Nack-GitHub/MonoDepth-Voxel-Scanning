@@ -58,6 +58,7 @@ class Job:
     scene: str | None = None          # from the capture's meta.json: which room this is (None = unknown)
     up: str = "y"                     # "y" | "z": world up-axis of the capture
     capture_stride: int | None = None  # frame stride the capture was exported with
+    has_reference: bool = False       # the capture came with a reference.ply (Faro mesh)
 
     def public(self) -> dict[str, Any]:
         d = asdict(self)
@@ -110,6 +111,7 @@ class JobRunner:
             raise ValueError(f"overrides not allowed: {sorted(bad)}; allowed: {sorted(ALLOWED_OVERRIDES)}")
         job = Job(id=job_id, scene_dir=scene_dir, overrides=merged, preset=preset, created_at=time.time(),
                   n_frames=_count_frames(scene_dir, merged), **read_meta(scene_dir))
+        job.has_reference = self.reference_path(job) is not None
         with self._lock:
             self._jobs[job_id] = job
         self._save(job)
@@ -127,6 +129,11 @@ class JobRunner:
     def run_dir(self, job_id: str) -> Path:
         """Where the pipeline writes this job's config.yaml / metrics.json / mesh.ply (and we keep job.json)."""
         return self.results_dir / "web" / job_id
+
+    def reference_path(self, job: Job) -> Path | None:
+        """The capture's own reference.ply, or None when it was uploaded without one."""
+        path = job.scene_dir / "reference.ply"
+        return path if path.is_file() else None
 
     def run_pending_sync(self) -> None:
         """Drain the queue on the calling thread (tests; also handy for CLI batch use)."""
@@ -155,6 +162,7 @@ class JobRunner:
                           status=str(rec["status"]), error=rec.get("error"), created_at=rec.get("created_at"),
                           started_at=rec.get("started_at"), finished_at=rec.get("finished_at"))
                 job.scene, job.up, job.capture_stride = read_meta(job.scene_dir).values()
+                job.has_reference = self.reference_path(job) is not None
             except (OSError, ValueError, KeyError, TypeError):
                 continue                                  # unreadable record: skip it, never block start-up
             if job.id != path.parent.name:

@@ -1,6 +1,8 @@
 // Page state and wiring. The only module that touches both the API and the DOM.
 import * as api from './api.js';
-import { MAX_COMPARE, fillPresets, markFocus, renderCells, renderJobs, setCellNote, tickTimers } from './panels.js';
+import {
+  MAX_COMPARE, fillPresets, markFocus, needsReference, renderCells, renderJobs, setCellNote, tickTimers,
+} from './panels.js';
 import { Viewer } from './viewer.js';
 
 const $ = (id) => document.getElementById(id);
@@ -62,6 +64,8 @@ function update() {
     });
   }
   $('hud').hidden = items.length > 0;
+  needsReference($('overlay-label'), $('overlay'), items.some((it) => it.urls.reference));
+  viewer.setOverlay($('overlay').checked);
   const scenes = new Set(items.map((it) => it.scene).filter((s) => s != null));
   $('banner').hidden = scenes.size < 2;
   if (!items.some((it) => it.key === state.focus)) state.focus = items[0]?.key ?? null;
@@ -78,6 +82,7 @@ async function refresh() {
 }
 
 viewer.onHover = (i) => { const item = shownItems()[i]; if (item && item.key !== state.focus) setFocus(item.key); };
+$('overlay').onchange = () => viewer.setOverlay($('overlay').checked);
 $('zup').onchange = () => {
   for (const item of shownItems()) state.zUp.set(item.key, $('zup').checked);
   viewer.setZUp($('zup').checked);

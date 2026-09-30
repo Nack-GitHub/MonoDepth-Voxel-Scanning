@@ -21,6 +21,7 @@ li .pick { cursor:pointer; white-space:nowrap }
 main { display:flex; flex-direction:column; min-width:0; min-height:0 }
 #toolbar { display:flex; align-items:center; gap:16px; padding:6px 12px; border-bottom:1px solid var(--line); font-size:13px; min-height:36px }
 #toolbar label { cursor:pointer; white-space:nowrap }
+#toolbar label.off { color:var(--muted); cursor:not-allowed }
 #banner { padding:6px 12px; background:var(--warn-bg); color:var(--warn-ink); font-weight:600; font-size:13px }
 #view { position:relative; flex:1; min-width:0; min-height:0; overflow:hidden }
 canvas { display:block; width:100% !important; height:100% !important }
