@@ -102,14 +102,28 @@ async function showMesh(id) {
   hud.textContent = `${id}: ${geo.attributes.position.count.toLocaleString()} vertices`;
 }
 
+const mmss = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+// running timers count from the server's elapsed_s (+ time since that answer), so a reload does not reset them
+let fetchedAt = performance.now();
+function tick() {
+  const dt = (performance.now() - fetchedAt) / 1000;
+  for (const el of document.querySelectorAll('[data-elapsed]')) el.textContent = `running ${mmss(+el.dataset.elapsed + dt)}`;
+}
+setInterval(tick, 500);
+
 let active = null;
 async function refresh() {
   const jobs = await (await fetch('/scans')).json();
+  fetchedAt = performance.now();
   const ul = document.getElementById('jobs'); ul.innerHTML = '';
   for (const j of jobs.slice().reverse()) {
     const li = document.createElement('li');
     const m = j.result?.metrics_3d;
-    li.innerHTML = `<div>${j.label} <span class="st ${j.status}">${j.status}</span></div><div class="st">${j.id}</div>` +
+    const st = j.status === 'running'
+      ? `<span class="st running" data-elapsed="${j.elapsed_s ?? 0}"></span>` +
+        (j.eta_s ? ` <span class="st">expected ~${j.eta_s < 60 ? Math.ceil(j.eta_s) + ' s' : mmss(j.eta_s)}</span>` : '')
+      : `<span class="st ${j.status}">${j.status}${j.status === 'done' && j.elapsed_s != null ? ' in ' + mmss(j.elapsed_s) : ''}</span>`;
+    li.innerHTML = `<div>${j.label} ${st}</div><div class="st">${j.id}</div>` +
       (m ? `<div class="st">chamfer ${(m.chamfer * 100).toFixed(1)} cm · F@5cm ${m['fscore@0.05'].toFixed(2)}</div>` :
        j.result ? `<div class="st">${j.result.n_frames} frames · ${j.result.timing.total.toFixed(0)} s</div>` :
        j.error ? `<div class="st failed">${j.error}</div>` : '');
@@ -117,6 +131,7 @@ async function refresh() {
     li.onclick = () => { if (j.status === 'done') { active = j.id; showMesh(j.id); refresh(); } };
     ul.appendChild(li);
   }
+  tick();
   if (jobs.some(j => j.status === 'queued' || j.status === 'running')) setTimeout(refresh, 2000);
 }
 document.getElementById('zup').onchange = () => { if (active) showMesh(active); };

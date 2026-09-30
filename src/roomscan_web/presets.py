@@ -1,8 +1,9 @@
 """Upload presets: the one place that maps a dropdown entry to config overrides and a paper label.
 
 Labels are the method names used in the paper; internal names (run ids, registry keys) never reach the page.
-`eta_s_per_frame` is a rough laptop figure (Exp1/Exp6 timing on 47429736: 504 frames, ~440 s with DA-v2 Large,
-~3 s with LiDAR) — it only feeds the "expected" hint next to the running timer.
+`eta_s_per_frame` is a rough laptop figure (Exp1/Exp6 timing on 47429736: 504 frames, ~440 s with DA-v2 Large;
+LiDAR is ~3 s in total, padded here for the fixed mesh-extraction cost on short captures) — it only feeds the
+"expected" hint next to the running timer.
 """
 
 from __future__ import annotations
@@ -25,7 +26,7 @@ def _mono(model: str, aligner: str) -> dict[str, str]:
 
 # Dropdown order.
 PRESETS: dict[str, Preset] = {p.key: p for p in (
-    Preset("lidar", "iPad LiDAR (sensor)", "needs depth/ in zip", 0.01),
+    Preset("lidar", "iPad LiDAR (sensor)", "needs depth/ in zip", 0.05),
     Preset("ft_lidar_24", "FT-LiDAR-24 (ours, RGB only)", "~3–7 min/room", 0.9,
            _mono("depth_anything_v2_ft_lidar_all", "identity")),
     Preset("mono_metric", "DA-v2 Metric-Indoor (pretrained)", "~3–7 min/room", 0.9,

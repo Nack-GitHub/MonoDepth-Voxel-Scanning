@@ -5,7 +5,7 @@
 ## Phase 1: Foundation
 - [x] **T1** FT-LiDAR-24 preset จาก server ถึง dropdown — `presets.py`, `GET /presets`, `POST /scans preset=` · S–M
   - Verify: `test_presets*`, dropdown บน `make web`
-- [ ] **T2** งานไม่หายเมื่อ restart + timestamps + ตัวจับเวลา — `job.json`, งานที่ค้างกลายเป็น failed · S–M · deps T1
+- [x] **T2** งานไม่หายเมื่อ restart + timestamps + ตัวจับเวลา — `job.json`, งานที่ค้างกลายเป็น failed · S–M · deps T1
   - Verify: `test_persist_across_restart`, `test_interrupted_job`, Ctrl-C แล้วเปิดใหม่ งานยังอยู่
 - [ ] **T3** three.js 0.160.0 ในเครื่อง + แตก index.html เป็น ES modules (ไม่เปลี่ยนพฤติกรรม) · M · deps T1,T2 · ⚠️ ถามก่อนดาวน์โหลด
   - Verify: `test_static_vendor_served`, `test_no_cdn_in_index`, network log ไม่มี request ออกนอก localhost

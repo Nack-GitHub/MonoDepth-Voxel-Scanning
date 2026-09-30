@@ -116,3 +116,41 @@ def test_presets_on_upload(tmp_path, capture):
     app.state.runner.run_pending_sync()
     j = client.get(f"/scans/{job['id']}").json()
     assert j["status"] == "done" and j["label"] == "iPad LiDAR (sensor)", j.get("error")
+
+
+def test_persist_across_restart(tmp_path, capture):
+    app = create_app(tmp_path / "web", autostart=False)
+    client = TestClient(app)
+    job = _upload(client, capture, preset="lidar").json()
+    assert job["created_at"] and job["started_at"] is None and job["n_frames"] == 10
+    app.state.runner.run_pending_sync()
+    before = client.get(f"/scans/{job['id']}").json()
+    assert before["status"] == "done", before.get("error")
+    assert before["created_at"] <= before["started_at"] <= before["finished_at"]
+    assert before["elapsed_s"] == pytest.approx(before["finished_at"] - before["started_at"])
+    rec = json.loads((tmp_path / "web" / "results" / "web" / job["id"] / "job.json").read_text())
+    assert set(rec) == {"id", "scene_dir", "overrides", "preset", "status", "error",
+                        "created_at", "started_at", "finished_at"}
+
+    client2 = TestClient(create_app(tmp_path / "web", autostart=False))      # "restart" on the same work dir
+    after = client2.get(f"/scans/{job['id']}").json()
+    assert after["status"] == "done" and after["preset"] == "lidar" and after["label"] == before["label"]
+    assert after["result"]["metrics_3d"] == before["result"]["metrics_3d"]
+    assert (after["started_at"], after["finished_at"]) == (before["started_at"], before["finished_at"])
+    assert client2.get(f"/scans/{job['id']}/mesh.ply").status_code == 200
+    assert [x["id"] for x in client2.get("/scans").json()] == [job["id"]]
+
+
+def test_interrupted_job(tmp_path, capture):
+    app = create_app(tmp_path / "web", autostart=False)
+    job = _upload(TestClient(app), capture, preset="lidar").json()            # stays queued: no worker
+
+    app2 = create_app(tmp_path / "web", autostart=False)
+    j = TestClient(app2).get(f"/scans/{job['id']}").json()
+    assert j["status"] == "failed" and j["error"] == "interrupted by server restart"
+    assert app2.state.runner._q.empty()                                        # never requeued
+    app2.state.runner.run_pending_sync()
+    assert TestClient(app2).get(f"/scans/{job['id']}").json()["status"] == "failed"
+    # and the failure is what a third start reads back, not "queued" again
+    app3 = create_app(tmp_path / "web", autostart=False)
+    assert TestClient(app3).get(f"/scans/{job['id']}").json()["error"] == "interrupted by server restart"
