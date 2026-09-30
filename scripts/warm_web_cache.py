@@ -8,6 +8,10 @@ on "Faro overlay" and "Color: error": the room's reference mesh, its display cop
 mesh. It calls the same functions as the HTTP endpoints (no server needed) and skips whatever is already
 cached and still newer than its sources, so it is safe to run again. Nothing is written under
 experiments/results — only under <work dir>/cache and <work dir>/results/web/<job>/.
+
+It ends with a table of every finished web job next to the paper run of the same room and method: a
+demo run (thinned capture, no GT mask) is not the paper's number, and a gap beyond +-20 % of Chamfer is
+flagged so it can be looked into before anyone asks about it on stage.
 """
 
 from __future__ import annotations
@@ -20,6 +24,11 @@ from pathlib import Path
 from roomscan_web import errorcolor, gallery, refmesh
 from roomscan_web._fs import is_fresh
 from roomscan_web.jobs import derived_files, read_jobs, reference_path
+
+# upload preset -> the run of Exp1/Exp6 that is the same method
+PAPER_RUN = {"lidar": "lidar", "ft_lidar_24": "mono_ft_lidar_all", "mono_metric": "mono_metric",
+             "mono_sparse": "mono_sparse"}
+TOLERANCE = 0.20        # relative Chamfer gap a demo run may have to its paper run before it is flagged
 
 
 def warm_jobs(work_dir: Path):
@@ -35,6 +44,20 @@ def warm_jobs(work_dir: Path):
         yield job.id, "cached" if cached else "built"
 
 
+def compare_with_paper(work_dir: Path, paper_runs: list[dict]):
+    """Finished web jobs that have a paper run of the same room and preset -> one table row each."""
+    paper = {(r["scene"], r["run"]): r for r in paper_runs}
+    for job in read_jobs(work_dir):
+        run = paper.get((job.scene, PAPER_RUN.get(job.preset)))
+        web = (job.result or {}).get("metrics_3d")
+        if job.status != "done" or run is None or not web or not run["metrics"].get("metrics_3d"):
+            continue
+        ref = run["metrics"]["metrics_3d"]["chamfer"]
+        gap = web["chamfer"] / ref - 1.0
+        yield (f"{job.scene}  {run['label']:<34} demo {web['chamfer'] * 100:5.1f} cm   paper {ref * 100:5.1f} cm   "
+               f"{gap:+5.0%}  {'ok' if abs(gap) <= TOLERANCE else 'LOOK INTO THIS'}   ({job.id})")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--scenes", nargs="*", default=None, help="gallery rooms to warm (default: all)")
@@ -46,6 +69,7 @@ def main() -> None:
     args = ap.parse_args()
 
     work_dir, counts, t0 = Path(args.work_dir), {}, time.perf_counter()
+    root, cache = Path(args.gallery_root), work_dir / "cache"
 
     def report(what: str, steps) -> None:
         t = time.perf_counter()
@@ -54,11 +78,16 @@ def main() -> None:
             print(f"{state:>12}  {what}  {name}  ({time.perf_counter() - t:.1f} s)")
             t = time.perf_counter()
 
-    report("gallery", gallery.warm(Path(args.gallery_root), args.exps, work_dir / "cache", args.scenes))
+    report("gallery", gallery.warm(root, args.exps, cache, args.scenes))
     if not args.no_web_jobs:
         report("web job", warm_jobs(work_dir))
     summary = ", ".join(f"{n} {state}" for state, n in sorted(counts.items())) or "nothing to warm"
     print(f"{summary} in {time.perf_counter() - t0:.1f} s")
+
+    rows = list(compare_with_paper(work_dir, gallery.list_runs(root, args.exps, cache)))
+    if rows:
+        print(f"\ndemo run vs paper run (Chamfer; flagged beyond +-{TOLERANCE:.0%}):")
+        print("\n".join(rows))
 
 
 if __name__ == "__main__":

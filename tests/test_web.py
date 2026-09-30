@@ -493,7 +493,10 @@ def test_warm_web_cache_script(tmp_path, capture, results, monkeypatch, capsys):
     work = tmp_path / "web"
     app = create_app(work, autostart=False, gallery_root=results, gallery_exps=["exp1_depth_source"])
     client = TestClient(app)
-    job = _upload(client, capture, preset="lidar").json()
+    named = tmp_path / "named" / "room1"                                # a capture that says which room it is
+    shutil.copytree(capture, named)
+    (named / "meta.json").write_text(json.dumps({"scene": "90000001", "up": "z", "stride": 1}))
+    job = _upload(client, named, preset="lidar").json()
     app.state.runner.run_pending_sync()
     before = _tree(results)
 
@@ -505,6 +508,8 @@ def test_warm_web_cache_script(tmp_path, capture, results, monkeypatch, capsys):
 
     out = warm()
     assert out.count("built") == 3 + 1 and "cached" not in out          # gt + lidar + the web job (+ summary line)
+    row = next(ln for ln in out.splitlines() if job["id"] in ln and "paper" in ln)
+    assert row.startswith("90000001  iPad LiDAR") and "demo" in row     # the job next to its paper run
     error = work / "cache" / "exp1_depth_source" / "90000001_lidar" / "error.ply"
     job_error = work / "results" / "web" / job["id"] / "error.ply"
     assert error.is_file() and job_error.is_file()
