@@ -457,3 +457,37 @@ def test_gallery_prefers_the_later_experiment_for_a_repeated_run(tmp_path, resul
         assert "upper bound" in gallery.RUN_LABELS["mono_sparse"]
     finally:
         shutil.rmtree(exp6)
+
+
+def test_warm_web_cache_script(tmp_path, capture, results, monkeypatch, capsys):
+    import runpy
+    import sys
+
+    work = tmp_path / "web"
+    app = create_app(work, autostart=False, gallery_root=results, gallery_exps=["exp1_depth_source"])
+    client = TestClient(app)
+    job = _upload(client, capture, preset="lidar").json()
+    app.state.runner.run_pending_sync()
+    before = _tree(results)
+
+    def warm():
+        monkeypatch.setattr(sys, "argv", ["warm_web_cache.py", "--work-dir", str(work), "--gallery-root",
+                                          str(results), "--exps", "exp1_depth_source", "--scenes", "90000001"])
+        runpy.run_path("scripts/warm_web_cache.py", run_name="__main__")
+        return capsys.readouterr().out
+
+    out = warm()
+    assert out.count("built") == 3 + 1 and "cached" not in out          # gt + lidar + the web job (+ summary line)
+    error = work / "cache" / "exp1_depth_source" / "90000001_lidar" / "error.ply"
+    job_error = work / "results" / "web" / job["id"] / "error.ply"
+    assert error.is_file() and job_error.is_file()
+    assert (work / "cache" / "exp1_depth_source" / "90000001" / "reference_view.ply").is_file()
+    stamps = (error.stat().st_mtime_ns, job_error.stat().st_mtime_ns)
+
+    out = warm()                                                        # again: nothing to do
+    assert out.count("cached") == 3 + 1 and "built" not in out
+    assert (error.stat().st_mtime_ns, job_error.stat().st_mtime_ns) == stamps
+    assert client.get("/gallery/exp1_depth_source/90000001_lidar/error.ply").status_code == 200
+    assert error.stat().st_mtime_ns == stamps[0]                        # the endpoint serves the warmed file
+    assert _tree(results) == before
+    assert client.get(f"/scans/{job['id']}").json()["status"] == "done"

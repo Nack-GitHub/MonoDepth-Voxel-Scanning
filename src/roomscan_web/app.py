@@ -32,7 +32,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from roomscan_web import errorcolor, gallery, refmesh
-from roomscan_web.jobs import Job, JobRunner
+from roomscan_web.jobs import Job, JobRunner, derived_files, reference_path
 from roomscan_web.presets import public_presets, resolve
 
 STATIC = Path(__file__).parent / "static"
@@ -138,11 +138,11 @@ def create_app(work_dir: str | Path | None = None, preset: str | None = None, *,
     @app.get("/scans/{job_id}/reference.ply")
     def get_reference(job_id: str) -> FileResponse:
         job = job_or_404(job_id)
-        ref = runner.reference_path(job)
+        ref = reference_path(job)
         if ref is None:
             raise HTTPException(404, "no Faro reference")
         try:
-            view = refmesh.write_view(ref, runner.run_dir(job.id) / "reference_view.ply")
+            view = refmesh.write_view(ref, derived_files(runner.work_dir, job)["reference_view"])
         except ValueError as e:
             raise HTTPException(404, f"no Faro reference: {e}") from None
         return _ply(view, f"{job_id}_reference.ply")
@@ -152,11 +152,11 @@ def create_app(work_dir: str | Path | None = None, preset: str | None = None, *,
         job = job_or_404(job_id)
         if job.status != "done" or job.mesh_path is None or not job.mesh_path.is_file():
             raise HTTPException(409, f"scan is {job.status}")
-        ref = runner.reference_path(job)
+        ref = reference_path(job)
         if ref is None:
             raise HTTPException(404, "no Faro reference")
         try:
-            out = errorcolor.write_error_ply(job.mesh_path, ref, runner.run_dir(job.id) / "error.ply")
+            out = errorcolor.write_error_ply(job.mesh_path, ref, derived_files(runner.work_dir, job)["error"])
         except ValueError as e:                   # an empty mesh on either side
             raise HTTPException(404, f"no error colours: {e}") from None
         return _ply(out, f"{job_id}_error.ply")
@@ -167,14 +167,6 @@ def create_app(work_dir: str | Path | None = None, preset: str | None = None, *,
         except ValueError:
             raise HTTPException(404, "no such gallery item") from None
 
-    def reference_or_404(exp: str, run: str) -> tuple[Path, Path]:
-        """(run folder, the room's cached reference mesh)."""
-        run_dir = run_or_404(exp, run)
-        ref = gallery.reference_for(run_dir, g_cache / exp / gallery.scene_of(run))
-        if ref is None:
-            raise HTTPException(404, "no Faro reference")
-        return run_dir, ref
-
     @app.get("/gallery")
     def list_gallery() -> list[dict]:
         return gallery.list_runs(g_root, g_exps, g_cache)
@@ -183,19 +175,22 @@ def create_app(work_dir: str | Path | None = None, preset: str | None = None, *,
     def gallery_mesh(exp: str, run: str) -> FileResponse:
         return _ply(run_or_404(exp, run) / "mesh.ply", f"{run}.ply")
 
+    def derived_or_404(build, exp: str, run: str, filename: str) -> FileResponse:
+        try:
+            out = build(run_or_404(exp, run), g_cache / exp)
+        except ValueError:                          # an empty mesh on either side
+            out = None
+        if out is None:
+            raise HTTPException(404, "no Faro reference")
+        return _ply(out, filename)
+
     @app.get("/gallery/{exp}/{run}/reference.ply")
     def gallery_reference(exp: str, run: str) -> FileResponse:
-        _, ref = reference_or_404(exp, run)
-        return _ply(refmesh.write_view(ref, ref.with_name("reference_view.ply")), f"{run}_reference.ply")
+        return derived_or_404(gallery.reference_view, exp, run, f"{run}_reference.ply")
 
     @app.get("/gallery/{exp}/{run}/error.ply")
     def gallery_error(exp: str, run: str) -> FileResponse:
-        run_dir, ref = reference_or_404(exp, run)
-        try:
-            out = errorcolor.write_error_ply(run_dir / "mesh.ply", ref, g_cache / exp / run / "error.ply")
-        except ValueError as e:
-            raise HTTPException(404, f"no error colours: {e}") from None
-        return _ply(out, f"{run}_error.ply")
+        return derived_or_404(gallery.error_mesh, exp, run, f"{run}_error.ply")
 
     return app
 

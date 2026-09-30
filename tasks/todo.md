@@ -33,7 +33,7 @@
   - Verify: `test_gallery_*` (list, 404 traversal, ไม่มีไฟล์ถูกเขียนใต้ gallery root)
 - [x] **T10** แท็บ Gallery (ตารางห้อง × source) + ผสมกับ web jobs ใน compare + ป้าย "paper run" · M · deps T4,T7,T8,T9
   - Verify: 47429736 ได้ 54.1 / 12.4 / 3.1 cm ใต้ช่อง; 1280×720 ไม่ล้น
-- [ ] **T11** `scripts/warm_web_cache.py` · S · deps T9
+- [x] **T11** `scripts/warm_web_cache.py` · S · deps T9
   - Verify: error เปิดได้ภายใน 3 วินาทีหลัง warm, รันซ้ำแล้วข้าม
 
 ### ☐ Checkpoint 3: SPEC §8 ข้อ 4–7 ผ่านบนข้อมูลจริง

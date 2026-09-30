@@ -81,7 +81,7 @@ class JobRunner:
     def __init__(self, work_dir: str | Path, preset: str = DEFAULT_PRESET, *, autostart: bool = True):
         self.work_dir = Path(work_dir)
         self.captures_dir = self.work_dir / "captures"
-        self.results_dir = self.work_dir / "results"
+        self.results_dir = self.work_dir / "results"         # the pipeline's output.root; jobs land in results/web/
         self.captures_dir.mkdir(parents=True, exist_ok=True)
         self.results_dir.mkdir(parents=True, exist_ok=True)
         self.preset = preset
@@ -111,7 +111,7 @@ class JobRunner:
             raise ValueError(f"overrides not allowed: {sorted(bad)}; allowed: {sorted(ALLOWED_OVERRIDES)}")
         job = Job(id=job_id, scene_dir=scene_dir, overrides=merged, preset=preset, created_at=time.time(),
                   n_frames=_count_frames(scene_dir, merged), **read_meta(scene_dir))
-        job.has_reference = self.reference_path(job) is not None
+        job.has_reference = reference_path(job) is not None
         with self._lock:
             self._jobs[job_id] = job
         self._save(job)
@@ -127,13 +127,7 @@ class JobRunner:
             return list(self._jobs.values())
 
     def run_dir(self, job_id: str) -> Path:
-        """Where the pipeline writes this job's config.yaml / metrics.json / mesh.ply (and we keep job.json)."""
-        return self.results_dir / "web" / job_id
-
-    def reference_path(self, job: Job) -> Path | None:
-        """The capture's own reference.ply, or None when it was uploaded without one."""
-        path = job.scene_dir / "reference.ply"
-        return path if path.is_file() else None
+        return run_dir(self.work_dir, job_id)
 
     def run_pending_sync(self) -> None:
         """Drain the queue on the calling thread (tests; also handy for CLI batch use)."""
@@ -151,36 +145,11 @@ class JobRunner:
         replace_atomic(tmp, d / "job.json")              # a crash never leaves half a record
 
     def _restore(self) -> None:
-        jobs = []
-        for path in (self.results_dir / "web").glob("*/job.json"):
-            try:
-                rec = json.loads(path.read_text(encoding="utf-8"))
-                scene_dir = Path(rec["scene_dir"])
-                job = Job(id=str(rec["id"]),
-                          scene_dir=scene_dir if scene_dir.is_absolute() else self.work_dir / scene_dir,
-                          overrides=dict(rec.get("overrides") or {}), preset=rec.get("preset"),
-                          status=str(rec["status"]), error=rec.get("error"), created_at=rec.get("created_at"),
-                          started_at=rec.get("started_at"), finished_at=rec.get("finished_at"))
-                job.scene, job.up, job.capture_stride = read_meta(job.scene_dir).values()
-                job.has_reference = self.reference_path(job) is not None
-            except (OSError, ValueError, KeyError, TypeError):
-                continue                                  # unreadable record: skip it, never block start-up
-            if job.id != path.parent.name:
-                continue
-            job.n_frames = _count_frames(job.scene_dir, job.overrides)
-            if job.status == "done":
-                try:
-                    job.result = json.loads((path.parent / "metrics.json").read_text(encoding="utf-8"))
-                    job.mesh_path = path.parent / "mesh.ply"
-                    job.n_frames = job.result.get("n_frames", job.n_frames)
-                except (OSError, ValueError):
-                    job.status, job.error = "failed", "result files missing after restart"
-            elif job.status in ("queued", "running"):
+        for job in read_jobs(self.work_dir):
+            if job.status in ("queued", "running"):       # it died with the old server; say so, do not rerun it
                 job.status, job.error = "failed", INTERRUPTED
                 job.finished_at = job.finished_at or time.time()
                 self._save(job)
-            jobs.append(job)
-        for job in sorted(jobs, key=lambda j: j.created_at or 0.0):
             self._jobs[job.id] = job
 
     # ------------------------------------------------------------------ worker
@@ -216,6 +185,49 @@ class JobRunner:
         self._save(job)
 
 
+def run_dir(work_dir: Path, job_id: str) -> Path:
+    """Where the pipeline writes a job's config.yaml / metrics.json / mesh.ply (and we keep job.json)."""
+    return Path(work_dir) / "results" / "web" / job_id
+
+
+def reference_path(job: Job) -> Path | None:
+    """The capture's own reference.ply, or None when it was uploaded without one."""
+    path = job.scene_dir / "reference.ply"
+    return path if path.is_file() else None
+
+
+def read_jobs(work_dir: str | Path) -> list[Job]:
+    """The jobs recorded under a work dir, oldest first, exactly as their job.json left them (nothing is written).
+
+    Finished jobs come back with their metrics and mesh path; a record that cannot be read is skipped.
+    """
+    work_dir, jobs = Path(work_dir), []
+    for path in run_dir(work_dir, "*").parent.glob("*/job.json"):
+        try:
+            rec = json.loads(path.read_text(encoding="utf-8"))
+            scene_dir = Path(rec["scene_dir"])
+            job = Job(id=str(rec["id"]), scene_dir=scene_dir if scene_dir.is_absolute() else work_dir / scene_dir,
+                      overrides=dict(rec.get("overrides") or {}), preset=rec.get("preset"),
+                      status=str(rec["status"]), error=rec.get("error"), created_at=rec.get("created_at"),
+                      started_at=rec.get("started_at"), finished_at=rec.get("finished_at"))
+            job.scene, job.up, job.capture_stride = read_meta(job.scene_dir).values()
+        except (OSError, ValueError, KeyError, TypeError):
+            continue
+        if job.id != path.parent.name:
+            continue
+        job.has_reference = reference_path(job) is not None
+        job.n_frames = _count_frames(job.scene_dir, job.overrides)
+        if job.status == "done":
+            try:
+                job.result = json.loads((path.parent / "metrics.json").read_text(encoding="utf-8"))
+                job.mesh_path = path.parent / "mesh.ply"
+                job.n_frames = job.result.get("n_frames", job.n_frames)
+            except (OSError, ValueError):
+                job.status, job.error = "failed", "result files missing after restart"
+        jobs.append(job)
+    return sorted(jobs, key=lambda j: j.created_at or 0.0)
+
+
 def _portable(path: Path, base: Path) -> str:
     """`path` relative to the work dir when it lives inside it, so a moved work dir still restores."""
     try:
@@ -243,6 +255,12 @@ def read_meta(scene_dir: Path) -> dict[str, Any]:
     if isinstance(raw.get("stride"), int) and not isinstance(raw["stride"], bool) and raw["stride"] > 0:
         meta["capture_stride"] = raw["stride"]
     return meta
+
+
+def derived_files(work_dir: Path, job: Job) -> dict[str, Path]:
+    """Cache paths of what the viewer derives from a finished job: the reference's display copy, the error mesh."""
+    d = run_dir(work_dir, job.id)
+    return {"reference_view": d / "reference_view.ply", "error": d / "error.ply"}
 
 
 def _count_frames(scene_dir: Path, overrides: dict[str, str]) -> int | None:

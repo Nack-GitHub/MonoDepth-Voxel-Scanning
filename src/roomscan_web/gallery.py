@@ -15,11 +15,12 @@ import json
 import logging
 import re
 import threading
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import Any
 
-from roomscan_web._fs import replace_atomic
+from roomscan_web import errorcolor, refmesh
+from roomscan_web._fs import is_fresh, replace_atomic
 
 log = logging.getLogger(__name__)
 
@@ -120,6 +121,38 @@ def reference_for(run_dir: Path, cache_dir: Path) -> Path | None:
         o3d.io.write_triangle_mesh(str(tmp), mesh)
         replace_atomic(tmp, out)
     return out
+
+
+def reference_view(run_dir: Path, exp_cache: Path) -> Path | None:
+    """Display copy of the room's reference (what GET .../reference.ply serves); `exp_cache` = <cache>/<exp>."""
+    ref = reference_for(run_dir, exp_cache / scene_of(run_dir.name))
+    return refmesh.write_view(ref, ref.with_name("reference_view.ply")) if ref else None
+
+
+def error_mesh(run_dir: Path, exp_cache: Path) -> Path | None:
+    """The run's mesh coloured by distance to its room's reference (what GET .../error.ply serves)."""
+    ref = reference_for(run_dir, exp_cache / scene_of(run_dir.name))
+    if ref is None:
+        return None
+    return errorcolor.write_error_ply(run_dir / "mesh.ply", ref, exp_cache / run_dir.name / "error.ply")
+
+
+def warm(root: Path, exps: Sequence[str], cache_dir: Path, scenes: Sequence[str] | None = None,
+         ) -> Iterator[tuple[str, str]]:
+    """Build everything the viewer will ask for, ahead of time: yields (item id, built | cached | no reference).
+
+    Goes through the same functions as the endpoints, so a warmed cache is exactly what a first click makes.
+    """
+    for item in list_runs(root, exps, cache_dir):
+        if scenes and item["scene"] not in scenes:
+            continue
+        run_dir, exp_cache = root / item["id"], cache_dir / item["exp"]
+        ref = exp_cache / item["scene"] / "reference.ply"
+        cached = (is_fresh(exp_cache / run_dir.name / "error.ply", run_dir / "mesh.ply", ref)
+                  and is_fresh(ref.with_name("reference_view.ply"), ref))
+        built = cached or (reference_view(run_dir, exp_cache) is not None
+                           and error_mesh(run_dir, exp_cache) is not None)
+        yield item["id"], "cached" if cached else "built" if built else "no reference"
 
 
 def _dataset_cfg(run_dir: Path):
