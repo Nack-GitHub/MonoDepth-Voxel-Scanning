@@ -15,10 +15,18 @@
     <div class="st" id="preset-note"></div>
     <button type="submit">Upload &amp; reconstruct</button>
   </form>
-  <label class="st"><input type="checkbox" id="zup"> capture is Z-up (ARKit/ARCore are Y-up: leave off)</label>
   <ul id="jobs"></ul>
 </aside>
-<div id="view"><div id="hud">select a finished scan</div></div>
+<main>
+  <div id="toolbar">
+    <label title="rotate a Z-up capture (ARKitScenes) upright; ARKit/ARCore app captures are Y-up"><input type="checkbox" id="zup"> Z-up</label>
+  </div>
+  <div id="banner" hidden>different rooms — not comparable</div>
+  <div id="view">
+    <div id="cells"></div>
+    <div id="hud">select a finished scan, or tick “compare” on up to 3</div>
+  </div>
+</main>
 
 <script type="importmap">
 { "imports": {

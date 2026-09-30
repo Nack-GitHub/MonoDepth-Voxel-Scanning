@@ -7,11 +7,26 @@ async function getJSON(url) {
 
 export const listPresets = () => getJSON('/presets');
 export const listScans = () => getJSON('/scans');
-export const meshUrl = (id) => `/scans/${id}/mesh.ply`;
 
 // FormData with `file` and `preset`; the server merges the preset's overrides.
 export async function createScan(formData) {
   const r = await fetch('/scans', { method: 'POST', body: formData });
   if (!r.ok) throw new Error(await r.text());
   return r.json();
+}
+
+// An "item" is anything the viewer can show. Web jobs and gallery runs share this shape, so the
+// viewer, the compare mode and the panels never need to know where a mesh came from.
+export function itemFromJob(j) {
+  return {
+    key: `web:${j.id}`,
+    origin: 'web',
+    label: j.label,
+    detail: j.id,
+    scene: j.scene ?? null,
+    up: j.up ?? 'y',
+    metrics: j.result ?? null,                          // the run's metrics.json
+    isLidar: j.result?.depth_source === 'lidar',
+    urls: { mesh: `/scans/${j.id}/mesh.ply` },
+  };
 }
