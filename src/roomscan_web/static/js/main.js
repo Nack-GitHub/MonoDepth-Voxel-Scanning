@@ -9,7 +9,7 @@ import { Viewer } from './viewer.js';
 const $ = (id) => document.getElementById(id);
 const state = {
   jobs: [],                // web jobs, as GET /scans returns them
-  gallery: [],             // paper runs, as GET /gallery returns them
+  gallery: null,           // paper runs, as GET /gallery returns them (null until the first answer)
   items: new Map(),        // key -> item, for everything that can be shown right now (finished jobs + gallery)
   compare: [],             // keys ticked "compare" (max MAX_COMPARE), in the order they were ticked
   solo: null,              // key opened by clicking a row while nothing is ticked
@@ -111,7 +111,7 @@ function update() {
 function rebuildItems() {
   state.items = new Map([
     ...state.jobs.filter((j) => j.status === 'done').map((j) => api.itemFromJob(j)),
-    ...state.gallery.map((g) => api.itemFromGallery(g)),
+    ...(state.gallery ?? []).map((g) => api.itemFromGallery(g)),
   ].map((item) => [item.key, item]));
   state.compare = state.compare.filter((k) => state.items.has(k));
   update();

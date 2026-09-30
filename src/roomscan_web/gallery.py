@@ -118,7 +118,8 @@ def reference_for(run_dir: Path, cache_dir: Path) -> Path | None:
             return None
         cache_dir.mkdir(parents=True, exist_ok=True)
         tmp = cache_dir / "reference.tmp.ply"
-        o3d.io.write_triangle_mesh(str(tmp), mesh)
+        # geometry only: colours and normals of a 1 cm mesh would add ~40 % to a file nobody reads them from
+        o3d.io.write_triangle_mesh(str(tmp), o3d.geometry.TriangleMesh(mesh.vertices, mesh.triangles))
         replace_atomic(tmp, out)
     return out
 

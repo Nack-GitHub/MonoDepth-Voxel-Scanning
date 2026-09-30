@@ -296,6 +296,7 @@ export const badge = (recall) => (recall >= 0.9 ? '✓' : recall >= 0.75 ? '~' :
 1. **ซ้อมกับข้อมูลจริงบนเครื่องที่มี mesh ของ sweep** (ข้อ 4, 8, 9 ข้างบน และ Checkpoint 3 ของ `tasks/plan.md`) รวมถึงตรวจว่าตัวเลขของงานบนเว็บต่างจาก gallery ไม่เกิน ±20%
 2. **รัน FT-LiDAR-24 / pretrained ผ่านเว็บบนห้องจริง** ยังไม่ได้ทำ (ต้องถามก่อนตาม §7 และเครื่องนี้ไม่มีข้อมูลห้องทดสอบ)
 3. **Retina**: viewport คำนวณเป็น CSS px แล้วให้ three.js คูณ pixel ratio เอง แต่เครื่องที่ตรวจมี pixel ratio 1 จึงยังไม่ได้เห็นบนจอ Retina
+4. **ขนาด cache ของ gallery** ยังไม่ได้วัดกับข้อมูลจริง: `outputs/web/cache/<exp>/<scene>/reference.ply` เก็บ reference ตัวเต็ม (เฉพาะ vertex กับ face) หนึ่งไฟล์ต่อห้องต่อ experiment คาดว่าหลักสิบ MB ต่อไฟล์ ถ้า reference ถูกสร้างใหม่ให้ลบโฟลเดอร์ cache ทิ้ง เพราะไฟล์นี้ไม่ถูกสร้างซ้ำเอง
 
 ### 10.3 ส่วนที่ต่างจาก spec และเหตุผล
 

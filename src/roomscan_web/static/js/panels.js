@@ -78,6 +78,10 @@ const DEMO_TRIO = ['mono_metric', 'mono_ft_lidar_all', 'lidar'];
 // counts towards the same MAX_COMPARE as the web jobs; `onRoom(keys)` compares the demo trio of one room.
 export function renderGallery(box, runs, { compare, onCompare, onRoom }) {
   box.replaceChildren();
+  if (!runs) {                       // the first listing can take a few seconds: it checks each room's dataset
+    box.append(el('p', 'g-note', 'loading the gallery…'));
+    return;
+  }
   if (!runs.length) {
     box.append(el('p', 'g-note', 'No paper runs found: the gallery lists experiment runs that still have their mesh.ply (meshes are not committed; they exist on the machine that ran the sweeps).'));
     return;
