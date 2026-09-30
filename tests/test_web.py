@@ -12,7 +12,9 @@ pytest.importorskip("open3d")
 fastapi = pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient  # noqa: E402
 
+from roomscan.config import load_config  # noqa: E402
 from roomscan.dataio.synthetic import write_synthetic_scene  # noqa: E402
+from roomscan.pipeline import ReconstructionPipeline  # noqa: E402
 from roomscan_web.app import create_app  # noqa: E402
 from roomscan_web.jobs import ALLOWED_OVERRIDES  # noqa: E402
 from roomscan_web.presets import PRESETS  # noqa: E402
@@ -337,3 +339,121 @@ def test_legend_stops_match_turbo():
     js = (STATIC / "js" / "panels.js").read_text(encoding="utf-8")
     stops = re.findall(r"#[0-9a-f]{6}", re.search(r"TURBO_STOPS = \[(.*?)\]", js, re.S).group(1))
     assert stops == ["#{:02x}{:02x}{:02x}".format(*errorcolor.TURBO[round(i * 25.5)]) for i in range(11)]
+
+
+@pytest.fixture(scope="module")
+def results(tmp_path_factory):
+    """A results tree like experiments/results: two runs of one synthetic room (wiring only, never results)."""
+    d = tmp_path_factory.mktemp("results")
+    write_synthetic_scene(d / "data", "90000001", n_frames=10, hires=(512, 384))
+    for name, source in (("gt", "gt"), ("lidar", "lidar")):
+        ReconstructionPipeline(load_config("configs/base.yaml", [
+            f"dataset.root={d / 'data'}", "dataset.scene=90000001", "dataset.options.reference=arkit_mesh",
+            f"depth.source={source}", "fusion.voxel_size=0.05", "fusion.sdf_trunc=0.15",
+            f"output.root={d / 'root'}", "output.experiment=exp1_depth_source",
+            f"output.run_name=90000001_{name}", "eval.n_sample_points=20000",
+        ])).run()
+    return d / "root"
+
+
+def _tree(root):
+    return sorted((str(p.relative_to(root)), p.stat().st_size, p.stat().st_mtime_ns) for p in root.rglob("*"))
+
+
+def test_gallery_lists_runs_with_paper_labels(tmp_path, results):
+    client = TestClient(create_app(tmp_path / "web", autostart=False, gallery_root=results,
+                                   gallery_exps=["exp1_depth_source", "exp6_finetune"]))   # exp6 absent: fine
+    items = client.get("/gallery").json()
+    assert [it["id"] for it in items] == ["exp1_depth_source/90000001_gt", "exp1_depth_source/90000001_lidar"]
+    gt, lidar = items
+    assert (lidar["label"], lidar["run"], lidar["scene"], lidar["exp"]) == \
+        ("iPad LiDAR", "lidar", "90000001", "exp1_depth_source")
+    assert gt["label"] == "Faro depth (pipeline ceiling)"
+    assert lidar["origin"] == "paper" and lidar["up"] == "z" and lidar["has_reference"] is True
+    assert lidar["metrics"]["metrics_3d"]["chamfer"] > 0 and lidar["metrics"]["n_frames"] == 10
+
+
+def test_gallery_serves_mesh_reference_and_error_without_touching_the_results(tmp_path, results):
+    before = _tree(results)
+    work = tmp_path / "web"
+    client = TestClient(create_app(work, autostart=False, gallery_root=results, gallery_exps=["exp1_depth_source"]))
+    base = "/gallery/exp1_depth_source/90000001_lidar"
+    mesh = client.get(f"{base}/mesh.ply")
+    assert mesh.status_code == 200 and mesh.content[:3] == b"ply"
+    ref = client.get(f"{base}/reference.ply")
+    assert ref.status_code == 200 and ref.content[:3] == b"ply"
+    err = client.get(f"{base}/error.ply")
+    assert err.status_code == 200 and _n_vertices(err.content) == _n_vertices(mesh.content)
+    assert b"property uchar red" in err.content[:err.content.index(b"end_header")]
+
+    cache = work / "cache" / "exp1_depth_source"
+    assert (cache / "90000001" / "reference.ply").is_file()            # one reference per room ...
+    assert (cache / "90000001_lidar" / "error.ply").is_file()          # ... one error mesh per run
+    mtime = (cache / "90000001_lidar" / "error.ply").stat().st_mtime_ns
+    assert client.get(f"{base}/error.ply").content == err.content
+    assert (cache / "90000001_lidar" / "error.ply").stat().st_mtime_ns == mtime
+    assert client.get("/gallery").status_code == 200
+    assert _tree(results) == before                                     # read-only: nothing new, nothing changed
+
+
+def test_gallery_rejects_paths_from_the_client(tmp_path, results):
+    (results / "exp9_private").mkdir(exist_ok=True)
+    shutil.copytree(results / "exp1_depth_source" / "90000001_lidar", results / "exp9_private" / "90000001_lidar",
+                    dirs_exist_ok=True)
+    client = TestClient(create_app(tmp_path / "web", autostart=False, gallery_root=results,
+                                   gallery_exps=["exp1_depth_source"]))
+    try:
+        for url in (
+            "/gallery/exp9_private/90000001_lidar/mesh.ply",            # exists, but not in the allowlist
+            "/gallery/exp1_depth_source/90000001_nope/mesh.ply",        # no such run
+            "/gallery/exp1_depth_source/..%2Fexp9_private%2F90000001_lidar/mesh.ply",
+            "/gallery/exp1_depth_source/%2E%2E/mesh.ply",
+            "/gallery/%2E%2E/90000001_lidar/mesh.ply",
+            "/gallery/exp1_depth_source/90000001_LIDAR/mesh.ply",       # not the run-name pattern
+            "/gallery/exp1_depth_source/lidar/error.ply",
+            "/gallery/exp1_depth_source/90000001_nope/reference.ply",
+        ):
+            assert client.get(url).status_code == 404, url
+    finally:
+        shutil.rmtree(results / "exp9_private")
+
+
+def test_gallery_never_lists_the_synthetic_smoke_experiment(tmp_path, results):
+    smoke = results / "exp0_synthetic_smoke"
+    shutil.copytree(results / "exp1_depth_source", smoke)
+    try:
+        client = TestClient(create_app(tmp_path / "web", autostart=False, gallery_root=results,
+                                       gallery_exps=["exp0_synthetic_smoke"]))
+        assert client.get("/gallery").json() == []
+        assert client.get("/gallery/exp0_synthetic_smoke/90000001_lidar/mesh.ply").status_code == 404
+    finally:
+        shutil.rmtree(smoke)
+
+
+def test_gallery_without_the_dataset_has_no_reference(tmp_path, results):
+    moved = tmp_path / "results"                                        # same runs, dataset path now dangling
+    shutil.copytree(results, moved)
+    for cfg in moved.rglob("config.yaml"):
+        cfg.write_text(cfg.read_text().replace("root: ", "root: /nowhere"))
+    client = TestClient(create_app(tmp_path / "web", autostart=False, gallery_root=moved,
+                                   gallery_exps=["exp1_depth_source"]))
+    items = client.get("/gallery").json()
+    assert len(items) == 2 and not any(it["has_reference"] for it in items)
+    base = "/gallery/exp1_depth_source/90000001_lidar"
+    assert client.get(f"{base}/mesh.ply").status_code == 200
+    assert client.get(f"{base}/reference.ply").status_code == 404      # a 404, not a 500
+    assert client.get(f"{base}/error.ply").status_code == 404
+
+
+def test_gallery_prefers_the_later_experiment_for_a_repeated_run(tmp_path, results):
+    from roomscan_web import gallery
+
+    exp6 = results / "exp6_finetune"
+    shutil.copytree(results / "exp1_depth_source", exp6)
+    try:
+        items = gallery.list_runs(results, ["exp1_depth_source", "exp6_finetune"], tmp_path / "cache")
+        assert [it["id"] for it in items] == ["exp6_finetune/90000001_gt", "exp6_finetune/90000001_lidar"]
+        assert all(v == k or "_" not in v for k, v in gallery.RUN_LABELS.items())   # no internal names as labels
+        assert "upper bound" in gallery.RUN_LABELS["mono_sparse"]
+    finally:
+        shutil.rmtree(exp6)

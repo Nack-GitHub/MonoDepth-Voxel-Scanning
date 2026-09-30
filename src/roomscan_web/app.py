@@ -7,6 +7,8 @@
     GET  /scans/{id}/mesh.ply
     GET  /scans/{id}/reference.ply   the capture's Faro reference, thinned for display (404 without one)
     GET  /scans/{id}/error.ply       the mesh coloured by distance to the reference, turbo 0-10 cm
+    GET  /gallery                                  finished experiment runs (read-only, see gallery.py)
+    GET  /gallery/{exp}/{run}/mesh.ply | reference.ply | error.ply
     GET  /                 three.js viewer (static/index.html)
     GET  /static/...       css / js modules of the viewer
 
@@ -22,13 +24,14 @@ import mimetypes
 import os
 import shutil
 import zipfile
+from collections.abc import Sequence
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-from roomscan_web import errorcolor, refmesh
+from roomscan_web import errorcolor, gallery, refmesh
 from roomscan_web.jobs import Job, JobRunner
 from roomscan_web.presets import public_presets, resolve
 
@@ -47,10 +50,15 @@ class _Static(StaticFiles):
         return response
 
 
-def create_app(work_dir: str | Path | None = None, preset: str | None = None, *, autostart: bool = True) -> FastAPI:
+def create_app(work_dir: str | Path | None = None, preset: str | None = None, *, autostart: bool = True,
+               gallery_root: str | Path | None = None, gallery_exps: Sequence[str] | None = None) -> FastAPI:
     runner = JobRunner(work_dir or os.environ.get("ROOMSCAN_WORK_DIR", "outputs/web"),
                        preset or os.environ.get("ROOMSCAN_PRESET", "configs/depth/lidar.yaml"),
                        autostart=autostart)
+    g_root = Path(gallery_root or os.environ.get("ROOMSCAN_GALLERY_ROOT", gallery.DEFAULT_ROOT))
+    g_exps = gallery.allowed_exps(
+        gallery_exps or os.environ.get("ROOMSCAN_GALLERY_EXPS", ",".join(gallery.DEFAULT_EXPS)).split(","))
+    g_cache = runner.work_dir / "cache"          # derived gallery files live here, never under g_root
     app = FastAPI(title="roomscan", version="0.1.0")
     app.state.runner = runner
     app.mount("/static", _Static(directory=STATIC), name="static")
@@ -152,6 +160,42 @@ def create_app(work_dir: str | Path | None = None, preset: str | None = None, *,
         except ValueError as e:                   # an empty mesh on either side
             raise HTTPException(404, f"no error colours: {e}") from None
         return _ply(out, f"{job_id}_error.ply")
+
+    def run_or_404(exp: str, run: str) -> Path:
+        try:
+            return gallery.resolve_run(g_root, g_exps, exp, run)
+        except ValueError:
+            raise HTTPException(404, "no such gallery item") from None
+
+    def reference_or_404(exp: str, run: str) -> tuple[Path, Path]:
+        """(run folder, the room's cached reference mesh)."""
+        run_dir = run_or_404(exp, run)
+        ref = gallery.reference_for(run_dir, g_cache / exp / gallery.scene_of(run))
+        if ref is None:
+            raise HTTPException(404, "no Faro reference")
+        return run_dir, ref
+
+    @app.get("/gallery")
+    def list_gallery() -> list[dict]:
+        return gallery.list_runs(g_root, g_exps, g_cache)
+
+    @app.get("/gallery/{exp}/{run}/mesh.ply")
+    def gallery_mesh(exp: str, run: str) -> FileResponse:
+        return _ply(run_or_404(exp, run) / "mesh.ply", f"{run}.ply")
+
+    @app.get("/gallery/{exp}/{run}/reference.ply")
+    def gallery_reference(exp: str, run: str) -> FileResponse:
+        _, ref = reference_or_404(exp, run)
+        return _ply(refmesh.write_view(ref, ref.with_name("reference_view.ply")), f"{run}_reference.ply")
+
+    @app.get("/gallery/{exp}/{run}/error.ply")
+    def gallery_error(exp: str, run: str) -> FileResponse:
+        run_dir, ref = reference_or_404(exp, run)
+        try:
+            out = errorcolor.write_error_ply(run_dir / "mesh.ply", ref, g_cache / exp / run / "error.ply")
+        except ValueError as e:
+            raise HTTPException(404, f"no error colours: {e}") from None
+        return _ply(out, f"{run}_error.ply")
 
     return app
 

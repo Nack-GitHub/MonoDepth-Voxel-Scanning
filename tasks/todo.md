@@ -29,7 +29,7 @@
 ### ☐ Checkpoint 2: demo ช่วง A–D ครบบน synthetic · review screenshot · ตัดสินใจว่าจะทำ Phase 3 ไหม
 
 ## Phase 3: Gallery
-- [ ] **T9** `gallery.py` + `GET /gallery` + `/gallery/{exp}/{run}/{mesh,reference,error}.ply` (อ่านอย่างเดียว, allowlist, cache ใน outputs/) · M · deps T7
+- [x] **T9** `gallery.py` + `GET /gallery` + `/gallery/{exp}/{run}/{mesh,reference,error}.ply` (อ่านอย่างเดียว, allowlist, cache ใน outputs/) · M · deps T7
   - Verify: `test_gallery_*` (list, 404 traversal, ไม่มีไฟล์ถูกเขียนใต้ gallery root)
 - [ ] **T10** แท็บ Gallery (ตารางห้อง × source) + ผสมกับ web jobs ใน compare + ป้าย "paper run" · M · deps T4,T7,T8,T9
   - Verify: 47429736 ได้ 54.1 / 12.4 / 3.1 cm ใต้ช่อง; 1280×720 ไม่ล้น
