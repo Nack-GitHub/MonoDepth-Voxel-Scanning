@@ -55,6 +55,9 @@ class Job:
     started_at: float | None = None
     finished_at: float | None = None
     n_frames: int | None = None       # frames the run will fuse (rgb count after stride / max_frames)
+    scene: str | None = None          # from the capture's meta.json: which room this is (None = unknown)
+    up: str = "y"                     # "y" | "z": world up-axis of the capture
+    capture_stride: int | None = None  # frame stride the capture was exported with
 
     def public(self) -> dict[str, Any]:
         d = asdict(self)
@@ -62,6 +65,7 @@ class Job:
         d["mesh_path"] = str(self.mesh_path) if self.mesh_path else None
         d["mesh_url"] = f"/scans/{self.id}/mesh.ply" if self.status == "done" else None
         d["label"] = PRESETS[self.preset].label if self.preset in PRESETS else "custom overrides"
+        d["origin"] = "web"               # a demo run, as opposed to a gallery item ("paper")
         # elapsed on the server clock, so a timer in the page keeps counting right across reloads and devices
         if self.started_at is not None:
             d["elapsed_s"] = (self.finished_at or time.time()) - self.started_at
@@ -103,7 +107,7 @@ class JobRunner:
         if bad:
             raise ValueError(f"overrides not allowed: {sorted(bad)}; allowed: {sorted(ALLOWED_OVERRIDES)}")
         job = Job(id=job_id, scene_dir=scene_dir, overrides=merged, preset=preset, created_at=time.time(),
-                  n_frames=_count_frames(scene_dir, merged))
+                  n_frames=_count_frames(scene_dir, merged), **read_meta(scene_dir))
         with self._lock:
             self._jobs[job_id] = job
         self._save(job)
@@ -148,6 +152,7 @@ class JobRunner:
                           overrides=dict(rec.get("overrides") or {}), preset=rec.get("preset"),
                           status=str(rec["status"]), error=rec.get("error"), created_at=rec.get("created_at"),
                           started_at=rec.get("started_at"), finished_at=rec.get("finished_at"))
+                job.scene, job.up, job.capture_stride = read_meta(job.scene_dir).values()
             except (OSError, ValueError, KeyError, TypeError):
                 continue                                  # unreadable record: skip it, never block start-up
             if job.id != path.parent.name:
@@ -207,6 +212,27 @@ def _portable(path: Path, base: Path) -> str:
         return path.resolve().relative_to(base.resolve()).as_posix()
     except ValueError:
         return str(path)
+
+
+def read_meta(scene_dir: Path) -> dict[str, Any]:
+    """`meta.json` of a capture -> {scene, up, capture_stride}. Missing or malformed: unknown room, Y-up.
+
+    The file comes out of an uploaded zip, so nothing in it is trusted beyond these three checked fields.
+    """
+    meta: dict[str, Any] = {"scene": None, "up": "y", "capture_stride": None}
+    try:
+        raw = json.loads((scene_dir / "meta.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return meta
+    if not isinstance(raw, dict):
+        return meta
+    if isinstance(raw.get("scene"), (str, int)) and not isinstance(raw["scene"], bool) and str(raw["scene"]):
+        meta["scene"] = str(raw["scene"])[:64]
+    if raw.get("up") in ("y", "z"):
+        meta["up"] = raw["up"]
+    if isinstance(raw.get("stride"), int) and not isinstance(raw["stride"], bool) and raw["stride"] > 0:
+        meta["capture_stride"] = raw["stride"]
+    return meta
 
 
 def _count_frames(scene_dir: Path, overrides: dict[str, str]) -> int | None:

@@ -22,7 +22,8 @@ export function itemFromJob(j) {
     key: `web:${j.id}`,
     origin: 'web',
     label: j.label,
-    detail: j.id,
+    // a demo run is not a paper number: it was fused from a thinned capture and without the GT mask
+    originNote: j.capture_stride ? `stride ${j.capture_stride}, no GT mask` : 'no GT mask',
     scene: j.scene ?? null,
     up: j.up ?? 'y',
     metrics: j.result ?? null,                          // the run's metrics.json

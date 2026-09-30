@@ -165,3 +165,30 @@ def test_static_modules_served(tmp_path):
         assert r.status_code == 200 and "javascript" in r.headers["content-type"], name   # module scripts need it
     assert client.get("/static/app.css").status_code == 200
     assert client.get("/static/../app.py").status_code == 404
+
+
+def test_meta_json_up_and_scene(tmp_path, capture):
+    import shutil
+
+    with_meta = tmp_path / "with_meta" / "room1"
+    shutil.copytree(capture, with_meta)
+    (with_meta / "meta.json").write_text(json.dumps(
+        {"source": "arkitscenes", "scene": "47429736", "up": "z", "stride": 5}))
+    app = create_app(tmp_path / "web", autostart=False)
+    client = TestClient(app)
+
+    plain = _upload(client, capture, preset="lidar").json()
+    assert (plain["up"], plain["scene"], plain["capture_stride"], plain["origin"]) == ("y", None, None, "web")
+    job = _upload(client, with_meta, preset="lidar").json()
+    assert (job["up"], job["scene"], job["capture_stride"]) == ("z", "47429736", 5)
+
+    app.state.runner.run_pending_sync()                     # the loader must not trip over the extra file
+    for j in (plain, job):
+        assert client.get(f"/scans/{j['id']}").json()["status"] == "done"
+    restored = TestClient(create_app(tmp_path / "web", autostart=False)).get(f"/scans/{job['id']}").json()
+    assert (restored["up"], restored["scene"]) == ("z", "47429736")
+
+    for bad in ('["z"]', "not json", json.dumps({"up": "sideways", "scene": {"a": 1}, "stride": "5"})):
+        (with_meta / "meta.json").write_text(bad)           # comes from an upload: anything odd falls back
+        j = _upload(client, with_meta, preset="lidar").json()
+        assert (j["up"], j["scene"], j["capture_stride"]) == ("y", None, None)

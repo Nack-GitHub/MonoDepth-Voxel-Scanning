@@ -85,7 +85,8 @@ export function renderCells(container, items) {
       el('div', 'cap-num', chamfer != null ? `Chamfer ${cm(chamfer)}` : 'no 3D metrics'),
       el('div', 'st', ''),
     );
-    cap.lastChild.append(el('span', `origin ${item.origin}`, ORIGIN[item.origin]), el('span', 'cap-note', ' loading…'));
+    const origin = ORIGIN[item.origin] + (item.originNote ? ` (${item.originNote})` : '');
+    cap.lastChild.append(el('span', `origin ${item.origin}`, origin), el('span', 'cap-note', ' loading…'));
     cell.append(pane, cap);
     container.appendChild(cell);
     return pane;
